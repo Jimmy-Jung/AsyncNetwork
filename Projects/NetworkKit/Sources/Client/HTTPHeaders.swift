@@ -15,7 +15,7 @@ public struct HTTPHeaders: Sendable {
 
     // MARK: - Static Header Keys
 
-    public enum HeaderKey: String, CaseIterable {
+    public enum HeaderKey: String, CaseIterable, Sendable {
         /// 요청 본문의 데이터 형식을 서버에 알려줌
         /// 예시: application/json, application/x-www-form-urlencoded
         case contentType = "Content-Type"
