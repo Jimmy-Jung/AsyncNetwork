@@ -1,14 +1,14 @@
 <div align="center">
 
-# NetworkKit
+# AsyncNetwork
 
 ### 순수 Foundation 기반의 Swift 네트워크 라이브러리
 
 [![Swift](https://img.shields.io/badge/Swift-6.0-orange.svg)](https://swift.org)
 [![Platform](https://img.shields.io/badge/Platform-iOS%2013%2B%20%7C%20macOS%2010.15%2B%20%7C%20tvOS%2013%2B%20%7C%20watchOS%206%2B-lightgrey.svg)](https://developer.apple.com/swift)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Release](https://img.shields.io/github/v/release/Jimmy-Jung/NetworkKit)](https://github.com/Jimmy-Jung/NetworkKit/releases)
-[![CI](https://github.com/Jimmy-Jung/NetworkKit/actions/workflows/ci.yml/badge.svg)](https://github.com/Jimmy-Jung/NetworkKit/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/Jimmy-Jung/AsyncNetwork)](https://github.com/Jimmy-Jung/AsyncNetwork/releases)
+[![CI](https://github.com/Jimmy-Jung/AsyncNetwork/actions/workflows/ci.yml/badge.svg)](https://github.com/Jimmy-Jung/AsyncNetwork/actions/workflows/ci.yml)
 [![SPM Compatible](https://img.shields.io/badge/SPM-compatible-brightgreen.svg)](https://swift.org/package-manager)
 
 [English](#) | [한국어](#-korean)
@@ -17,9 +17,9 @@
 
 ---
 
-## 왜 NetworkKit인가?
+## 왜 AsyncNetwork인가?
 
-NetworkKit은 순수 Foundation만을 사용하여 구축된 현대적인 Swift 네트워크 라이브러리입니다.
+AsyncNetwork은 순수 Foundation만을 사용하여 구축된 현대적인 Swift 네트워크 라이브러리입니다.
 
 ### 주요 특징
 
@@ -35,7 +35,7 @@ NetworkKit은 순수 Foundation만을 사용하여 구축된 현대적인 Swift 
 
 ### 다른 라이브러리와 비교
 
-| 특징 | NetworkKit | Alamofire | Moya |
+| 특징 | AsyncNetwork | Alamofire | Moya |
 |------|-----------|-----------|------|
 | 외부 의존성 | ✅ 없음 | ❌ AFNetworking | ❌ Alamofire |
 | Swift Concurrency | ✅ 네이티브 | ✅ 지원 | ⚠️ 부분 지원 |
@@ -54,7 +54,7 @@ NetworkKit은 순수 Foundation만을 사용하여 구축된 현대적인 Swift 
 
 ## 목차
 
-- [왜 NetworkKit인가?](#왜-networkkit인가)
+- [왜 AsyncNetwork인가?](#왜-networkkit인가)
 - [빠른 시작](#빠른-시작)
 - [설치](#설치)
 - [핵심 개념](#핵심-개념)
@@ -72,7 +72,7 @@ NetworkKit은 순수 Foundation만을 사용하여 구축된 현대적인 Swift 
 ### 1. API Request 정의
 
 ```swift
-import NetworkKit
+import AsyncNetwork
 
 enum MyAPI {
     case getUsers
@@ -136,10 +136,10 @@ struct User: Codable, Sendable {
 ### 3. NetworkService 사용
 
 ```swift
-import NetworkKit
+import AsyncNetwork
 
 // NetworkService 생성 (Factory 사용)
-let networkService = NetworkKit.createNetworkService(
+let networkService = AsyncNetwork.createNetworkService(
     interceptors: [ConsoleLoggingInterceptor()],
     configuration: .development
 )
@@ -175,7 +175,7 @@ do {
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/Jimmy-Jung/NetworkKit.git", from: "1.0.0")
+    .package(url: "https://github.com/Jimmy-Jung/AsyncNetwork.git", from: "1.0.0")
 ]
 ```
 
@@ -185,7 +185,7 @@ dependencies: [
 .target(
     name: "YourTarget",
     dependencies: [
-        .product(name: "NetworkKit", package: "NetworkKit")
+        .product(name: "AsyncNetwork", package: "AsyncNetwork")
     ]
 )
 ```
@@ -193,13 +193,13 @@ dependencies: [
 #### Xcode에서 추가
 
 1. **File → Add Package Dependencies...**
-2. 검색창에 입력: `https://github.com/Jimmy-Jung/NetworkKit.git`
+2. 검색창에 입력: `https://github.com/Jimmy-Jung/AsyncNetwork.git`
 3. **Add Package** 클릭
-4. **`NetworkKit`** 선택
+4. **`AsyncNetwork`** 선택
 
 ## 핵심 개념
 
-NetworkKit은 **책임별 모듈 구조**로 설계되었습니다:
+AsyncNetwork은 **책임별 모듈 구조**로 설계되었습니다:
 
 ```
 ┌──────────────────────────────────────┐
@@ -244,7 +244,7 @@ NetworkKit은 **책임별 모듈 구조**로 설계되었습니다:
 
 ### 책임별 모듈 구조
 
-NetworkKit은 단일 책임 원칙에 따라 9개의 명확한 모듈로 구성되어 있습니다:
+AsyncNetwork은 단일 책임 원칙에 따라 9개의 명확한 모듈로 구성되어 있습니다:
 
 #### 1️⃣ Models (도메인 모델)
 
@@ -342,13 +342,13 @@ sequenceDiagram
 간편하게 NetworkService를 생성합니다:
 
 ```swift
-import NetworkKit
+import AsyncNetwork
 
 // 기본 설정 (Console Logging)
-let service = NetworkKit.createNetworkService()
+let service = AsyncNetwork.createNetworkService()
 
 // 커스텀 Interceptors + 환경 설정
-let service = NetworkKit.createNetworkService(
+let service = AsyncNetwork.createNetworkService(
     interceptors: [
         ConsoleLoggingInterceptor(minimumLevel: .verbose),
         AuthInterceptor()
@@ -357,7 +357,7 @@ let service = NetworkKit.createNetworkService(
 )
 
 // 로깅 없이 (빈 Interceptors)
-let service = NetworkKit.createNetworkService(
+let service = AsyncNetwork.createNetworkService(
     interceptors: [],
     configuration: .production
 )
@@ -397,11 +397,11 @@ public enum HTTPTask: Sendable {
 
 ```swift
 // Preset 사용
-let service1 = NetworkKit.createNetworkService(
+let service1 = AsyncNetwork.createNetworkService(
     configuration: .default  // maxRetries: 3, baseDelay: 1.0
 )
 
-let service2 = NetworkKit.createNetworkService(
+let service2 = AsyncNetwork.createNetworkService(
     configuration: .aggressive  // maxRetries: 5, baseDelay: 0.5
 )
 
@@ -445,7 +445,7 @@ struct AnalyticsInterceptor: RequestInterceptor {
 }
 
 // 사용
-let service = NetworkKit.createNetworkService(
+let service = AsyncNetwork.createNetworkService(
     interceptors: [AnalyticsInterceptor()],
     configuration: .production
 )
@@ -576,7 +576,7 @@ enum SearchAPI: APIRequest {
 
 ## Example 앱
 
-NetworkKitExample은 JSONPlaceholder API를 테스트할 수 있는 **인터랙티브 API Playground**입니다.
+AsyncNetworkExample은 JSONPlaceholder API를 테스트할 수 있는 **인터랙티브 API Playground**입니다.
 
 ### 주요 기능
 
@@ -589,7 +589,7 @@ NetworkKitExample은 JSONPlaceholder API를 테스트할 수 있는 **인터랙�
 
 ### 기술 스택
 
-- **NetworkKit**: 네트워크 레이어
+- **AsyncNetwork**: 네트워크 레이어
 - **AsyncViewModel**: 상태 관리 (단방향 데이터 흐름)
 - **TraceKit**: 구조화된 로깅
 - **Tuist**: 프로젝트 관리
@@ -597,7 +597,7 @@ NetworkKitExample은 JSONPlaceholder API를 테스트할 수 있는 **인터랙�
 ### 실행 방법
 
 ```bash
-cd Projects/NetworkKitExample
+cd Projects/AsyncNetworkExample
 
 # 의존성 가져오기
 tuist install
@@ -606,20 +606,20 @@ tuist install
 tuist generate
 
 # Xcode로 열기
-open NetworkKitExample.xcworkspace
+open AsyncNetworkExample.xcworkspace
 ```
 
-자세한 내용은 [NetworkKitExample README](./Projects/NetworkKitExample/README.md)를 참고하세요.
+자세한 내용은 [AsyncNetworkExample README](./Projects/AsyncNetworkExample/README.md)를 참고하세요.
 
 ## 테스트
 
-NetworkKit은 테스트하기 쉽게 설계되었습니다.
+AsyncNetwork은 테스트하기 쉽게 설계되었습니다.
 
 ### MockURLProtocol 사용
 
 ```swift
 import Testing
-@testable import NetworkKit
+@testable import AsyncNetwork
 
 @Test("사용자 목록 조회 성공")
 func testGetUsersSuccess() async throws {
@@ -708,10 +708,10 @@ func testRetryPolicy() async throws {
 ### 📚 프로젝트 구조
 
 ```
-NetworkKit/
+AsyncNetwork/
 ├── Package.swift                    # SPM 패키지 정의
 ├── Projects/
-│   ├── NetworkKit/                  # Core 라이브러리
+│   ├── AsyncNetwork/                  # Core 라이브러리
 │   │   ├── Sources/
 │   │   │   ├── Models/              # 도메인 모델
 │   │   │   ├── Protocols/           # 인터페이스
@@ -722,25 +722,25 @@ NetworkKit/
 │   │   │   ├── Service/             # 네트워크 서비스
 │   │   │   ├── Errors/              # 에러 처리
 │   │   │   ├── Utilities/           # 유틸리티
-│   │   │   └── NetworkKit.swift     # 공개 진입점
+│   │   │   └── AsyncNetwork.swift     # 공개 진입점
 │   │   └── Tests/                   # 단위 테스트
-│   └── NetworkKitExample/           # Example 앱 (Tuist)
+│   └── AsyncNetworkExample/           # Example 앱 (Tuist)
 └── .github/                         # GitHub 설정 (CI/CD)
 ```
 
 ### 🎯 추가 리소스
 
-- 📱 [Example 앱 README](Projects/NetworkKitExample/README.md) - 인터랙티브 API Playground
-- 🐛 [Issues](https://github.com/Jimmy-Jung/NetworkKit/issues) - 버그 리포트 및 기능 제안
-- 💬 [Discussions](https://github.com/Jimmy-Jung/NetworkKit/discussions) - 질문 및 피드백
+- 📱 [Example 앱 README](Projects/AsyncNetworkExample/README.md) - 인터랙티브 API Playground
+- 🐛 [Issues](https://github.com/Jimmy-Jung/AsyncNetwork/issues) - 버그 리포트 및 기능 제안
+- 💬 [Discussions](https://github.com/Jimmy-Jung/AsyncNetwork/discussions) - 질문 및 피드백
 
 ## 기여하기
 
-NetworkKit은 오픈소스 프로젝트이며, 여러분의 기여를 환영합니다! 🎉
+AsyncNetwork은 오픈소스 프로젝트이며, 여러분의 기여를 환영합니다! 🎉
 
 ### 기여 방법
 
-1. **이슈 확인**: [Issues](https://github.com/Jimmy-Jung/NetworkKit/issues)에서 해결하고 싶은 문제 찾기
+1. **이슈 확인**: [Issues](https://github.com/Jimmy-Jung/AsyncNetwork/issues)에서 해결하고 싶은 문제 찾기
 2. **Fork**: 저장소를 Fork합니다
 3. **브랜치 생성**: `git checkout -b feature/amazing-feature`
 4. **변경사항 작성**: 코드 작성 및 테스트 추가
@@ -758,11 +758,11 @@ NetworkKit은 오픈소스 프로젝트이며, 여러분의 기여를 환영합�
 
 ### 좋은 첫 이슈
 
-처음 기여하시나요? [`good first issue`](https://github.com/Jimmy-Jung/NetworkKit/labels/good%20first%20issue) 라벨이 붙은 이슈부터 시작해보세요!
+처음 기여하시나요? [`good first issue`](https://github.com/Jimmy-Jung/AsyncNetwork/labels/good%20first%20issue) 라벨이 붙은 이슈부터 시작해보세요!
 
 ## 라이선스
 
-NetworkKit은 [MIT License](LICENSE)로 배포됩니다.
+AsyncNetwork은 [MIT License](LICENSE)로 배포됩니다.
 
 ```
 MIT License
@@ -790,7 +790,7 @@ SOFTWARE.
 
 ## 감사의 말
 
-NetworkKit은 다음 프로젝트들에서 영감을 받았습니다:
+AsyncNetwork은 다음 프로젝트들에서 영감을 받았습니다:
 
 - [Alamofire](https://github.com/Alamofire/Alamofire) - Swift HTTP 네트워킹 라이브러리
 - [Moya](https://github.com/Moya/Moya) - 계층화된 네트워크 추상화
@@ -808,7 +808,7 @@ iOS Developer from Seoul, South Korea 🇰🇷
 
 ## 후원
 
-NetworkKit이 도움이 되었나요? ⭐ Star를 눌러주세요!
+AsyncNetwork이 도움이 되었나요? ⭐ Star를 눌러주세요!
 
 프로젝트 개발을 지원하고 싶으시다면:
 - ⭐ GitHub Star

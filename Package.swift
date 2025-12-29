@@ -1,11 +1,11 @@
 // swift-tools-version: 6.0
 // Package.swift
-// NetworkKit
+// AsyncNetwork
 
 import PackageDescription
 
 let package = Package(
-    name: "NetworkKit",
+    name: "AsyncNetwork",
     platforms: [
         .iOS(.v13),
         .macOS(.v10_15),
@@ -14,21 +14,21 @@ let package = Package(
     ],
     products: [
         .library(
-            name: "NetworkKit",
-            targets: ["NetworkKit"]
+            name: "AsyncNetwork",
+            targets: ["AsyncNetwork"]
         ),
     ],
     dependencies: [],
     targets: [
         .target(
-            name: "NetworkKit",
+            name: "AsyncNetwork",
             dependencies: [],
-            path: "Projects/NetworkKit/Sources"
+            path: "Projects/AsyncNetwork/Sources"
         ),
         .testTarget(
-            name: "NetworkKitTests",
-            dependencies: ["NetworkKit"],
-            path: "Projects/NetworkKit/Tests"
+            name: "AsyncNetworkTests",
+            dependencies: ["AsyncNetwork"],
+            path: "Projects/AsyncNetwork/Tests"
         ),
     ]
 )
