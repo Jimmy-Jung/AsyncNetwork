@@ -1,0 +1,37 @@
+# Xcode
+*.xcodeproj
+*.xcworkspace
+*.xcuserstate
+xcuserdata/
+DerivedData/
+
+# Tuist
+.tuist-cache/
+.tuist-version
+Derived/
+graph.json
+
+# SPM
+.build/
+.swiftpm/
+
+# Tuist 의존성
+**/Tuist/Dependencies/
+**/Tuist/.build/
+**/Tuist/Package.resolved
+
+# macOS
+.DS_Store
+*/.DS_Store
+
+# Swift
+*.swiftmodule
+*.swiftdoc
+*.ipa
+build/
+
+# 기타
+.package.resolved
+
+# cursor
+.cursor/
