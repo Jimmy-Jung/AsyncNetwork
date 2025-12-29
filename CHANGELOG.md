@@ -5,6 +5,20 @@ All notable changes to AsyncNetwork will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.1] - 2025-12-29
+
+### Fixed
+- `StatusCodeValidationError`에 `Equatable` 프로토콜 추가하여 Swift Testing 호환성 개선
+- `RetryPolicy`에 유효하지 않은 시도 횟수(0 이하) 검증 로직 추가
+
+### Changed
+- Moya 의존성 제거: 모든 테스트를 프로젝트의 자체 타입으로 전환
+  - `StatusCodeValidatorTests`: `HTTPResponse` 사용
+  - `ResponseDecoderTests`: `HTTPResponse` 사용
+  - `RetryPolicyTests`: 실제 `RetryPolicy` 타입 사용
+  - `NetworkLogPluginTests` → `ConsoleLoggingInterceptor` 테스트로 변경
+- 테스트 파일에 `Foundation` import 추가
+
 ## [1.0.0] - 2025-12-29
 
 ### Added
