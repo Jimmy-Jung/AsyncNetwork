@@ -1,0 +1,135 @@
+name: Bug Report
+description: 버그를 발견하셨나요? 리포트를 작성해주세요.
+title: "[Bug] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        버그 리포트를 작성해주셔서 감사합니다. 가능한 한 자세히 작성해주시면 빠르게 문제를 해결할 수 있습니다.
+
+  - type: textarea
+    id: description
+    attributes:
+      label: 버그 설명
+      description: 어떤 버그가 발생했나요?
+      placeholder: 버그에 대한 명확하고 간결한 설명을 작성해주세요.
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: 재현 방법
+      description: 버그를 재현하는 단계를 작성해주세요.
+      placeholder: |
+        1. '...'로 이동
+        2. '...' 클릭
+        3. '...'까지 스크롤
+        4. 에러 확인
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: 예상 동작
+      description: 어떤 동작을 예상하셨나요?
+      placeholder: 예상했던 동작을 명확하고 간결하게 설명해주세요.
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: 실제 동작
+      description: 실제로 어떤 동작이 발생했나요?
+      placeholder: 실제로 발생한 동작을 설명해주세요.
+    validations:
+      required: true
+
+  - type: textarea
+    id: code
+    attributes:
+      label: 코드 예제
+      description: 버그를 재현할 수 있는 최소한의 코드를 작성해주세요.
+      render: swift
+      placeholder: |
+        import NetworkKit
+        
+        enum MyAPI: APIRequest {
+            case getUsers
+            // 코드 작성
+        }
+
+  - type: dropdown
+    id: component
+    attributes:
+      label: 컴포넌트
+      description: 어떤 컴포넌트에서 문제가 발생했나요?
+      options:
+        - Core (APIRequest, HTTPClient)
+        - Infrastructure (HTTPClient, ResponseDecoder)
+        - Application (ErrorMapper, RetryPolicy)
+        - Orchestration (NetworkService)
+        - 잘 모르겠음
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: 버전
+      description: NetworkKit의 버전을 입력해주세요.
+      placeholder: "예: 1.0.0"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: platform
+    attributes:
+      label: 플랫폼
+      description: 어떤 플랫폼에서 문제가 발생했나요?
+      multiple: true
+      options:
+        - iOS
+        - macOS
+        - tvOS
+        - watchOS
+    validations:
+      required: true
+
+  - type: input
+    id: os-version
+    attributes:
+      label: OS 버전
+      description: OS 버전을 입력해주세요.
+      placeholder: "예: iOS 17.0"
+    validations:
+      required: true
+
+  - type: input
+    id: xcode-version
+    attributes:
+      label: Xcode 버전
+      description: Xcode 버전을 입력해주세요.
+      placeholder: "예: 16.0"
+    validations:
+      required: true
+
+  - type: input
+    id: swift-version
+    attributes:
+      label: Swift 버전
+      description: Swift 버전을 입력해주세요.
+      placeholder: "예: 6.0"
+    validations:
+      required: true
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: 추가 컨텍스트
+      description: 버그에 대한 추가 정보가 있나요?
+      placeholder: 스크린샷, 로그, 또는 기타 관련 정보를 추가해주세요.
+

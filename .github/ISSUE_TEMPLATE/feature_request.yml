@@ -1,0 +1,80 @@
+name: Feature Request
+description: 새로운 기능을 제안해주세요.
+title: "[Feature] "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        새로운 기능 제안을 해주셔서 감사합니다. 가능한 한 자세히 작성해주시면 더 나은 기능을 만들 수 있습니다.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: 해결하려는 문제
+      description: 현재 어떤 문제가 있나요?
+      placeholder: "예: 매번 [...] 할 때마다 불편합니다."
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: 제안하는 해결 방법
+      description: 어떤 해결 방법을 제안하시나요?
+      placeholder: 제안하는 해결 방법을 명확하고 간결하게 설명해주세요.
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: 대안
+      description: 다른 대안을 고려하셨나요?
+      placeholder: 고려한 대안이나 다른 접근 방법을 설명해주세요.
+
+  - type: textarea
+    id: example
+    attributes:
+      label: API 예제
+      description: 제안하는 기능의 API 사용 예제를 작성해주세요.
+      render: swift
+      placeholder: |
+        import NetworkKit
+        
+        enum MyAPI: APIRequest {
+            case getUsers
+            // 제안하는 API 사용 예제
+        }
+
+  - type: dropdown
+    id: component
+    attributes:
+      label: 컴포넌트
+      description: 어떤 컴포넌트에 기능을 추가하고 싶으신가요?
+      options:
+        - Core (APIRequest, HTTPClient)
+        - Infrastructure (HTTPClient, ResponseDecoder)
+        - Application (ErrorMapper, RetryPolicy)
+        - Orchestration (NetworkService)
+        - 새로운 컴포넌트
+        - 잘 모르겠음
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: breaking
+    attributes:
+      label: Breaking Change
+      description: 이 기능이 Breaking Change를 포함하나요?
+      options:
+        - label: 이 기능은 Breaking Change를 포함합니다
+        - label: 이 기능은 기존 API와 호환됩니다
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: 추가 컨텍스트
+      description: 기능에 대한 추가 정보가 있나요?
+      placeholder: 스크린샷, 참고 자료, 또는 기타 관련 정보를 추가해주세요.
+

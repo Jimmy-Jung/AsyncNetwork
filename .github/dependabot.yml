@@ -1,0 +1,42 @@
+version: 2
+
+updates:
+  # GitHub Actions 업데이트
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    labels:
+      - "dependencies"
+      - "github-actions"
+    commit-message:
+      prefix: "chore(deps)"
+
+  # NetworkKit Swift 패키지 업데이트
+  - package-ecosystem: "swift"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    labels:
+      - "dependencies"
+      - "swift"
+    commit-message:
+      prefix: "chore(deps)"
+    open-pull-requests-limit: 5
+
+  # NetworkKitExample Tuist 프로젝트 업데이트
+  - package-ecosystem: "swift"
+    directory: "/Projects/NetworkKitExample"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    labels:
+      - "dependencies"
+      - "swift"
+      - "example"
+    commit-message:
+      prefix: "chore(deps)"
+    open-pull-requests-limit: 5
+

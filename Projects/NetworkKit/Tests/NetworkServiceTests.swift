@@ -176,10 +176,8 @@ struct NetworkServiceTests {
         let httpClient = HTTPClient(session: session)
 
         struct TestInterceptor: RequestInterceptor {
-            func adapt(_ request: URLRequest) async throws -> URLRequest {
-                var req = request
-                req.setValue("Bearer test-token", forHTTPHeaderField: "Authorization")
-                return req
+            func prepare(_ request: inout URLRequest, target: (any APIRequest)?) async throws {
+                request.setValue("Bearer test-token", forHTTPHeaderField: "Authorization")
             }
         }
 

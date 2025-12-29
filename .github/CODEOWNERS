@@ -1,0 +1,23 @@
+# Code Owners for NetworkKit
+
+# 전체 프로젝트 기본 리뷰어
+* @Jimmy-Jung
+
+# NetworkKit Core 패키지
+/Projects/NetworkKit/ @Jimmy-Jung
+
+# NetworkKitExample 프로젝트
+/Projects/NetworkKitExample/ @Jimmy-Jung
+
+# 문서
+/README.md @Jimmy-Jung
+
+# GitHub 설정
+/.github/ @Jimmy-Jung
+
+# CI/CD
+/.github/workflows/ @Jimmy-Jung
+
+# Swift Package Manager
+/Package.swift @Jimmy-Jung
+

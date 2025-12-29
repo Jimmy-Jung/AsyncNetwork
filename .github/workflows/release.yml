@@ -1,0 +1,90 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - '*.*.*'
+
+permissions:
+  contents: write
+
+jobs:
+  create-release:
+    name: Create Release
+    runs-on: macos-15
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+      
+      - name: Show Xcode and Swift version
+        run: |
+          xcodebuild -version
+          swift --version
+      
+      - name: Build NetworkKit
+        run: swift build -c release
+      
+      - name: Test NetworkKit
+        run: swift test --parallel
+      
+      - name: Validate Package
+        run: |
+          swift package dump-package
+          swift package show-dependencies
+      
+      - name: Extract Version
+        id: version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+      
+      - name: Generate Changelog
+        id: changelog
+        run: |
+          VERSION="${{ steps.version.outputs.VERSION }}"
+          echo "CHANGELOG<<EOF" >> $GITHUB_OUTPUT
+          echo "## What's Changed in $VERSION" >> $GITHUB_OUTPUT
+          echo "" >> $GITHUB_OUTPUT
+          git log $(git describe --tags --abbrev=0 HEAD^)..HEAD --pretty=format:"- %s (%h)" >> $GITHUB_OUTPUT
+          echo "" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+      
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.version.outputs.VERSION }}
+          name: NetworkKit ${{ steps.version.outputs.VERSION }}
+          body: |
+            # NetworkKit ${{ steps.version.outputs.VERSION }}
+            
+            ${{ steps.changelog.outputs.CHANGELOG }}
+            
+            ## Installation
+            
+            ### Swift Package Manager
+            
+            ```swift
+            dependencies: [
+                .package(url: "https://github.com/Jimmy-Jung/NetworkKit", from: "${{ steps.version.outputs.VERSION }}")
+            ]
+            ```
+            
+            ### Products
+            
+            ```swift
+            .target(
+                name: "YourTarget",
+                dependencies: [
+                    .product(name: "NetworkKit", package: "NetworkKit")
+                ]
+            )
+            ```
+            
+            ## Documentation
+            
+            - [GitHub README](https://github.com/Jimmy-Jung/NetworkKit)
+            - [Example App](https://github.com/Jimmy-Jung/NetworkKit/tree/main/Projects/NetworkKitExample)
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+

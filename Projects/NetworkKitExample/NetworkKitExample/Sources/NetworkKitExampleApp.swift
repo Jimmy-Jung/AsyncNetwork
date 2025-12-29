@@ -15,7 +15,8 @@ struct NetworkKitExampleApp: App {
     let repository: APITestRepository
 
     init() {
-        let logger = TraceKitNetworkLogger(
+        // Logging Interceptor 생성
+        let loggingInterceptor = TraceKitLoggingInterceptor(
             minimumLevel: .verbose,
             sensitiveKeys: ["password", "token", "key", "secret"]
         )
@@ -25,10 +26,11 @@ struct NetworkKitExampleApp: App {
         )
 
         let networkService = NetworkService(
-            httpClient: HTTPClient(logger: logger),
+            httpClient: HTTPClient(),
             retryPolicy: .default,
             configuration: .development,
-            responseProcessor: processor
+            responseProcessor: processor,
+            interceptors: [loggingInterceptor]  // Interceptor 주입
         )
 
         repository = DefaultAPITestRepository(networkService: networkService)
