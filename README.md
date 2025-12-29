@@ -25,10 +25,10 @@ NetworkKit은 순수 Foundation만을 사용하여 구축된 현대적인 Swift 
 
 - ✅ **순수 Foundation**: URLSession, Codable, async/await만 사용 (외부 의존성 제로)
 - ⚡ **Swift Concurrency 네이티브**: async/await 완벽 지원
-- 🧱 **계층화된 아키텍처**: Core → Infrastructure → Application → Orchestration
+- 🧱 **책임별 모듈 구조**: 명확한 단일 책임 원칙 (Models, Client, Service 등)
 - 🔄 **재시도 정책**: 유연한 재시도 전략 (지수 백오프, 커스텀 규칙)
 - 🔗 **Chain of Responsibility 패턴**: 확장 가능한 응답 처리 파이프라인
-- 📝 **Dependency Injection 로깅**: 프로토콜 기반 로거 교체 가능
+- 🔌 **RequestInterceptor**: 프로토콜 기반 요청/응답 인터셉터 (로깅, 인증 등)
 - 🧪 **테스트 용이성**: MockURLProtocol 기반 단위 테스트 지원
 - 🎯 **타입 안전성**: Sendable 완벽 준수 (Swift 6.0 Strict Concurrency)
 - 📦 **SPM 패키지**: Swift Package Manager로 간편 설치
@@ -39,7 +39,7 @@ NetworkKit은 순수 Foundation만을 사용하여 구축된 현대적인 Swift 
 |------|-----------|-----------|------|
 | 외부 의존성 | ✅ 없음 | ❌ AFNetworking | ❌ Alamofire |
 | Swift Concurrency | ✅ 네이티브 | ✅ 지원 | ⚠️ 부분 지원 |
-| 계층화 아키텍처 | ✅ 4계층 | ⚠️ 단일 계층 | ✅ 계층화 |
+| 모듈 구조 | ✅ 책임별 분리 | ⚠️ 단일 계층 | ✅ 계층화 |
 | 재시도 정책 | ✅ 내장 | ✅ 내장 | ⚠️ 플러그인 |
 | 코드 크기 | 🟢 작음 | 🟡 중간 | 🟡 중간 |
 | 학습 곡선 | ⭐⭐ 보통 | ⭐ 쉬움 | ⭐⭐ 보통 |
@@ -48,7 +48,7 @@ NetworkKit은 순수 Foundation만을 사용하여 구축된 현대적인 Swift 
 
 - ✅ 외부 의존성 없이 순수 Foundation만 사용하고 싶은 팀
 - ✅ Swift Concurrency를 활용한 현대적인 네트워크 코드를 원하는 개발자
-- ✅ 계층화된 아키텍처로 확장 가능한 네트워크 레이어를 구축하려는 프로젝트
+- ✅ 명확한 책임 분리로 확장 가능한 네트워크 레이어를 구축하려는 프로젝트
 - ✅ 재시도 정책과 에러 처리를 세밀하게 제어하고 싶은 경우
 - ✅ 테스트 가능한 네트워크 코드를 작성하려는 팀
 
@@ -110,10 +110,10 @@ extension MyAPI: APIRequest {
         case .getUsers, .getUser:
             return .requestPlain
         case .createUser(let name):
-            return .requestParameters(
-                parameters: ["name": name],
-                encoding: .json
-            )
+            struct CreateUserBody: Encodable, Sendable {
+                let name: String
+            }
+            return .requestJSONEncodable(CreateUserBody(name: name))
         }
     }
     
@@ -199,27 +199,32 @@ dependencies: [
 
 ## 핵심 개념
 
-NetworkKit은 **계층화된 아키텍처**로 설계되었습니다:
+NetworkKit은 **책임별 모듈 구조**로 설계되었습니다:
 
 ```
 ┌──────────────────────────────────────┐
-│      Orchestration Layer             │  NetworkService, ResponseProcessor
-│      (비즈니스 로직 조율)              │
+│      Service                          │  NetworkService (오케스트레이터)
+│      (네트워크 요청 조율)              │
 └──────────────┬───────────────────────┘
                │
 ┌──────────────▼───────────────────────┐
-│      Application Layer                │  RetryPolicy, ErrorMapper
-│      (애플리케이션 정책)               │
+│      Processing                       │  ResponseProcessor, ResponseDecoder
+│      (응답 처리 파이프라인)            │  StatusCodeValidator
 └──────────────┬───────────────────────┘
                │
 ┌──────────────▼───────────────────────┐
-│      Infrastructure Layer             │  HTTPClient, ResponseDecoder
-│      (인프라 구현)                     │
+│      Client                           │  HTTPClient (HTTP 통신)
+│      (HTTP 통신 클라이언트)            │  HTTPHeaders
 └──────────────┬───────────────────────┘
                │
 ┌──────────────▼───────────────────────┐
-│      Core Layer                       │  APIRequest, HTTPMethod, HTTPTask
-│      (핵심 타입 정의)                  │
+│      Models + Protocols               │  APIRequest, HTTPMethod, HTTPTask
+│      (핵심 타입 및 인터페이스)         │  RequestInterceptor, RetryRule
+└──────────────────────────────────────┘
+               │
+┌──────────────▼───────────────────────┐
+│      Configuration + Errors           │  NetworkConfiguration, RetryPolicy
+│      (정책 및 에러 처리)               │  ErrorMapper
 └──────────────────────────────────────┘
 ```
 
@@ -227,48 +232,83 @@ NetworkKit은 **계층화된 아키텍처**로 설계되었습니다:
 
 | 컴포넌트 | 역할 | 위치 |
 |---------|------|------|
-| **APIRequest** | API 엔드포인트 정의 프로토콜 | Core |
-| **HTTPClient** | URLSession 기반 HTTP 클라이언트 | Infrastructure |
-| **NetworkService** | 네트워크 요청 오케스트레이터 | Orchestration |
-| **RetryPolicy** | 재시도 정책 | Application |
-| **ResponseProcessor** | Chain of Responsibility 응답 처리 | Orchestration |
-| **NetworkLogger** | DI 기반 로깅 프로토콜 | Core |
+| **APIRequest** | API 엔드포인트 정의 프로토콜 | Protocols |
+| **HTTPClient** | URLSession 기반 HTTP 클라이언트 | Client |
+| **NetworkService** | 네트워크 요청 오케스트레이터 | Service |
+| **RetryPolicy** | 재시도 정책 | Configuration |
+| **ResponseProcessor** | Chain of Responsibility 응답 처리 | Processing |
+| **RequestInterceptor** | 요청/응답 인터셉터 프로토콜 | Protocols |
+| **ConsoleLoggingInterceptor** | 콘솔 로깅 구현체 | Interceptors |
 
 ## 아키텍처
 
-### 계층별 책임
+### 책임별 모듈 구조
 
-#### 1️⃣ Core Layer (핵심 타입)
+NetworkKit은 단일 책임 원칙에 따라 9개의 명확한 모듈로 구성되어 있습니다:
 
-순수 타입 정의만 포함합니다:
+#### 1️⃣ Models (도메인 모델)
+
+HTTP 관련 기본 타입 정의:
+
+- `HTTPMethod`: HTTP 메서드 (GET, POST, PUT, DELETE 등)
+- `HTTPResponse`: HTTP 응답 래퍼
+- `HTTPTask`: 요청 타입 (Plain, Data, JSONEncodable, Parameters)
+- `ServerResponse`: 서버 응답 제네릭 래퍼
+
+#### 2️⃣ Protocols (인터페이스)
+
+확장 가능한 프로토콜 정의:
 
 - `APIRequest`: API 엔드포인트 프로토콜
-- `HTTPMethod`: HTTP 메서드 (GET, POST, PUT, DELETE 등)
-- `HTTPTask`: 요청 타입 (Plain, Parameters, Upload, Download)
-- `HTTPResponse`: HTTP 응답 래퍼
-- `NetworkLogger`: 로거 프로토콜
+- `RequestInterceptor`: 요청/응답 인터셉터 프로토콜
+- `ResponseProcessorStep`: 응답 처리 단계 프로토콜
+- `RetryRule`: 재시도 규칙 프로토콜
 
-#### 2️⃣ Infrastructure Layer (인프라 구현)
+#### 3️⃣ Configuration (설정 및 정책)
 
-Foundation 기반 구현체:
+네트워크 설정과 정책:
 
-- `HTTPClient`: URLSession 래퍼
-- `ResponseDecoder`: Codable 디코딩
+- `NetworkConfiguration`: 네트워크 설정 (타임아웃, 재시도, 로깅)
+- `RetryPolicy`: 재시도 전략 (지수 백오프, Rule 기반 판단)
+
+#### 4️⃣ Client (HTTP 통신)
+
+순수 HTTP 통신 클라이언트:
+
+- `HTTPClient`: URLSession 기반 HTTP 클라이언트
+- `HTTPHeaders`: HTTP 헤더 빌더 (메서드 체이닝)
+
+#### 5️⃣ Interceptors (인터셉터)
+
+요청/응답 인터셉터 구현체:
+
+- `ConsoleLoggingInterceptor`: 콘솔 로깅 (민감 정보 필터링)
+
+#### 6️⃣ Processing (응답 처리)
+
+응답 처리 파이프라인:
+
+- `ResponseProcessor`: Chain of Responsibility 패턴 응답 처리
+- `ResponseDecoder`: JSON 디코딩
 - `StatusCodeValidator`: HTTP 상태 코드 검증
 
-#### 3️⃣ Application Layer (애플리케이션 정책)
+#### 7️⃣ Service (네트워크 서비스)
 
-비즈니스 정책:
+컴포넌트 오케스트레이터:
 
-- `RetryPolicy`: 재시도 전략 (지수 백오프, 재시도 가능 에러/상태 코드)
-- `ErrorMapper`: 에러 변환
+- `NetworkService`: 요청 실행, 재시도, 인터셉터 체이닝
 
-#### 4️⃣ Orchestration Layer (조율)
+#### 8️⃣ Errors (에러 처리)
 
-컴포넌트 통합:
+에러 변환 및 매핑:
 
-- `NetworkService`: 요청 실행, 재시도, 응답 처리
-- `ResponseProcessor`: Chain of Responsibility 패턴 응답 파이프라인
+- `ErrorMapper`: 다양한 에러를 통합 NetworkError로 변환
+
+#### 9️⃣ Utilities (유틸리티)
+
+공통 헬퍼:
+
+- `AsyncDelayer`: 비동기 지연 처리 (테스트 가능)
 
 ### 데이터 흐름
 
@@ -332,7 +372,12 @@ public protocol APIRequest: Sendable {
     var method: HTTPMethod { get }
     var task: HTTPTask { get }
     var headers: [String: String]? { get }
-    var validationType: ValidationType { get }
+    var timeout: TimeInterval { get }
+}
+
+public extension APIRequest {
+    var timeout: TimeInterval { 30.0 }  // 기본 타임아웃: 30초
+    var headers: [String: String]? { nil }  // 기본 헤더: nil
 }
 ```
 
@@ -341,31 +386,40 @@ public protocol APIRequest: Sendable {
 ```swift
 public enum HTTPTask: Sendable {
     case requestPlain                                           // 파라미터 없음
-    case requestParameters(parameters: [String: Any],           // URL 파라미터
-                          encoding: ParameterEncoding)
-    case requestJSONEncodable(encodable: any Encodable)         // JSON Body
-    case requestData(data: Data)                                // Raw Data
-    case uploadMultipart(formData: [MultipartFormData])         // Multipart
-    case downloadDestination(destination: URL)                  // 파일 다운로드
+    case requestData(Data)                                      // Raw Data
+    case requestJSONEncodable(any Encodable & Sendable)         // JSON Body
+    case requestParameters(parameters: [String: String])        // Form 파라미터
+    case requestQueryParameters(parameters: [String: String])   // Query 파라미터
 }
 ```
 
 ### 재시도 정책
 
 ```swift
-let retryPolicy = RetryPolicy(
-    maxRetries: 3,
-    retryableErrors: [.timeout, .networkConnectionLost],
-    retryableStatusCodes: [408, 429, 500, 502, 503, 504],
-    baseDelay: 1.0,         // 초기 대기 시간
-    maxDelay: 60.0,         // 최대 대기 시간
-    multiplier: 2.0         // 지수 백오프 배율
+// Preset 사용
+let service1 = NetworkKit.createNetworkService(
+    configuration: .default  // maxRetries: 3, baseDelay: 1.0
 )
 
-let service = NetworkService(
-    httpClient: HTTPClient(),
-    retryPolicy: retryPolicy,
-    configuration: .production
+let service2 = NetworkKit.createNetworkService(
+    configuration: .aggressive  // maxRetries: 5, baseDelay: 0.5
+)
+
+// 커스텀 설정
+let customConfig = NetworkConfiguration(
+    maxRetries: 3,
+    retryDelay: 1.0,
+    timeout: 30.0,
+    enableLogging: true
+)
+
+let customRetryPolicy = RetryPolicy(
+    configuration: RetryConfiguration(
+        maxRetries: 3,
+        baseDelay: 1.0,
+        maxDelay: 30.0
+    ),
+    rules: [URLErrorRetryRule(), ServerErrorRetryRule()]
 )
 ```
 
@@ -391,12 +445,9 @@ struct AnalyticsInterceptor: RequestInterceptor {
 }
 
 // 사용
-let service = NetworkService(
-    httpClient: HTTPClient(),
-    retryPolicy: .default,
-    configuration: .production,
-    responseProcessor: ResponseProcessor(),
-    interceptors: [AnalyticsInterceptor()]
+let service = NetworkKit.createNetworkService(
+    interceptors: [AnalyticsInterceptor()],
+    configuration: .production
 )
 ```
 
@@ -446,7 +497,9 @@ let service = NetworkService(
     httpClient: HTTPClient(),
     retryPolicy: .default,
     configuration: .production,
-    responseProcessor: processor
+    responseProcessor: processor,
+    dataResponseProcessor: DataResponseProcessor(),
+    interceptors: []
 )
 ```
 
@@ -472,36 +525,53 @@ struct AuthInterceptor: RequestInterceptor {
 }
 ```
 
-### Multipart Form Data
+### Form Parameters
 
-파일 업로드:
+Form 데이터 전송:
 
 ```swift
-enum UploadAPI: APIRequest {
-    case uploadImage(image: UIImage, userId: String)
+enum LoginAPI: APIRequest {
+    case login(username: String, password: String)
     
     var task: HTTPTask {
         switch self {
-        case .uploadImage(let image, let userId):
-            guard let imageData = image.jpegData(compressionQuality: 0.8) else {
-                return .requestPlain
-            }
-            
-            return .uploadMultipart(formData: [
-                MultipartFormData(
-                    data: imageData,
-                    name: "image",
-                    fileName: "profile.jpg",
-                    mimeType: "image/jpeg"
-                ),
-                MultipartFormData(
-                    data: userId.data(using: .utf8)!,
-                    name: "userId"
-                )
-            ])
+        case .login(let username, let password):
+            return .requestParameters(
+                parameters: [
+                    "username": username,
+                    "password": password
+                ]
+            )
+        }
+    }
+    
+    var headers: [String: String]? {
+        ["Content-Type": "application/x-www-form-urlencoded"]
+    }
+}
+```
+
+### Query Parameters
+
+URL Query 파라미터:
+
+```swift
+enum SearchAPI: APIRequest {
+    case search(query: String, page: Int)
+    
+    var task: HTTPTask {
+        switch self {
+        case .search(let query, let page):
+            return .requestQueryParameters(
+                parameters: [
+                    "q": query,
+                    "page": "\(page)"
+                ]
+            )
         }
     }
 }
+// 결과: GET /search?q=keyword&page=1
 ```
 
 ## Example 앱
@@ -597,7 +667,7 @@ func testRetryPolicy() async throws {
         attemptCount += 1
         
         if attemptCount < 3 {
-            throw NetworkError.timeout
+            throw URLError(.timedOut)
         }
         
         let response = HTTPURLResponse(
@@ -609,22 +679,24 @@ func testRetryPolicy() async throws {
         return (response, Data())
     }
     
-    let retryPolicy = RetryPolicy(
-        maxRetries: 3,
-        retryableErrors: [.timeout],
-        baseDelay: 0.1
-    )
-    
     let config = URLSessionConfiguration.ephemeral
     config.protocolClasses = [MockURLProtocol.self]
-    let client = HTTPClient(session: URLSession(configuration: config))
+    let session = URLSession(configuration: config)
+    
+    let client = HTTPClient(session: session)
+    let retryPolicy = RetryPolicy(
+        configuration: RetryConfiguration(maxRetries: 3, baseDelay: 0.1)
+    )
     let service = NetworkService(
         httpClient: client,
-        retryPolicy: retryPolicy
+        retryPolicy: retryPolicy,
+        configuration: .test,
+        responseProcessor: ResponseProcessor(),
+        dataResponseProcessor: DataResponseProcessor()
     )
     
     // When
-    _ = try await service.requestRaw(request: MyAPI.getUsers)
+    _ = try await service.requestRaw(MyAPI.getUsers)
     
     // Then
     #expect(attemptCount == 3)
@@ -641,10 +713,16 @@ NetworkKit/
 ├── Projects/
 │   ├── NetworkKit/                  # Core 라이브러리
 │   │   ├── Sources/
-│   │   │   ├── Core/                # 핵심 타입
-│   │   │   ├── Infrastructure/      # 인프라 구현
-│   │   │   ├── Application/         # 애플리케이션 정책
-│   │   │   └── Orchestration/       # 오케스트레이션
+│   │   │   ├── Models/              # 도메인 모델
+│   │   │   ├── Protocols/           # 인터페이스
+│   │   │   ├── Configuration/       # 설정 및 정책
+│   │   │   ├── Client/              # HTTP 클라이언트
+│   │   │   ├── Interceptors/        # 인터셉터
+│   │   │   ├── Processing/          # 응답 처리
+│   │   │   ├── Service/             # 네트워크 서비스
+│   │   │   ├── Errors/              # 에러 처리
+│   │   │   ├── Utilities/           # 유틸리티
+│   │   │   └── NetworkKit.swift     # 공개 진입점
 │   │   └── Tests/                   # 단위 테스트
 │   └── NetworkKitExample/           # Example 앱 (Tuist)
 └── .github/                         # GitHub 설정 (CI/CD)
