@@ -1,6 +1,6 @@
 import Foundation
 
-public enum StatusCodeValidationError: Error, LocalizedError {
+public enum StatusCodeValidationError: Error, LocalizedError, Equatable {
     case invalidStatusCode(Int, Data?)
     case clientError(Int, Data?)
     case serverError(Int, Data?)

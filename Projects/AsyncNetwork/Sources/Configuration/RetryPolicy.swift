@@ -42,6 +42,12 @@ public struct RetryPolicy: Sendable {
     }
 
     public func shouldRetry(error: Error, attempt: Int) -> RetryDecision {
+        // 0. 유효하지 않은 시도 횟수 확인
+        guard attempt > 0 else {
+            logRetryDecision(decision: .stop, reason: "Invalid attempt number: \(attempt)")
+            return .stop
+        }
+
         // 1. 최대 재시도 횟수 초과 확인
         guard attempt <= configuration.maxRetries else {
             logRetryDecision(decision: .stop, reason: "Max retries exceeded")
@@ -73,7 +79,7 @@ public struct RetryPolicy: Sendable {
             { pow(2.0, $0) }, // 지수 계산
             { self.configuration.baseDelay * $0 }, // 기본 지연시간 적용
             addJitter, // 지터 추가
-            { min($0, self.configuration.maxDelay) }, // 최대 지연시간 제한
+            { min($0, self.configuration.maxDelay) } // 최대 지연시간 제한
         ]
 
         return transforms.reduce(Double(attempt - 1)) { value, transform in
