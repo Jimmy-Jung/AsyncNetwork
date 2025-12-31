@@ -222,7 +222,7 @@ struct ErrorView: View {
     NavigationStack {
         APITesterView(
             endpoint: .getPosts,
-            repository: DefaultAPITestRepository(networkService: NetworkKit.createNetworkService())
+            repository: DefaultAPITestRepository(networkService: AsyncNetwork.createNetworkService())
         )
     }
 }

@@ -64,5 +64,7 @@ struct RootView: View {
 }
 
 #Preview {
-    RootView(repository: DefaultAPITestRepository(networkService: NetworkKit.createNetworkService()))
+    RootView(
+        repository: DefaultAPITestRepository(networkService: AsyncNetwork.createNetworkService())
+    )
 }

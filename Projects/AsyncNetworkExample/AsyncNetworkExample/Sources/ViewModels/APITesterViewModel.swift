@@ -5,9 +5,9 @@
 //  Created by jimmy on 2025/12/29.
 //
 
+import AsyncNetwork
 import AsyncViewModel
 import Foundation
-import AsyncNetwork
 
 @AsyncViewModel
 final class APITesterViewModel: ObservableObject {
@@ -88,13 +88,14 @@ final class APITesterViewModel: ObservableObject {
                     id: .request,
                     errorAction: { .requestFailed($0.localizedDescription) },
                     operation: { [repository] in
-                    let result = try await repository.executeRequest(
-                        endpoint: endpoint,
-                        parameters: parameters,
-                        body: body
-                    )
-                    return .requestCompleted(result)
-                },
+                        let result = try await repository.executeRequest(
+                            endpoint: endpoint,
+                            parameters: parameters,
+                            body: body
+                        )
+                        return .requestCompleted(result)
+                    }
+                )
             ]
 
         case let .requestCompleted(result):
