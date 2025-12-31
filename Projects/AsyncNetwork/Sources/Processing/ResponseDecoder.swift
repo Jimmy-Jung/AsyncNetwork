@@ -16,10 +16,13 @@ public struct ResponseDecoder: Sendable {
         logDecodingStart(for: type)
 
         do {
-            // EmptyResponseDto는 빈 데이터 허용
-            if response.data.isEmpty && type is EmptyResponseDto.Type {
-                // EmptyResponseDto의 기본 인스턴스 반환
-                if let emptyResponse = EmptyResponseDto() as? T {
+            // EmptyResponseDto 또는 EmptyResponse는 빈 데이터 허용
+            if response.data.isEmpty {
+                if type is EmptyResponseDto.Type, let emptyResponse = EmptyResponseDto() as? T {
+                    logDecodingSuccess(for: type)
+                    return emptyResponse
+                }
+                if type is EmptyResponse.Type, let emptyResponse = EmptyResponse() as? T {
                     logDecodingSuccess(for: type)
                     return emptyResponse
                 }

@@ -27,6 +27,22 @@ public struct NetworkService: Sendable {
         self.delayer = delayer
     }
 
+    /// 응답을 특정 타입으로 디코딩하여 반환합니다 (명시적 타입 지정)
+    ///
+    /// - Parameters:
+    ///   - request: 실행할 API 요청
+    ///   - decodeType: 디코딩할 응답 타입
+    /// - Returns: 디코딩된 응답 객체
+    /// - Throws: 네트워크 에러, 디코딩 에러 등
+    ///
+    /// **사용 예시:**
+    /// ```swift
+    /// // 커스텀 타입으로 디코딩
+    /// let response = try await networkService.request(
+    ///     request: userRequest,
+    ///     decodeType: CustomUserResponse.self
+    /// )
+    /// ```
     public func request<R: APIRequest, T: Decodable>(
         request: R,
         decodeType: T.Type
@@ -50,6 +66,28 @@ public struct NetworkService: Sendable {
                 try await handleRetry(error: error, attempt: &attempt)
             }
         }
+    }
+
+    /// 응답을 APIRequest의 associatedtype Response로 디코딩하여 반환합니다 (타입 추론)
+    ///
+    /// - Parameter request: 실행할 API 요청 (Response associatedtype 정의 필요)
+    /// - Returns: 디코딩된 응답 객체
+    /// - Throws: 네트워크 에러, 디코딩 에러 등
+    ///
+    /// **사용 예시:**
+    /// ```swift
+    /// struct LoginRequest: APIRequest {
+    ///     typealias Response = LoginResponse
+    ///     // ...
+    /// }
+    ///
+    /// // 타입이 자동으로 추론됨
+    /// let loginResponse = try await networkService.request(LoginRequest())
+    /// ```
+    public func request<R: APIRequest>(
+        _ request: R
+    ) async throws -> R.Response {
+        try await self.request(request: request, decodeType: R.Response.self)
     }
 
     public func requestData<R: APIRequest>(
