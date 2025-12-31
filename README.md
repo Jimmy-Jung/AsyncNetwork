@@ -31,6 +31,7 @@ AsyncNetwork은 순수 Foundation만을 사용하여 구축된 현대적인 Swif
 - 🔌 **RequestInterceptor**: 프로토콜 기반 요청/응답 인터셉터 (로깅, 인증 등)
 - 🧪 **테스트 용이성**: MockURLProtocol 기반 단위 테스트 지원
 - 🎯 **타입 안전성**: Sendable 완벽 준수 (Swift 6.0 Strict Concurrency)
+- 🏷️ **타입 추론**: associatedtype Response로 간결한 API 호출
 - 📦 **SPM 패키지**: Swift Package Manager로 간편 설치
 
 ### 다른 라이브러리와 비교
@@ -69,18 +70,32 @@ AsyncNetwork은 순수 Foundation만을 사용하여 구축된 현대적인 Swif
 
 ## 빠른 시작
 
-### 1. API Request 정의
+### 1. Response 모델 정의
 
 ```swift
 import AsyncNetwork
 
+struct User: Codable, Sendable {
+    let id: Int
+    let name: String
+    let email: String
+}
+```
+
+### 2. API Request 정의 (타입 안전)
+
+```swift
 enum MyAPI {
     case getUsers
     case getUser(id: Int)
     case createUser(name: String)
+    case logout
 }
 
 extension MyAPI: APIRequest {
+    // 🎯 associatedtype으로 응답 타입 지정 (타입 추론 가능)
+    typealias Response = User
+    
     var baseURL: URL {
         URL(string: "https://api.example.com")!
     }
@@ -93,6 +108,8 @@ extension MyAPI: APIRequest {
             return "/users/\(id)"
         case .createUser:
             return "/users"
+        case .logout:
+            return "/auth/logout"
         }
     }
     
@@ -102,12 +119,14 @@ extension MyAPI: APIRequest {
             return .get
         case .createUser:
             return .post
+        case .logout:
+            return .post
         }
     }
     
     var task: HTTPTask {
         switch self {
-        case .getUsers, .getUser:
+        case .getUsers, .getUser, .logout:
             return .requestPlain
         case .createUser(let name):
             struct CreateUserBody: Encodable, Sendable {
@@ -123,13 +142,16 @@ extension MyAPI: APIRequest {
 }
 ```
 
-### 2. Response 모델 정의
+빈 응답이 필요한 경우:
 
 ```swift
-struct User: Codable, Sendable {
-    let id: Int
-    let name: String
-    let email: String
+struct LogoutRequest: APIRequest {
+    typealias Response = EmptyResponse  // 빈 응답 타입
+    
+    var baseURL: URL { URL(string: "https://api.example.com")! }
+    var path: String { "/auth/logout" }
+    var method: HTTPMethod { .post }
+    var task: HTTPTask { .requestPlain }
 }
 ```
 
@@ -144,13 +166,29 @@ let networkService = AsyncNetwork.createNetworkService(
     configuration: .development
 )
 
-// API 요청
+// 방법 1️⃣: associatedtype Response 타입 추론 (권장 ⭐)
+do {
+    let user = try await networkService.request(MyAPI.getUser(id: 1))
+    print("User: \(user)")  // User 타입이 자동으로 추론됨
+} catch {
+    print("Error: \(error)")
+}
+
+// 방법 2️⃣: 명시적 타입 지정 (유연성 필요 시)
 do {
     let users = try await networkService.request(
         request: MyAPI.getUsers,
-        decodeType: [User].self
+        decodeType: [User].self  // 배열 타입으로 명시
     )
     print("Users: \(users)")
+} catch {
+    print("Error: \(error)")
+}
+
+// 방법 3️⃣: 빈 응답 처리
+do {
+    let emptyResponse = try await networkService.request(LogoutRequest())
+    print("Logout success")  // EmptyResponse 반환
 } catch {
     print("Error: \(error)")
 }
@@ -367,6 +405,11 @@ let service = AsyncNetwork.createNetworkService(
 
 ```swift
 public protocol APIRequest: Sendable {
+    /// 🎯 응답 타입 (associatedtype)
+    /// - 기본값: EmptyResponse (빈 응답)
+    /// - 사용 예: typealias Response = User
+    associatedtype Response: Decodable & Sendable = EmptyResponse
+    
     var baseURL: URL { get }
     var path: String { get }
     var method: HTTPMethod { get }
@@ -379,6 +422,51 @@ public extension APIRequest {
     var timeout: TimeInterval { 30.0 }  // 기본 타임아웃: 30초
     var headers: [String: String]? { nil }  // 기본 헤더: nil
 }
+```
+
+**사용 예시:**
+
+```swift
+// 1️⃣ 단일 객체 응답
+struct GetUserRequest: APIRequest {
+    typealias Response = User  // User 타입 지정
+    let userId: Int
+    
+    var baseURL: URL { URL(string: "https://api.example.com")! }
+    var path: String { "/users/\(userId)" }
+    var method: HTTPMethod { .get }
+    var task: HTTPTask { .requestPlain }
+}
+
+// 사용: 타입 추론으로 간결하게
+let user = try await networkService.request(GetUserRequest(userId: 1))
+
+// 2️⃣ 배열 응답
+struct GetUsersRequest: APIRequest {
+    typealias Response = [User]  // 배열 타입 지정
+    
+    var baseURL: URL { URL(string: "https://api.example.com")! }
+    var path: String { "/users" }
+    var method: HTTPMethod { .get }
+    var task: HTTPTask { .requestPlain }
+}
+
+// 사용
+let users = try await networkService.request(GetUsersRequest())
+
+// 3️⃣ 빈 응답 (204 No Content 등)
+struct DeleteUserRequest: APIRequest {
+    typealias Response = EmptyResponse  // 빈 응답
+    let userId: Int
+    
+    var baseURL: URL { URL(string: "https://api.example.com")! }
+    var path: String { "/users/\(userId)" }
+    var method: HTTPMethod { .delete }
+    var task: HTTPTask { .requestPlain }
+}
+
+// 사용
+try await networkService.request(DeleteUserRequest(userId: 1))
 ```
 
 ### HTTPTask 타입
