@@ -9,27 +9,51 @@
 import Foundation
 import Testing
 
+// MARK: - Test Models
+
+private struct TestUser: Codable, Equatable {
+    let id: Int
+    let name: String
+}
+
+private struct TestAPIRequest: APIRequest {
+    typealias Response = EmptyResponse
+
+    var baseURL: URL = .init(string: "https://api.example.com")!
+    var path: String
+    var method: HTTPMethod = .get
+    var task: HTTPTask = .requestPlain
+
+    init(path: String) {
+        self.path = path
+    }
+}
+
+private struct TypedTestAPIRequest: APIRequest {
+    typealias Response = TestUser
+
+    var baseURL: URL = .init(string: "https://api.example.com")!
+    var path: String
+    var method: HTTPMethod = .get
+    var task: HTTPTask = .requestPlain
+
+    init(path: String) {
+        self.path = path
+    }
+}
+
+private struct LogoutRequest: APIRequest {
+    typealias Response = EmptyResponse
+
+    var baseURL: URL = .init(string: "https://api.example.com")!
+    var path: String = "/auth/logout"
+    var method: HTTPMethod = .post
+    var task: HTTPTask = .requestPlain
+}
+
 // MARK: - NetworkServiceTests
 
 struct NetworkServiceTests {
-    // MARK: - Test Models
-
-    private struct TestUser: Codable, Equatable {
-        let id: Int
-        let name: String
-    }
-
-    private struct TestAPIRequest: APIRequest {
-        var baseURL: URL = .init(string: "https://api.example.com")!
-        var path: String
-        var method: HTTPMethod = .get
-        var task: HTTPTask = .requestPlain
-
-        init(path: String) {
-            self.path = path
-        }
-    }
-
     // MARK: - Tests
 
     @Test("성공적인 네트워크 요청 및 디코딩")
@@ -209,5 +233,116 @@ struct NetworkServiceTests {
 
         // Then
         #expect(user.name == "Auth User")
+    }
+
+    @Test("associatedtype Response를 사용한 타입 추론 요청")
+    func requestWithAssociatedTypeResponse() async throws {
+        // Given
+        let path = "/users/typed"
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.protocolClasses = [MockURLProtocol.self]
+        let session = URLSession(configuration: configuration)
+        let httpClient = HTTPClient(session: session)
+
+        let expectedUser = TestUser(id: 42, name: "Typed User")
+        let responseData = try JSONEncoder().encode(expectedUser)
+
+        MockURLProtocol.register(path: path) { request in
+            let response = HTTPURLResponse(
+                url: request.url!,
+                statusCode: 200,
+                httpVersion: nil,
+                headerFields: ["Content-Type": "application/json"]
+            )!
+            return (response, responseData)
+        }
+
+        let service = NetworkService(
+            httpClient: httpClient,
+            retryPolicy: .none,
+            configuration: .test,
+            responseProcessor: ResponseProcessor()
+        )
+
+        // When - 타입을 명시하지 않고 요청 (associatedtype Response 사용)
+        let user = try await service.request(TypedTestAPIRequest(path: path))
+
+        // Then
+        #expect(user == expectedUser)
+        #expect(user.id == 42)
+        #expect(user.name == "Typed User")
+    }
+
+    @Test("associatedtype Response와 명시적 타입 지정 비교")
+    func compareAssociatedTypeVsExplicitType() async throws {
+        // Given
+        let path = "/users/compare"
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.protocolClasses = [MockURLProtocol.self]
+        let session = URLSession(configuration: configuration)
+        let httpClient = HTTPClient(session: session)
+
+        let expectedUser = TestUser(id: 100, name: "Compare User")
+        let responseData = try JSONEncoder().encode(expectedUser)
+
+        MockURLProtocol.register(path: path) { request in
+            let response = HTTPURLResponse(
+                url: request.url!,
+                statusCode: 200,
+                httpVersion: nil,
+                headerFields: ["Content-Type": "application/json"]
+            )!
+            return (response, responseData)
+        }
+
+        let service = NetworkService(
+            httpClient: httpClient,
+            retryPolicy: .none,
+            configuration: .test,
+            responseProcessor: ResponseProcessor()
+        )
+
+        // When - 두 가지 방식으로 요청
+        let user1 = try await service.request(TypedTestAPIRequest(path: path))
+        let user2 = try await service.request(
+            request: TypedTestAPIRequest(path: path),
+            decodeType: TestUser.self
+        )
+
+        // Then - 두 결과가 동일해야 함
+        #expect(user1 == user2)
+        #expect(user1 == expectedUser)
+    }
+
+    @Test("빈 응답 EmptyResponse 처리")
+    func requestWithEmptyResponse() async throws {
+        // Given
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.protocolClasses = [MockURLProtocol.self]
+        let session = URLSession(configuration: configuration)
+        let httpClient = HTTPClient(session: session)
+
+        MockURLProtocol.register(path: "/auth/logout") { request in
+            let response = HTTPURLResponse(
+                url: request.url!,
+                statusCode: 204,
+                httpVersion: nil,
+                headerFields: nil
+            )!
+            return (response, Data())
+        }
+
+        let service = NetworkService(
+            httpClient: httpClient,
+            retryPolicy: .none,
+            configuration: .test,
+            responseProcessor: ResponseProcessor()
+        )
+
+        // When
+        let emptyResponse = try await service.request(LogoutRequest())
+
+        // Then
+        #expect(emptyResponse is EmptyResponse)
     }
 }
