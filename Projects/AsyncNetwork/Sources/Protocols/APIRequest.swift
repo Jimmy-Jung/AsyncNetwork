@@ -5,14 +5,23 @@ import Foundation
 /// **사용 예시:**
 /// ```swift
 /// struct LoginRequest: APIRequest {
+///     typealias Response = LoginResponse
+///
 ///     let baseURL: URL = URL(string: "https://api.example.com")!
 ///     let path: String = "/auth/login"
 ///     let method: HTTPMethod = .post
 ///     let task: HTTPTask = .requestJSONEncodable(LoginBody(username: "user", password: "pass"))
 ///     let headers: [String: String]? = ["Content-Type": "application/json"]
 /// }
+///
+/// // 사용
+/// let response = try await networkService.request(LoginRequest())  // LoginResponse 타입 추론
 /// ```
 public protocol APIRequest: Sendable {
+    /// 응답 타입 정의
+    /// - Note: 빈 응답의 경우 `EmptyResponse`를 사용하세요
+    associatedtype Response: Decodable = EmptyResponse
+
     var baseURL: URL { get }
     var path: String { get }
     var method: HTTPMethod { get }
@@ -55,3 +64,16 @@ extension APIRequest {
 /// }
 /// ```
 public protocol APIResponse: Codable, Sendable {}
+
+/// 빈 응답을 나타내는 타입
+///
+/// **사용 예시:**
+/// ```swift
+/// struct LogoutRequest: APIRequest {
+///     typealias Response = EmptyResponse
+///     // ...
+/// }
+/// ```
+public struct EmptyResponse: Codable, Sendable {
+    public init() {}
+}
