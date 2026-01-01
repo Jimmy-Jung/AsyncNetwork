@@ -3,7 +3,6 @@ import Foundation
 public struct NetworkService: Sendable {
     private let httpClient: HTTPClient
     private let retryPolicy: RetryPolicy
-    private let configuration: NetworkConfiguration
     private let responseProcessor: any ResponseProcessing
     private let dataResponseProcessor: any DataResponseProcessing
     private let delayer: AsyncDelayer
@@ -12,7 +11,6 @@ public struct NetworkService: Sendable {
     public init(
         httpClient: HTTPClient,
         retryPolicy: RetryPolicy,
-        configuration: NetworkConfiguration,
         responseProcessor: any ResponseProcessing,
         dataResponseProcessor: any DataResponseProcessing = DataResponseProcessor(),
         interceptors: [any RequestInterceptor] = [],
@@ -20,13 +18,12 @@ public struct NetworkService: Sendable {
     ) {
         self.httpClient = httpClient
         self.retryPolicy = retryPolicy
-        self.configuration = configuration
         self.responseProcessor = responseProcessor
         self.dataResponseProcessor = dataResponseProcessor
         self.interceptors = interceptors
         self.delayer = delayer
     }
-    
+
     /// 기본 설정으로 NetworkService를 초기화합니다
     public init(
         configuration: NetworkConfiguration = .default,
@@ -35,11 +32,10 @@ public struct NetworkService: Sendable {
         let defaultPlugins: [any RequestInterceptor] = plugins ?? [
             ConsoleLoggingInterceptor(minimumLevel: .verbose)
         ]
-        
+
         self.init(
-            httpClient: HTTPClient(session: .shared),
+            httpClient: HTTPClient(configuration: configuration),
             retryPolicy: RetryPolicy.default,
-            configuration: configuration,
             responseProcessor: ResponseProcessor(),
             dataResponseProcessor: DataResponseProcessor(),
             interceptors: defaultPlugins,

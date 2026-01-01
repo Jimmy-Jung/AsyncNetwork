@@ -16,33 +16,33 @@ struct NetworkServiceFactoryTests {
     func createNetworkServiceWithDefaults() {
         // Given & When
         let service = NetworkService()
-        
+
         // Then - NetworkService가 성공적으로 생성됨
         _ = service
     }
-    
+
     @Test("NetworkService 커스텀 interceptors")
     func createNetworkServiceWithCustomInterceptors() {
         // Given
         struct CustomInterceptor: RequestInterceptor {}
         let plugins: [any RequestInterceptor] = [CustomInterceptor()]
-        
+
         // When
         let service = NetworkService(plugins: plugins)
-        
+
         // Then - NetworkService가 성공적으로 생성됨
         _ = service
     }
-    
+
     @Test("NetworkService 빈 interceptors")
     func createNetworkServiceWithEmptyInterceptors() {
         // Given & When
         let service = NetworkService(plugins: [])
-        
+
         // Then - NetworkService가 성공적으로 생성됨
         _ = service
     }
-    
+
     @Test("NetworkService 커스텀 configuration")
     func createNetworkServiceWithCustomConfiguration() {
         // Given
@@ -52,14 +52,14 @@ struct NetworkServiceFactoryTests {
             timeout: 60.0,
             enableLogging: false
         )
-        
+
         // When
         let service = NetworkService(configuration: configuration)
-        
+
         // Then - NetworkService가 성공적으로 생성됨
         _ = service
     }
-    
+
     @Test("NetworkService 다양한 configuration", arguments: [
         NetworkConfiguration.default,
         NetworkConfiguration.development,
@@ -70,32 +70,30 @@ struct NetworkServiceFactoryTests {
     func createNetworkServiceWithVariousConfigurations(configuration: NetworkConfiguration) {
         // Given & When
         let service = NetworkService(configuration: configuration)
-        
+
         // Then - NetworkService가 성공적으로 생성됨
         _ = service
     }
-    
+
     @Test("NetworkService 완전한 커스텀 초기화")
     func createNetworkServiceWithFullCustomization() {
         // Given
         let httpClient = HTTPClient(session: .shared)
         let retryPolicy = RetryPolicy.aggressive
-        let configuration = NetworkConfiguration.test
         let responseProcessor = ResponseProcessor()
         let dataResponseProcessor = DataResponseProcessor()
         struct TestInterceptor: RequestInterceptor {}
         let interceptors: [any RequestInterceptor] = [TestInterceptor()]
-        
+
         // When
         let service = NetworkService(
             httpClient: httpClient,
             retryPolicy: retryPolicy,
-            configuration: configuration,
             responseProcessor: responseProcessor,
             dataResponseProcessor: dataResponseProcessor,
             interceptors: interceptors
         )
-        
+
         // Then - NetworkService가 성공적으로 생성됨
         _ = service
     }

@@ -45,9 +45,8 @@ public enum NetworkLogLevel: Int, Sendable {
 /// )
 ///
 /// let service = NetworkService(
-///     httpClient: HTTPClient(),
+///     httpClient: HTTPClient(configuration: .development),
 ///     retryPolicy: .default,
-///     configuration: .development,
 ///     responseProcessor: ResponseProcessor(),
 ///     interceptors: [loggingInterceptor]
 /// )
@@ -146,7 +145,7 @@ public struct ConsoleLoggingInterceptor: RequestInterceptor {
         for key in sensitiveKeys {
             let patterns = [
                 "\"\(key)\"\\s*:\\s*\"[^\"]*\"",
-                "\(key)=([^&\\s]*)",
+                "\(key)=([^&\\s]*)"
             ]
 
             for pattern in patterns {

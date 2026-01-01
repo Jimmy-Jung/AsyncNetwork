@@ -82,7 +82,6 @@ struct NetworkServiceTests {
         let service = NetworkService(
             httpClient: httpClient,
             retryPolicy: .none,
-            configuration: .test,
             responseProcessor: ResponseProcessor()
         )
 
@@ -139,7 +138,6 @@ struct NetworkServiceTests {
         let service = NetworkService(
             httpClient: httpClient,
             retryPolicy: RetryPolicy(configuration: retryConfig),
-            configuration: .test,
             responseProcessor: ResponseProcessor(),
             delayer: SystemDelayer()
         )
@@ -177,7 +175,6 @@ struct NetworkServiceTests {
         let service = NetworkService(
             httpClient: httpClient,
             retryPolicy: RetryPolicy(configuration: retryConfig),
-            configuration: .test,
             responseProcessor: ResponseProcessor()
         )
 
@@ -220,7 +217,6 @@ struct NetworkServiceTests {
         let service = NetworkService(
             httpClient: httpClient,
             retryPolicy: .none,
-            configuration: .test,
             responseProcessor: ResponseProcessor(),
             interceptors: [TestInterceptor()]
         )
@@ -260,7 +256,6 @@ struct NetworkServiceTests {
         let service = NetworkService(
             httpClient: httpClient,
             retryPolicy: .none,
-            configuration: .test,
             responseProcessor: ResponseProcessor()
         )
 
@@ -298,7 +293,6 @@ struct NetworkServiceTests {
         let service = NetworkService(
             httpClient: httpClient,
             retryPolicy: .none,
-            configuration: .test,
             responseProcessor: ResponseProcessor()
         )
 
@@ -335,7 +329,6 @@ struct NetworkServiceTests {
         let service = NetworkService(
             httpClient: httpClient,
             retryPolicy: .none,
-            configuration: .test,
             responseProcessor: ResponseProcessor()
         )
 
