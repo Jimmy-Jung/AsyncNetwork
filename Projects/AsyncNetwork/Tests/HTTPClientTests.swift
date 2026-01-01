@@ -5,7 +5,7 @@
 //  Created by jimmy on 2025/12/29.
 //
 
-@testable import AsyncNetwork
+@testable import AsyncNetworkCore
 import Foundation
 import Testing
 
@@ -15,7 +15,7 @@ struct HTTPClientTests {
     // MARK: - Test Models
 
     private struct TestAPIRequest: APIRequest {
-        var baseURL: URL = .init(string: "https://example.com")!
+        var baseURLString: String = "https://example.com"
         var path: String
         var method: HTTPMethod = .get
         var task: HTTPTask = .requestPlain

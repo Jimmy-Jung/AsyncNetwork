@@ -5,7 +5,7 @@
 //  Created by jimmy on 2025/12/29.
 //
 
-@testable import AsyncNetwork
+@testable import AsyncNetworkCore
 import Testing
 
 // MARK: - NetworkConfigurationTests

@@ -5,7 +5,7 @@
 //  Created by jimmy on 2025/12/29.
 //
 
-@testable import AsyncNetwork
+@testable import AsyncNetworkCore
 import Foundation
 import Testing
 
@@ -20,14 +20,14 @@ struct APIRequestTests {
     }
 
     private struct SimpleRequest: APIRequest {
-        var baseURL: URL = .init(string: "https://api.example.com")!
+        var baseURLString: String = "https://api.example.com"
         var path: String = "/users"
         var method: HTTPMethod = .get
         var task: HTTPTask = .requestPlain
     }
 
     private struct RequestWithHeaders: APIRequest {
-        var baseURL: URL = .init(string: "https://api.example.com")!
+        var baseURLString: String = "https://api.example.com"
         var path: String = "/auth"
         var method: HTTPMethod = .post
         var task: HTTPTask = .requestPlain
@@ -38,7 +38,7 @@ struct APIRequestTests {
     }
 
     private struct RequestWithTimeout: APIRequest {
-        var baseURL: URL = .init(string: "https://api.example.com")!
+        var baseURLString: String = "https://api.example.com"
         var path: String = "/slow"
         var method: HTTPMethod = .get
         var task: HTTPTask = .requestPlain
@@ -46,7 +46,7 @@ struct APIRequestTests {
     }
 
     private struct RequestWithJSONBody: APIRequest {
-        var baseURL: URL = .init(string: "https://api.example.com")!
+        var baseURLString: String = "https://api.example.com"
         var path: String = "/login"
         var method: HTTPMethod = .post
         var task: HTTPTask
@@ -151,7 +151,7 @@ struct APIRequestTests {
     func asURLRequestWithVariousMethods(method: HTTPMethod) throws {
         // Given
         struct MethodRequest: APIRequest {
-            var baseURL: URL = .init(string: "https://api.example.com")!
+            var baseURLString: String = "https://api.example.com"
             var path: String = "/test"
             var method: HTTPMethod
             var task: HTTPTask = .requestPlain
@@ -170,7 +170,7 @@ struct APIRequestTests {
     func asURLRequestPathHandling() throws {
         // Given
         struct PathRequest: APIRequest {
-            var baseURL: URL = .init(string: "https://api.example.com")!
+            var baseURLString: String = "https://api.example.com"
             var path: String
             var method: HTTPMethod = .get
             var task: HTTPTask = .requestPlain
@@ -189,7 +189,7 @@ struct APIRequestTests {
     func asURLRequestWithQueryParameters() throws {
         // Given
         struct QueryRequest: APIRequest {
-            var baseURL: URL = .init(string: "https://api.example.com")!
+            var baseURLString: String = "https://api.example.com"
             var path: String = "/search"
             var method: HTTPMethod = .get
             var task: HTTPTask = .requestQueryParameters(parameters: ["q": "test", "page": "1"])
@@ -210,7 +210,7 @@ struct APIRequestTests {
     func asURLRequestWithFormParameters() throws {
         // Given
         struct FormRequest: APIRequest {
-            var baseURL: URL = .init(string: "https://api.example.com")!
+            var baseURLString: String = "https://api.example.com"
             var path: String = "/form"
             var method: HTTPMethod = .post
             var task: HTTPTask = .requestParameters(parameters: ["field1": "value1", "field2": "value2"])
@@ -235,7 +235,7 @@ struct APIRequestTests {
         // Given
         let bodyData = Data("raw data".utf8)
         struct DataRequest: APIRequest {
-            var baseURL: URL = .init(string: "https://api.example.com")!
+            var baseURLString: String = "https://api.example.com"
             var path: String = "/upload"
             var method: HTTPMethod = .post
             var task: HTTPTask

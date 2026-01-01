@@ -1,59 +1,49 @@
 //
 //  AsyncNetworkFactoryTests.swift
-//  NetworkKit
+//  AsyncNetwork
 //
 //  Created by jimmy on 2025/12/29.
 //
 
-@testable import AsyncNetwork
+@testable import AsyncNetworkCore
 import Foundation
 import Testing
 
-// MARK: - NetworkKitTests
+// MARK: - NetworkServiceFactoryTests
 
-struct NetworkKitTests {
-    @Test("NetworkKit 버전 확인")
-    func versionCheck() {
-        #expect(AsyncNetwork.version == "1.0.0")
-    }
-}
-
-// MARK: - NetworkKitFactoryTests
-
-struct NetworkKitFactoryTests {
-    @Test("createNetworkService 기본 설정")
+struct NetworkServiceFactoryTests {
+    @Test("NetworkService 기본 생성")
     func createNetworkServiceWithDefaults() {
         // Given & When
-        let service = AsyncNetwork.createNetworkService()
-
-        // Then
-        #expect(service is NetworkService)
+        let service = NetworkService()
+        
+        // Then - NetworkService가 성공적으로 생성됨
+        _ = service
     }
-
-    @Test("createNetworkService 커스텀 interceptors")
+    
+    @Test("NetworkService 커스텀 interceptors")
     func createNetworkServiceWithCustomInterceptors() {
         // Given
         struct CustomInterceptor: RequestInterceptor {}
-
+        let plugins: [any RequestInterceptor] = [CustomInterceptor()]
+        
         // When
-        let service = AsyncNetwork.createNetworkService(
-            interceptors: [CustomInterceptor()]
-        )
-
-        // Then
-        #expect(service is NetworkService)
+        let service = NetworkService(plugins: plugins)
+        
+        // Then - NetworkService가 성공적으로 생성됨
+        _ = service
     }
-
-    @Test("createNetworkService 빈 interceptors")
+    
+    @Test("NetworkService 빈 interceptors")
     func createNetworkServiceWithEmptyInterceptors() {
         // Given & When
-        let service = AsyncNetwork.createNetworkService(interceptors: [])
-
-        // Then
-        #expect(service is NetworkService)
+        let service = NetworkService(plugins: [])
+        
+        // Then - NetworkService가 성공적으로 생성됨
+        _ = service
     }
-
-    @Test("createNetworkService 커스텀 configuration")
+    
+    @Test("NetworkService 커스텀 configuration")
     func createNetworkServiceWithCustomConfiguration() {
         // Given
         let configuration = NetworkConfiguration(
@@ -62,17 +52,15 @@ struct NetworkKitFactoryTests {
             timeout: 60.0,
             enableLogging: false
         )
-
+        
         // When
-        let service = AsyncNetwork.createNetworkService(
-            configuration: configuration
-        )
-
-        // Then
-        #expect(service is NetworkService)
+        let service = NetworkService(configuration: configuration)
+        
+        // Then - NetworkService가 성공적으로 생성됨
+        _ = service
     }
-
-    @Test("createNetworkService 다양한 기본 설정", arguments: [
+    
+    @Test("NetworkService 다양한 configuration", arguments: [
         NetworkConfiguration.default,
         NetworkConfiguration.development,
         NetworkConfiguration.test,
@@ -81,120 +69,36 @@ struct NetworkKitFactoryTests {
     ])
     func createNetworkServiceWithVariousConfigurations(configuration: NetworkConfiguration) {
         // Given & When
-        let service = AsyncNetwork.createNetworkService(configuration: configuration)
-
-        // Then
-        #expect(service is NetworkService)
+        let service = NetworkService(configuration: configuration)
+        
+        // Then - NetworkService가 성공적으로 생성됨
+        _ = service
     }
-
-    // MARK: - Test Helper Factory Tests
-
-    #if DEBUG
-        @Test("createTestNetworkService 기본 설정")
-        func createTestNetworkServiceWithDefaults() {
-            // Given & When
-            let service = AsyncNetwork.createTestNetworkService()
-
-            // Then
-            #expect(service is NetworkService)
-        }
-
-        @Test("createTestNetworkService 커스텀 HTTPClient")
-        func createTestNetworkServiceWithCustomHTTPClient() {
-            // Given
-            let configuration = URLSessionConfiguration.ephemeral
-            configuration.protocolClasses = [MockURLProtocol.self]
-            let session = URLSession(configuration: configuration)
-            let httpClient = HTTPClient(session: session)
-
-            // When
-            let service = AsyncNetwork.createTestNetworkService(httpClient: httpClient)
-
-            // Then
-            #expect(service is NetworkService)
-        }
-
-        @Test("createTestNetworkService 커스텀 RetryPolicy")
-        func createTestNetworkServiceWithCustomRetryPolicy() {
-            // Given
-            let retryPolicy = RetryPolicy.none
-
-            // When
-            let service = AsyncNetwork.createTestNetworkService(retryPolicy: retryPolicy)
-
-            // Then
-            #expect(service is NetworkService)
-        }
-
-        @Test("createTestNetworkService 커스텀 ResponseProcessor")
-        func createTestNetworkServiceWithCustomResponseProcessor() {
-            // Given
-            let responseProcessor = ResponseProcessor()
-
-            // When
-            let service = AsyncNetwork.createTestNetworkService(
-                responseProcessor: responseProcessor
-            )
-
-            // Then
-            #expect(service is NetworkService)
-        }
-
-        @Test("createTestNetworkService 커스텀 DataResponseProcessor")
-        func createTestNetworkServiceWithCustomDataResponseProcessor() {
-            // Given
-            let dataResponseProcessor = DataResponseProcessor()
-
-            // When
-            let service = AsyncNetwork.createTestNetworkService(
-                dataResponseProcessor: dataResponseProcessor
-            )
-
-            // Then
-            #expect(service is NetworkService)
-        }
-
-        @Test("createTestNetworkService 커스텀 interceptors")
-        func createTestNetworkServiceWithCustomInterceptors() {
-            // Given
-            struct TestInterceptor: RequestInterceptor {}
-
-            // When
-            let service = AsyncNetwork.createTestNetworkService(
-                interceptors: [TestInterceptor()]
-            )
-
-            // Then
-            #expect(service is NetworkService)
-        }
-
-        @Test("createTestNetworkService 모든 커스텀 파라미터")
-        func createTestNetworkServiceWithAllCustomParameters() {
-            // Given
-            let configuration = URLSessionConfiguration.ephemeral
-            configuration.protocolClasses = [MockURLProtocol.self]
-            let session = URLSession(configuration: configuration)
-            let httpClient = HTTPClient(session: session)
-            let retryPolicy = RetryPolicy.aggressive
-            let responseProcessor = ResponseProcessor()
-            let dataResponseProcessor = DataResponseProcessor()
-
-            struct TestInterceptor: RequestInterceptor {}
-
-            // When
-            let service = AsyncNetwork.createTestNetworkService(
-                httpClient: httpClient,
-                retryPolicy: retryPolicy,
-                configuration: .test,
-                responseProcessor: responseProcessor,
-                dataResponseProcessor: dataResponseProcessor,
-                interceptors: [TestInterceptor()]
-            )
-
-            // Then
-            #expect(service is NetworkService)
-        }
-    #endif
+    
+    @Test("NetworkService 완전한 커스텀 초기화")
+    func createNetworkServiceWithFullCustomization() {
+        // Given
+        let httpClient = HTTPClient(session: .shared)
+        let retryPolicy = RetryPolicy.aggressive
+        let configuration = NetworkConfiguration.test
+        let responseProcessor = ResponseProcessor()
+        let dataResponseProcessor = DataResponseProcessor()
+        struct TestInterceptor: RequestInterceptor {}
+        let interceptors: [any RequestInterceptor] = [TestInterceptor()]
+        
+        // When
+        let service = NetworkService(
+            httpClient: httpClient,
+            retryPolicy: retryPolicy,
+            configuration: configuration,
+            responseProcessor: responseProcessor,
+            dataResponseProcessor: dataResponseProcessor,
+            interceptors: interceptors
+        )
+        
+        // Then - NetworkService가 성공적으로 생성됨
+        _ = service
+    }
 }
 
 // MARK: - ResponseProcessorStep Tests

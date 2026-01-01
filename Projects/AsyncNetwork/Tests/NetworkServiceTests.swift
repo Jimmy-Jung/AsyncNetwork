@@ -5,7 +5,7 @@
 //  Created by jimmy on 2025/12/29.
 //
 
-@testable import AsyncNetwork
+@testable import AsyncNetworkCore
 import Foundation
 import Testing
 
@@ -19,7 +19,7 @@ private struct TestUser: Codable, Equatable {
 private struct TestAPIRequest: APIRequest {
     typealias Response = EmptyResponse
 
-    var baseURL: URL = .init(string: "https://api.example.com")!
+    var baseURLString: String = "https://api.example.com"
     var path: String
     var method: HTTPMethod = .get
     var task: HTTPTask = .requestPlain
@@ -32,7 +32,7 @@ private struct TestAPIRequest: APIRequest {
 private struct TypedTestAPIRequest: APIRequest {
     typealias Response = TestUser
 
-    var baseURL: URL = .init(string: "https://api.example.com")!
+    var baseURLString: String = "https://api.example.com"
     var path: String
     var method: HTTPMethod = .get
     var task: HTTPTask = .requestPlain
@@ -45,7 +45,7 @@ private struct TypedTestAPIRequest: APIRequest {
 private struct LogoutRequest: APIRequest {
     typealias Response = EmptyResponse
 
-    var baseURL: URL = .init(string: "https://api.example.com")!
+    var baseURLString: String = "https://api.example.com"
     var path: String = "/auth/logout"
     var method: HTTPMethod = .post
     var task: HTTPTask = .requestPlain

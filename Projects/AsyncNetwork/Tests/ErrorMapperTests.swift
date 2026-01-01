@@ -5,7 +5,7 @@
 //  Created by jimmy on 2025/12/29.
 //
 
-@testable import AsyncNetwork
+@testable import AsyncNetworkCore
 import Foundation
 import Testing
 
@@ -404,7 +404,7 @@ struct ErrorMapperTests {
     func mapErrorWithRequestContext() {
         // Given
         struct TestRequest: APIRequest {
-            var baseURL: URL = .init(string: "https://api.example.com")!
+            var baseURLString: String = "https://api.example.com"
             var path: String = "/test"
             var method: HTTPMethod = .get
             var task: HTTPTask = .requestPlain
