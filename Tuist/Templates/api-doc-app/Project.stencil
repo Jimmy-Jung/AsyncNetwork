@@ -1,0 +1,23 @@
+import ProjectDescription
+
+let project = Project(
+    name: "{{ name }}",
+    organizationName: "{{ organization }}",
+    targets: [
+        .target(
+            name: "{{ name }}",
+            destinations: .iOS,
+            product: .app,
+            bundleId: "{{ organization }}.{{ name }}",
+            deploymentTargets: .iOS("{{ deploymentTarget }}"),
+            infoPlist: .file(path: "Resources/Info.plist"),
+            sources: ["Sources/**"],
+            resources: ["Resources/**"],
+            dependencies: [
+                .external(name: "AsyncNetwork"),
+                .external(name: "AsyncNetworkMacros"),
+            ]
+        ),
+    ]
+)
+

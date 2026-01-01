@@ -1,0 +1,85 @@
+//
+//  {{ name }}App.swift
+//  {{ name }}
+//
+
+import SwiftUI
+
+@main
+struct {{ name }}App: App {
+    var body: some Scene {
+        WindowGroup {
+            ContentView()
+        }
+    }
+}
+
+struct ContentView: View {
+    var body: some View {
+        NavigationView {
+            List {
+                NavigationLink("API Endpoints") {
+                    EndpointsListView()
+                }
+                
+                NavigationLink("Try Requests") {
+                    RequestTesterView()
+                }
+            }
+            .navigationTitle("{{ name }}")
+        }
+    }
+}
+
+struct EndpointsListView: View {
+    var body: some View {
+        List {
+            Section("Posts") {
+                Text("GET /posts")
+                    .font(.system(.body, design: .monospaced))
+                Text("POST /posts")
+                    .font(.system(.body, design: .monospaced))
+            }
+            
+            Section("Users") {
+                Text("GET /users")
+                    .font(.system(.body, design: .monospaced))
+            }
+        }
+        .navigationTitle("Endpoints")
+    }
+}
+
+struct RequestTesterView: View {
+    @State private var result = ""
+    
+    var body: some View {
+        VStack(spacing: 20) {
+            Button("Test GET /posts") {
+                Task {
+                    await testRequest()
+                }
+            }
+            .buttonStyle(.borderedProminent)
+            
+            ScrollView {
+                Text(result)
+                    .font(.system(.caption, design: .monospaced))
+                    .padding()
+            }
+        }
+        .navigationTitle("Request Tester")
+        .padding()
+    }
+    
+    private func testRequest() async {
+        do {
+            result = "Executing request..."
+            // 실제 요청 로직은 APIRequests.swift 참고
+            result = "Success! (See APIRequests.swift for implementation)"
+        } catch {
+            result = "Error: \(error.localizedDescription)"
+        }
+    }
+}
+

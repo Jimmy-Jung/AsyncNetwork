@@ -1,0 +1,33 @@
+//
+//  Models.swift
+//  {{ name }}
+//
+
+import Foundation
+
+// MARK: - Post Model
+
+struct Post: Codable, Identifiable, Sendable {
+    let userId: Int
+    let id: Int
+    let title: String
+    let body: String
+}
+
+// MARK: - Post Body (for creating/updating)
+
+struct PostBody: Codable, Sendable {
+    let title: String
+    let body: String
+    let userId: Int
+}
+
+// MARK: - User Model
+
+struct User: Codable, Identifiable, Sendable {
+    let id: Int
+    let name: String
+    let username: String
+    let email: String
+}
+

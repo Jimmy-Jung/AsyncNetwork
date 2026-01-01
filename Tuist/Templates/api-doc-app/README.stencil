@@ -1,0 +1,78 @@
+# {{ name }}
+
+AsyncNetwork API Documentation & Tester App
+
+## Overview
+
+This app is generated using the AsyncNetwork Tuist template. It provides:
+- API endpoint documentation
+- Interactive request tester
+- Example implementations using `@APIRequest` macro
+
+## Getting Started
+
+### 1. Define Your API Requests
+
+Edit `Sources/APIRequests.swift` to add your API endpoints using the `@APIRequest` macro:
+
+```swift
+@APIRequest(
+    response: YourModel.self,
+    title: "Your endpoint title",
+    baseURL: "https://your-api.com",
+    path: "/your/path",
+    method: "get",
+    tags: ["Category"]
+)
+struct YourRequest {
+    @QueryParameter var param: String?
+}
+```
+
+### 2. Define Your Models
+
+Edit `Sources/Models.swift` to add your data models:
+
+```swift
+struct YourModel: Codable, Sendable {
+    let id: Int
+    let name: String
+}
+```
+
+### 3. Make Requests
+
+Use `NetworkService` to execute requests:
+
+```swift
+let networkService = NetworkService()
+let request = YourRequest(param: "value")
+let result = try await networkService.request(request)
+```
+
+## Features
+
+### Property Wrappers
+
+- `@QueryParameter`: URL query parameters
+- `@PathParameter`: URL path placeholders (`{id}`)
+- `@RequestBody`: JSON request body
+- `@HeaderField`: Type-safe HTTP headers
+- `@CustomHeader`: Custom headers
+
+### Auto-Generated
+
+The `@APIRequest` macro automatically generates:
+- `typealias Response`
+- `var baseURLString: String`
+- `var path: String`
+- `var method: HTTPMethod`
+- `var task: HTTPTask`
+- `static var metadata: EndpointMetadata`
+
+## Documentation
+
+For more information, see:
+- [AsyncNetwork GitHub](https://github.com/your-repo/AsyncNetwork)
+- [API Reference](https://your-docs.com)
+

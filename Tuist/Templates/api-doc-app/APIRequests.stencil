@@ -1,0 +1,80 @@
+//
+//  APIRequests.swift
+//  {{ name }}
+//
+//  이 파일은 @APIRequest 매크로를 사용한 API 요청 정의 예시입니다.
+//
+
+import Foundation
+import AsyncNetwork
+import AsyncNetworkMacros
+
+// MARK: - Example: GET all posts
+
+@APIRequest(
+    response: [Post].self,
+    title: "Get all posts",
+    description: "Retrieve a list of all posts",
+    baseURL: "https://jsonplaceholder.typicode.com",
+    path: "/posts",
+    method: "get",
+    tags: ["Posts", "Read"]
+)
+struct GetPostsRequest {
+    @QueryParameter var userId: Int?
+}
+
+// MARK: - Example: GET single post
+
+@APIRequest(
+    response: Post.self,
+    title: "Get a post by ID",
+    description: "Retrieve a specific post",
+    baseURL: "https://jsonplaceholder.typicode.com",
+    path: "/posts/{id}",
+    method: "get",
+    tags: ["Posts", "Read"]
+)
+struct GetPostRequest {
+    @PathParameter var id: Int
+}
+
+// MARK: - Example: POST create post
+
+@APIRequest(
+    response: Post.self,
+    title: "Create a new post",
+    description: "Create a new post",
+    baseURL: "https://jsonplaceholder.typicode.com",
+    path: "/posts",
+    method: "post",
+    tags: ["Posts", "Write"]
+)
+struct CreatePostRequest {
+    @RequestBody var body: PostBody
+}
+
+// MARK: - Usage Example
+
+/// NetworkService 인스턴스 생성
+let networkService = NetworkService()
+
+/// 사용 예시 함수
+func exampleUsage() async throws {
+    // GET all posts
+    let request1 = GetPostsRequest(userId: 1)
+    let posts = try await networkService.request(request1)
+    print("받은 포스트: \(posts.count)개")
+    
+    // GET single post
+    let request2 = GetPostRequest(id: 1)
+    let post = try await networkService.request(request2)
+    print("포스트 제목: \(post.title)")
+    
+    // POST create post
+    let newPost = PostBody(title: "New Post", body: "Content", userId: 1)
+    let request3 = CreatePostRequest(body: newPost)
+    let created = try await networkService.request(request3)
+    print("생성된 ID: \(created.id)")
+}
+
