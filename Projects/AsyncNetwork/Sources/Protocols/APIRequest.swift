@@ -4,25 +4,27 @@ import Foundation
 ///
 /// **사용 예시:**
 /// ```swift
-/// struct LoginRequest: APIRequest {
-///     typealias Response = LoginResponse
-///
-///     let baseURL: URL = URL(string: "https://api.example.com")!
-///     let path: String = "/auth/login"
-///     let method: HTTPMethod = .post
-///     let task: HTTPTask = .requestJSONEncodable(LoginBody(username: "user", password: "pass"))
-///     let headers: [String: String]? = ["Content-Type": "application/json"]
+/// @APIRequest(
+///     response: LoginResponse.self,
+///     title: "사용자 로그인",
+///     baseURL: "https://api.example.com",
+///     path: "/auth/login",
+///     method: .post
+/// )
+/// struct LoginRequest {
+///     @RequestBody var body: LoginBody
 /// }
 ///
 /// // 사용
-/// let response = try await networkService.request(LoginRequest())  // LoginResponse 타입 추론
+/// let request = LoginRequest(body: LoginBody(username: "user", password: "pass"))
+/// let response: LoginResponse = try await networkService.request(request)
 /// ```
 public protocol APIRequest: Sendable {
     /// 응답 타입 정의
     /// - Note: 빈 응답의 경우 `EmptyResponse`를 사용하세요
     associatedtype Response: Decodable = EmptyResponse
 
-    var baseURL: URL { get }
+    var baseURLString: String { get }
     var path: String { get }
     var method: HTTPMethod { get }
     var task: HTTPTask { get }
@@ -33,17 +35,39 @@ public protocol APIRequest: Sendable {
 public extension APIRequest {
     var timeout: TimeInterval { 30.0 }
     var headers: [String: String]? { nil }
+    
+    /// String을 URL로 변환
+    var baseURL: URL {
+        guard let url = URL(string: baseURLString) else {
+            preconditionFailure("Invalid baseURL: \(baseURLString)")
+        }
+        return url
+    }
 }
 
 extension APIRequest {
-    func asURLRequest() throws -> URLRequest {
+    public func asURLRequest() throws -> URLRequest {
         let url = baseURL.appendingPathComponent(path)
         var request = URLRequest(url: url, timeoutInterval: timeout)
         request.httpMethod = method.rawValue
 
-        // 헤더 추가
+        // 정적 헤더 추가
         headers?.forEach { key, value in
             request.setValue(value, forHTTPHeaderField: key)
+        }
+
+        // Property Wrapper들을 리플렉션으로 찾아서 적용
+        let mirror = Mirror(reflecting: self)
+        for child in mirror.children {
+            guard let label = child.label else { continue }
+            
+            // Property Wrapper의 실제 이름 추출 (_를 제거)
+            let propertyName = label.hasPrefix("_") ? String(label.dropFirst()) : label
+            
+            // RequestParameter 프로토콜을 채택한 Property Wrapper 찾기
+            if let param = child.value as? RequestParameter {
+                try param.apply(to: &request, key: propertyName)
+            }
         }
 
         // Task 적용

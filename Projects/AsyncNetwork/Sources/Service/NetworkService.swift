@@ -26,6 +26,26 @@ public struct NetworkService: Sendable {
         self.interceptors = interceptors
         self.delayer = delayer
     }
+    
+    /// 기본 설정으로 NetworkService를 초기화합니다
+    public init(
+        configuration: NetworkConfiguration = .default,
+        plugins: [any RequestInterceptor]? = nil
+    ) {
+        let defaultPlugins: [any RequestInterceptor] = plugins ?? [
+            ConsoleLoggingInterceptor(minimumLevel: .verbose)
+        ]
+        
+        self.init(
+            httpClient: HTTPClient(session: .shared),
+            retryPolicy: RetryPolicy.default,
+            configuration: configuration,
+            responseProcessor: ResponseProcessor(),
+            dataResponseProcessor: DataResponseProcessor(),
+            interceptors: defaultPlugins,
+            delayer: SystemDelayer()
+        )
+    }
 
     /// 응답을 특정 타입으로 디코딩하여 반환합니다 (명시적 타입 지정)
     ///
