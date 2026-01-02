@@ -5,9 +5,7 @@
 //  Created by jimmy on 2026/01/02.
 //
 
-import AsyncNetworkCore
-
-// MARK: - APIRequest Macro
+@_exported import AsyncNetworkCore
 
 /// APIRequest 프로토콜 채택 시 필요한 보일러플레이트 프로퍼티를 자동 생성하는 매크로
 ///
@@ -28,7 +26,7 @@ import AsyncNetworkCore
 ///     description: "Retrieve a list of all posts",
 ///     baseURL: "https://jsonplaceholder.typicode.com",
 ///     path: "/posts",
-///     method: .get,
+///     method: "get",
 ///     headers: ["Content-Type": "application/json"],
 ///     tags: ["Posts", "Read"],
 ///     responseExample: "[{\"id\": 1, \"title\": \"Hello\"}]"
@@ -97,7 +95,7 @@ import AsyncNetworkCore
 ///     response: Post.self,
 ///     title: "Get a post",
 ///     path: "/posts/1",
-///     method: .get
+///     method: "get"
 /// )
 /// struct GetPostRequest {
 ///     let environment: Environment
@@ -118,7 +116,7 @@ import AsyncNetworkCore
 ///     title: "Update a post",
 ///     baseURL: "https://api.example.com",
 ///     path: "/posts/{id}",
-///     method: .put
+///     method: "put"
 /// )
 /// struct UpdatePostRequest {
 ///     let id: Int
@@ -145,7 +143,7 @@ import AsyncNetworkCore
 /// - 이 매크로는 `struct`에만 적용할 수 있습니다.
 /// - 필수 파라미터: `response`, `title`, `path`, `method`
 /// - 이미 선언된 프로퍼티는 매크로가 생성하지 않습니다.
-/// - `method` 파라미터는 `HTTPMethod` 열거형 값을 사용합니다 (`.get`, `.post`, `.put`, `.delete` 등)
+/// - `method` 파라미터는 문자열로 지정합니다 ("get", "post", "put", "delete", "patch", "head", "options")
 @attached(member, names:
     named(Response),
     named(baseURLString),
@@ -165,7 +163,6 @@ public macro APIRequest(
     headers: [String: String] = [:],
     tags: [String] = [],
     requestBodyExample: String? = nil,
-    responseStructure: String? = nil,
     responseExample: String? = nil
 ) = #externalMacro(
     module: "AsyncNetworkMacrosImpl",

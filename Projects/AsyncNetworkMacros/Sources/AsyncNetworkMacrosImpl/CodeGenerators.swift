@@ -31,7 +31,8 @@ func scanPropertyWrappers( // swiftlint:disable:this function_body_length cyclom
             let wrapperType = identifier
             let validTypes = [
                 "PathParameter", "QueryParameter",
-                "HeaderParameter", "HeaderField", "CustomHeader"
+                "HeaderParameter", "HeaderField", "CustomHeader",
+                "RequestBody",
             ]
             guard validTypes.contains(wrapperType) else {
                 continue
@@ -122,7 +123,7 @@ private func mapHeaderKeyToString(_ key: String) -> String {
         "timestamp": "X-Timestamp",
         "sessionId": "X-Session-Id",
         "clientVersion": "X-Client-Version",
-        "platform": "X-Platform"
+        "platform": "X-Platform",
     ]
     return mapping[key] ?? key
 }
@@ -130,11 +131,11 @@ private func mapHeaderKeyToString(_ key: String) -> String {
 // MARK: - Code Generation
 
 /// PropertyWrapperInfo 배열을 ParameterInfo 배열 리터럴로 변환합니다.
-/// HeaderField와 CustomHeader는 제외합니다 (이들은 headers 프로퍼티로 처리됨)
+/// HeaderField, CustomHeader, RequestBody는 제외합니다 (별도 섹션에서 처리됨)
 func generateParametersArray(_ parameters: [PropertyWrapperInfo]) -> String {
-    // HeaderField와 CustomHeader는 파라미터가 아니므로 제외
+    // HeaderField, CustomHeader, RequestBody는 파라미터가 아니므로 제외
     let filteredParameters = parameters.filter {
-        !["HeaderField", "CustomHeader"].contains($0.wrapperType)
+        !["HeaderField", "CustomHeader", "RequestBody"].contains($0.wrapperType)
     }
 
     if filteredParameters.isEmpty {
@@ -172,64 +173,4 @@ func generateParametersArray(_ parameters: [PropertyWrapperInfo]) -> String {
                 \(parameterStrings.joined(separator: ",\n                "))
             ]
     """
-}
-
-// swiftlint:disable:next function_body_length
-func generateResponseStructure(from responseType: String) -> String? {
-    // 배열 타입인 경우 [Type] → Type으로 변환
-    let cleanedType = responseType
-        .trimmingCharacters(in: .whitespacesAndNewlines)
-        .replacingOccurrences(of: "[", with: "")
-        .replacingOccurrences(of: "]", with: "")
-
-    // 간단한 타입 매핑 (실제 타입 정의를 코드 문자열로 표현)
-    let typeStructures: [String: String] = [
-        "Post": """
-        struct Post {
-            let userId: Int
-            let id: Int
-            let title: String
-            let body: String
-        }
-        """,
-        "User": """
-        struct User {
-            let id: Int
-            let name: String
-            let username: String
-            let email: String
-            let address: Address?
-            let phone: String?
-            let website: String?
-            let company: Company?
-        }
-        """,
-        "Comment": """
-        struct Comment {
-            let postId: Int
-            let id: Int
-            let name: String
-            let email: String
-            let body: String
-        }
-        """,
-        "Album": """
-        struct Album {
-            let userId: Int
-            let id: Int
-            let title: String
-        }
-        """,
-        "Photo": """
-        struct Photo {
-            let albumId: Int
-            let id: Int
-            let title: String
-            let url: String
-            let thumbnailUrl: String
-        }
-        """
-    ]
-
-    return typeStructures[cleanedType]
 }

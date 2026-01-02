@@ -21,7 +21,6 @@ struct MacroArguments {
     let headers: [String: String]
     let tags: [String]
     let requestBodyExample: String?
-    let responseStructure: String?
     let responseExample: String?
 }
 
@@ -55,7 +54,6 @@ func parseArguments(_ arguments: LabeledExprListSyntax) throws -> MacroArguments
     var headers: [String: String] = [:]
     var tags: [String] = []
     var requestBodyExample: String?
-    var responseStructure: String?
     var responseExample: String?
 
     for argument in arguments {
@@ -88,8 +86,6 @@ func parseArguments(_ arguments: LabeledExprListSyntax) throws -> MacroArguments
             tags = extractArray(from: expr)
         case "requestBodyExample":
             requestBodyExample = extractStringLiteral(from: expr)
-        case "responseStructure":
-            responseStructure = extractStringLiteral(from: expr)
         case "responseExample":
             responseExample = extractStringLiteral(from: expr)
         default:
@@ -121,7 +117,6 @@ func parseArguments(_ arguments: LabeledExprListSyntax) throws -> MacroArguments
         headers: headers,
         tags: tags,
         requestBodyExample: requestBodyExample,
-        responseStructure: responseStructure,
         responseExample: responseExample
     )
 }

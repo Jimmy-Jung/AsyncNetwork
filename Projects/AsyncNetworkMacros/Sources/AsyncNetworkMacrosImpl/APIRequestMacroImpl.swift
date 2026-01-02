@@ -188,52 +188,61 @@ public struct APIRequestMacroImpl: MemberMacro, ExtensionMacro {
             }
         }
 
-        // responseStructure 생성
-        let responseStructure = args.responseStructure ?? generateResponseStructure(from: args.responseType)
+        // @RequestBody에서 타입 정보 추출
+        let requestBodyParameter = parameters.first { $0.wrapperType == "RequestBody" }
 
-        // responseExample과 requestBodyExample, responseStructure를 raw string으로 변환
+        // requestBodyStructure와 requestBodyRelatedTypes 생성
         let requestBodyExampleCode: String
-        let requestBodyFieldsCode: String
+        let requestBodyStructureCode: String
+        let requestBodyRelatedTypesCode: String
 
-        if let example = args.requestBodyExample {
-            // 백슬래시와 따옴표를 이스케이프
+        if let requestBodyParam = requestBodyParameter {
+            // @RequestBody의 타입에서 제네릭 타입 추출 (예: RequestBody<PostBody> -> PostBody)
+            let requestBodyType = extractGenericType(from: requestBodyParam.type) ?? requestBodyParam.type
+
+            // 타입에서 옵셔널 제거 (예: PostBody? -> PostBody)
+            let cleanType = requestBodyType.replacingOccurrences(of: "?", with: "")
+
+            // @RequestBody의 타입에서 typeStructure 추출 (Response와 동일한 방식)
+            requestBodyStructureCode = "resolveTypeStructure(for: \(cleanType).self)"
+
+            // relatedTypes도 동일하게 수집
+            requestBodyRelatedTypesCode = "collectRelatedTypes(for: \(cleanType).self)"
+
+            // requestBodyExample은 매크로 인자에서 가져오거나 nil
+            if let example = args.requestBodyExample {
+                let escaped = example
+                    .replacingOccurrences(of: "\\", with: "\\\\")
+                    .replacingOccurrences(of: "\"", with: "\\\"")
+                    .replacingOccurrences(of: "\n", with: "\\n")
+                requestBodyExampleCode = "\"\(escaped)\""
+            } else {
+                requestBodyExampleCode = "nil"
+            }
+        } else if let example = args.requestBodyExample {
+            // @RequestBody가 없지만 requestBodyExample이 있는 경우 (레거시)
             let escaped = example
                 .replacingOccurrences(of: "\\", with: "\\\\")
                 .replacingOccurrences(of: "\"", with: "\\\"")
                 .replacingOccurrences(of: "\n", with: "\\n")
             requestBodyExampleCode = "\"\(escaped)\""
 
-            // requestBodyExample에서 필드 파싱
-            let fields = parseRequestBodyFields(from: example)
-            let fieldsCodes = fields.map { field -> String in
-                let exampleValueCode = field.exampleValue.map {
-                    "\"\($0)\""
-                } ?? "nil"
-                return """
-                    RequestBodyFieldInfo(
-                        name: "\(field.name)",
-                        type: "\(field.type)",
-                        isRequired: \(field.isRequired),
-                        exampleValue: \(exampleValueCode)
-                    )
-                    """
-            }
-            requestBodyFieldsCode = "[\(fieldsCodes.joined(separator: ", "))]"
+            // JSON에서 구조 생성 (레거시)
+            requestBodyStructureCode = "generateStructureFromJSON(\"\(escaped)\")"
+            requestBodyRelatedTypesCode = "[:]"
         } else {
             requestBodyExampleCode = "nil"
-            requestBodyFieldsCode = "[]"
+            requestBodyStructureCode = "nil"
+            requestBodyRelatedTypesCode = "nil"
         }
 
-        let responseStructureCode: String
-        if let structure = responseStructure {
-            let escaped = structure
-                .replacingOccurrences(of: "\\", with: "\\\\")
-                .replacingOccurrences(of: "\"", with: "\\\"")
-                .replacingOccurrences(of: "\n", with: "\\n")
-            responseStructureCode = "\"\(escaped)\""
-        } else {
-            responseStructureCode = "nil"
-        }
+        // responseStructure 생성 (DocumentedType 프로토콜 체크는 런타임에 수행)
+        // 매크로는 다른 타입의 정보에 접근할 수 없으므로 런타임에 조회하도록 코드 생성
+        let responseStructureCode = "resolveTypeStructure(for: \(args.responseType).self)"
+
+        // relatedTypes는 런타임에 collectRelatedTypes 헬퍼로 수집
+        // Response 타입에서 시작하여 모든 중첩 타입을 BFS로 탐색
+        let relatedTypesCode = "collectRelatedTypes(for: \(args.responseType).self)"
 
         let responseExampleCode: String
         if let example = args.responseExample {
@@ -272,15 +281,17 @@ public struct APIRequestMacroImpl: MemberMacro, ExtensionMacro {
                     path: "\(raw: args.path)",
                     baseURLString: \(raw: baseURLStringCode),
                     headers: \(raw: allHeaders.isEmpty ? "nil" : """
-                        [\(allHeaders.map { "\"\($0.key)\": \"\($0.value)\"" }.joined(separator: ", "))]
-                        """),
+            [\(allHeaders.map { "\"\($0.key)\": \"\($0.value)\"" }.joined(separator: ", "))]
+                    """),
                     tags: [\(raw: args.tags.map { "\"\($0)\"" }.joined(separator: ", "))],
                     parameters: \(raw: parametersArray),
                     requestBodyExample: \(raw: requestBodyExampleCode),
-                    requestBodyFields: \(raw: requestBodyFieldsCode),
+                    requestBodyStructure: \(raw: requestBodyStructureCode),
+                    requestBodyRelatedTypes: \(raw: requestBodyRelatedTypesCode),
                     responseStructure: \(raw: responseStructureCode),
                     responseExample: \(raw: responseExampleCode),
-                    responseTypeName: "\(raw: args.responseType)"
+                    responseTypeName: "\(raw: args.responseType)",
+                    relatedTypes: \(raw: relatedTypesCode)
                 )
             }
             """
@@ -347,6 +358,20 @@ public struct APIRequestMacroImpl: MemberMacro, ExtensionMacro {
 
         return properties
     }
+
+    /// 제네릭 타입에서 내부 타입을 추출합니다.
+    /// 예: "RequestBody<PostBody>" -> "PostBody"
+    ///     "[String: User]" -> "User"
+    private static func extractGenericType(from typeString: String) -> String? {
+        // RequestBody<PostBody> 형태에서 PostBody 추출
+        if let startIndex = typeString.firstIndex(of: "<"),
+           let endIndex = typeString.lastIndex(of: ">")
+        {
+            let innerType = String(typeString[typeString.index(after: startIndex) ..< endIndex])
+            return innerType.trimmingCharacters(in: .whitespaces)
+        }
+        return nil
+    }
 }
 
 // MARK: - Plugin Registration
@@ -354,6 +379,7 @@ public struct APIRequestMacroImpl: MemberMacro, ExtensionMacro {
 @main
 struct AsyncNetworkMacrosPlugin: CompilerPlugin {
     let providingMacros: [Macro.Type] = [
-        APIRequestMacroImpl.self
+        APIRequestMacroImpl.self,
+        DocumentedTypeMacroImpl.self,
     ]
 }
