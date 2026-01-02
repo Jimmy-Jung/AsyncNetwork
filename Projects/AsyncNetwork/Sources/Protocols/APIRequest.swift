@@ -36,9 +36,10 @@ public extension APIRequest {
     var headers: [String: String]? { nil }
 
     /// String을 URL로 변환
-    var baseURL: URL {
+    /// - Throws: NetworkError.invalidURL if baseURLString is not a valid URL
+    func getBaseURL() throws -> URL {
         guard let url = URL(string: baseURLString) else {
-            preconditionFailure("Invalid baseURL: \(baseURLString)")
+            throw NetworkError.invalidURL(baseURLString)
         }
         return url
     }
@@ -46,6 +47,7 @@ public extension APIRequest {
 
 public extension APIRequest {
     func asURLRequest() throws -> URLRequest {
+        let baseURL = try getBaseURL()
         let url = baseURL.appendingPathComponent(path)
         var request = URLRequest(url: url, timeoutInterval: timeout)
         request.httpMethod = method.rawValue
