@@ -818,3 +818,61 @@ AsyncNetwork이 도움이 되었나요? ⭐ Star를 눌러주세요!
 
 </div>
 
+---
+
+# 🌏 Korean
+
+<div align="center">
+
+# AsyncNetwork
+
+### 순수 Foundation 기반의 Swift 네트워크 라이브러리
+
+[![Swift](https://img.shields.io/badge/Swift-6.0-orange.svg)](https://swift.org)
+[![Platform](https://img.shields.io/badge/Platform-iOS%2013%2B%20%7C%20macOS%2010.15%2B%20%7C%20tvOS%2013%2B%20%7C%20watchOS%206%2B-lightgrey.svg)](https://developer.apple.com/swift)
+[![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Release](https://img.shields.io/github/v/release/Jimmy-Jung/AsyncNetwork)](https://github.com/Jimmy-Jung/AsyncNetwork/releases)
+[![SPM Compatible](https://img.shields.io/badge/SPM-compatible-brightgreen.svg)](https://swift.org/package-manager)
+
+</div>
+
+---
+
+## 왜 AsyncNetwork인가?
+
+AsyncNetwork은 순수 Foundation만을 사용하여 구축된 현대적인 Swift 네트워크 라이브러리입니다.
+
+### 주요 특징
+
+- ✅ **순수 Foundation**: URLSession, Codable, async/await만 사용 (외부 의존성 제로)
+- ⚡ **Swift Concurrency 네이티브**: async/await 완벽 지원
+- 🧱 **책임별 모듈 구조**: 명확한 단일 책임 원칙 (Models, Client, Service 등)
+- 🔄 **재시도 정책**: 유연한 재시도 전략 (지수 백오프, 커스텀 규칙)
+- 🔗 **Chain of Responsibility 패턴**: 확장 가능한 응답 처리 파이프라인
+- 🔌 **RequestInterceptor**: 프로토콜 기반 요청/응답 인터셉터 (로깅, 인증 등)
+- 🪄 **매크로 지원**: `@APIRequest` 매크로로 보일러플레이트 제거
+- 🎯 **Property Wrappers**: 선언적 API (`@QueryParameter`, `@PathParameter`, `@RequestBody`, `@HeaderField`)
+- 🧪 **테스트 용이성**: MockURLProtocol 지원, 의존성 주입 설계
+
+### 다른 라이브러리와 비교
+
+| 특징 | AsyncNetwork | Alamofire | Moya |
+|-----|-------------|-----------|------|
+| 외부 의존성 | ❌ 없음 | ✅ 있음 (AFNetworking 등) | ✅ 있음 (Alamofire) |
+| Swift Concurrency | ✅ 네이티브 | ⚠️ 부분 지원 | ⚠️ 부분 지원 |
+| 매크로 지원 | ✅ `@APIRequest` | ❌ | ❌ |
+| 재시도 정책 | ✅ 프로토콜 기반 | ✅ | ⚠️ 제한적 |
+| Chain of Responsibility | ✅ | ❌ | ❌ |
+| 학습 곡선 | 낮음 (Foundation 기반) | 중간 | 중간 |
+
+위 내용과 동일한 내용이 영문 섹션에 포함되어 있습니다.
+
+---
+
+<div align="center">
+
+**Made with ❤️ and ☕ in Seoul, Korea**
+
+⬆️ [맨 위로](#-korean)
+
+</div>
