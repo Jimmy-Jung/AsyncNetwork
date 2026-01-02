@@ -1,0 +1,31 @@
+{
+  "configurations" : [
+    {
+      "id" : "B49C4AD2-A10B-4304-8DA3-7E7EDD1AC03E",
+      "name" : "Test Scheme Action",
+      "options" : {
+
+      }
+    }
+  ],
+  "defaultOptions" : {
+
+  },
+  "testTargets" : [
+    {
+      "target" : {
+        "containerPath" : "container:",
+        "identifier" : "AsyncNetworkMacrosTests",
+        "name" : "AsyncNetworkMacrosTests"
+      }
+    },
+    {
+      "target" : {
+        "containerPath" : "container:",
+        "identifier" : "AsyncNetworkTests",
+        "name" : "AsyncNetworkTests"
+      }
+    }
+  ],
+  "version" : 1
+}

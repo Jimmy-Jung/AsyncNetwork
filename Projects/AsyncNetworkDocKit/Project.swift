@@ -13,7 +13,7 @@ let project = Project(
             infoPlist: .default,
             sources: ["Sources/**"],
             dependencies: [
-                .external(name: "AsyncNetwork")
+                .project(target: "AsyncNetwork", path: "../AsyncNetwork")
             ],
             settings: .frameworkSettings()
         ),

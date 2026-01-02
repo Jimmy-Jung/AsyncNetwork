@@ -6,9 +6,21 @@ import PackageDescription
 
     let packageSettings = PackageSettings(
         productTypes: [
-            "AsyncNetworkCore": .framework,
-            "AsyncNetwork": .framework,
-            "AsyncNetworkMacros": .framework
+            // SwiftSyntax main products
+            "SwiftSyntax": .framework,
+            "SwiftSyntaxMacros": .framework,
+            "SwiftCompilerPlugin": .framework,
+            "SwiftSyntaxMacrosTestSupport": .framework,
+
+            // SwiftSyntax internal dependencies - dynamic으로 설정하여 중복 링크 방지
+            "SwiftBasicFormat": .framework,
+            "SwiftDiagnostics": .framework,
+            "SwiftOperators": .framework,
+            "SwiftParser": .framework,
+            "SwiftParserDiagnostics": .framework,
+            "SwiftSyntaxBuilder": .framework,
+            "SwiftSyntaxMacroExpansion": .framework,
+            "_SwiftSyntaxCShims": .framework
         ],
         baseSettings: .settings(
             configurations: [
@@ -22,9 +34,6 @@ import PackageDescription
 let package = Package(
     name: "AsyncNetworkDependencies",
     dependencies: [
-        // AsyncNetwork (Local Package)
-        .package(path: ".."),
-
         // Swift Syntax (for Macros)
         .package(url: "https://github.com/apple/swift-syntax.git", from: "600.0.0")
     ]
