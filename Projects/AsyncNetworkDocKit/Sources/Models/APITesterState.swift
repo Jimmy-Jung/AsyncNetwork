@@ -19,6 +19,12 @@ final class APITesterState {
     var requestBodyFields: [String: String] = [:]
     var requestBody: String = ""
 
+    // 배열 필드 저장 (예: "items" -> [0: {...}, 1: {...}])
+    var arrayItems: [String: [Int: [String: String]]] = [:]
+
+    // 배열 필드의 현재 개수 추적
+    var arrayItemCounts: [String: Int] = [:]
+
     // 요청/응답 상태
     var isLoading: Bool = false
     var hasBeenRequested: Bool = false
@@ -47,6 +53,8 @@ final class APITesterState {
         headerFields.removeAll()
         requestBodyFields.removeAll()
         requestBody = ""
+        arrayItems.removeAll()
+        arrayItemCounts.removeAll()
         isLoading = false
         hasBeenRequested = false
         response = ""
