@@ -26,7 +26,7 @@
 ///     description: "Retrieve a list of all posts",
 ///     baseURL: "https://jsonplaceholder.typicode.com",
 ///     path: "/posts",
-///     method: "get",
+///     method: .get,
 ///     headers: ["Content-Type": "application/json"],
 ///     tags: ["Posts", "Read"],
 ///     responseExample: "[{\"id\": 1, \"title\": \"Hello\"}]"
@@ -95,7 +95,7 @@
 ///     response: Post.self,
 ///     title: "Get a post",
 ///     path: "/posts/1",
-///     method: "get"
+///     method: .get
 /// )
 /// struct GetPostRequest {
 ///     let environment: Environment
@@ -116,7 +116,7 @@
 ///     title: "Update a post",
 ///     baseURL: "https://api.example.com",
 ///     path: "/posts/{id}",
-///     method: "put"
+///     method: .put
 /// )
 /// struct UpdatePostRequest {
 ///     let id: Int
