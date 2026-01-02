@@ -36,7 +36,7 @@ let apiExampleURL = "https://api.example.com"
 )
 struct GetAllPostsRequest {
     @QueryParameter var userId: Int?
-    @QueryParameter var _limit: Int?
+    @QueryParameter(key: "_limit") var limit: Int?
 }
 
 @APIRequest(
@@ -52,6 +52,7 @@ struct GetPostByIdRequest {
     @PathParameter var id: Int
     @HeaderField(.userAgent) var userAgent: String? = "AsyncNetworkDocKit/1.0.0"
     @HeaderField(.acceptLanguage) var acceptLanguage: String? = "ko-KR,ko;q=0.9,en;q=0.8"
+    @HeaderField(.)
 }
 
 @APIRequest(
