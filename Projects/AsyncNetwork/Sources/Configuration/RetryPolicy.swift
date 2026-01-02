@@ -30,7 +30,7 @@ public enum RetryDecision {
 }
 
 public struct RetryPolicy: Sendable {
-    private let configuration: RetryConfiguration
+    public let configuration: RetryConfiguration
     private let rules: [any RetryRule]
 
     public init(

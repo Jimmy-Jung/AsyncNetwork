@@ -1,24 +1,30 @@
 import Foundation
 
 public struct NetworkService: Sendable {
-    private let httpClient: HTTPClient
+    private let httpClient: any HTTPClientProtocol
     private let retryPolicy: RetryPolicy
     private let responseProcessor: any ResponseProcessing
     private let delayer: AsyncDelayer
     private let interceptors: [any RequestInterceptor]
+    private let networkMonitor: (any NetworkMonitoring)?
+    private let checkNetworkBeforeRequest: Bool
 
     public init(
-        httpClient: HTTPClient,
+        httpClient: any HTTPClientProtocol,
         retryPolicy: RetryPolicy,
         responseProcessor: any ResponseProcessing,
         interceptors: [any RequestInterceptor] = [],
-        delayer: AsyncDelayer = SystemDelayer()
+        delayer: AsyncDelayer = SystemDelayer(),
+        networkMonitor: (any NetworkMonitoring)? = NetworkMonitor.shared,
+        checkNetworkBeforeRequest: Bool = true
     ) {
         self.httpClient = httpClient
         self.retryPolicy = retryPolicy
         self.responseProcessor = responseProcessor
         self.interceptors = interceptors
         self.delayer = delayer
+        self.networkMonitor = networkMonitor
+        self.checkNetworkBeforeRequest = checkNetworkBeforeRequest
     }
 
     /// 기본 설정으로 NetworkService를 초기화합니다
@@ -35,8 +41,22 @@ public struct NetworkService: Sendable {
             retryPolicy: RetryPolicy.default,
             responseProcessor: ResponseProcessor(),
             interceptors: defaultPlugins,
-            delayer: SystemDelayer()
+            delayer: SystemDelayer(),
+            networkMonitor: NetworkMonitor.shared,
+            checkNetworkBeforeRequest: true
         )
+    }
+
+    // MARK: - Network Status
+
+    /// 현재 네트워크 연결 여부를 반환합니다
+    public var isNetworkAvailable: Bool {
+        networkMonitor?.isConnected ?? true
+    }
+
+    /// 현재 네트워크 연결 타입을 반환합니다
+    public var connectionType: NetworkMonitor.ConnectionType {
+        networkMonitor?.connectionType ?? .unknown
     }
 
     // MARK: - Public API
@@ -61,6 +81,11 @@ public struct NetworkService: Sendable {
         request: R,
         decodeType: T.Type
     ) async throws -> T {
+        // 네트워크 연결 체크
+        if checkNetworkBeforeRequest, !isNetworkAvailable {
+            throw NetworkError.offline
+        }
+
         let response = try await execute(request)
         return try responseProcessor.process(
             result: .success(response),
@@ -114,17 +139,31 @@ public struct NetworkService: Sendable {
     ) async throws -> HTTPResponse {
         var urlRequest = try request.asURLRequest()
         var attempt = 1
+        let maxAttempts = retryPolicy.configuration.maxRetries + 1
 
-        while true {
+        while attempt <= maxAttempts {
             do {
                 return try await executeWithInterceptors(
                     urlRequest: &urlRequest,
                     target: request
                 )
             } catch {
+                // 마지막 시도인 경우 즉시 throw
+                if attempt >= maxAttempts {
+                    throw error
+                }
                 try await handleRetry(error: error, attempt: &attempt)
             }
         }
+
+        // 이론적으로 도달 불가하지만 컴파일러를 위해
+        throw NetworkError.unknown(
+            NSError(
+                domain: "AsyncNetwork",
+                code: -1,
+                userInfo: [NSLocalizedDescriptionKey: "Unexpected: exceeded max attempts without throwing"]
+            )
+        )
     }
 
     private func executeWithInterceptors<R: APIRequest>(
