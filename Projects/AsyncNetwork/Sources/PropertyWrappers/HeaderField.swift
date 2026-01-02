@@ -13,9 +13,9 @@ import Foundation
 /// ```swift
 /// @APIRequest(...)
 /// struct GetCurrentUserRequest {
-///     @HeaderField(.authorization) var authorization: String?
-///     @HeaderField(.requestId) var requestId: String? = UUID().uuidString
-///     @HeaderField(.userAgent) var userAgent: String?
+///     @HeaderField(key: .authorization) var authorization: String?
+///     @HeaderField(key: .requestId) var requestId: String? = UUID().uuidString
+///     @HeaderField(key: .userAgent) var userAgent: String?
 /// }
 ///
 /// let request = GetCurrentUserRequest(
@@ -28,14 +28,14 @@ public struct HeaderField<Value: Sendable>: RequestParameter {
     public var wrappedValue: Value?
     private let key: HTTPHeaders.HeaderKey
 
-    public init(wrappedValue: Value? = nil, _ key: HTTPHeaders.HeaderKey) {
+    public init(wrappedValue: Value? = nil, key: HTTPHeaders.HeaderKey) {
         self.key = key
         self.wrappedValue = wrappedValue
     }
 
-    public func apply(to request: inout URLRequest, key: String) throws {
+    public func apply(to request: inout URLRequest, key _: String) throws {
         guard let value = wrappedValue else { return }
-        request.setValue("\(value)", forHTTPHeaderField: self.key.rawValue)
+        request.setValue("\(value)", forHTTPHeaderField: key.rawValue)
     }
 }
 
@@ -59,7 +59,7 @@ public struct CustomHeader<Value: Sendable>: RequestParameter {
         self.wrappedValue = wrappedValue
     }
 
-    public func apply(to request: inout URLRequest, key: String) throws {
+    public func apply(to request: inout URLRequest, key _: String) throws {
         guard let value = wrappedValue else { return }
         request.setValue("\(value)", forHTTPHeaderField: headerName)
     }
