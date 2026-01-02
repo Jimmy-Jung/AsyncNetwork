@@ -29,21 +29,20 @@ import Foundation
 @propertyWrapper
 public struct RequestBody<Value: Encodable & Sendable>: RequestParameter {
     public var wrappedValue: Value?
-    
+
     public init(wrappedValue: Value? = nil) {
         self.wrappedValue = wrappedValue
     }
-    
+
     public func apply(to request: inout URLRequest, key: String) throws {
         guard let value = wrappedValue else { return }
-        
+
         let encoder = JSONEncoder()
         request.httpBody = try encoder.encode(value)
-        
+
         // Content-Type이 설정되지 않은 경우에만 설정
         if request.value(forHTTPHeaderField: "Content-Type") == nil {
             request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         }
     }
 }
-

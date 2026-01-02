@@ -43,7 +43,7 @@ public struct DocKitFactory {
         let categories = endpoints.map { name, endpoints in
             EndpointCategory(name: name, endpoints: endpoints)
         }.sorted { $0.name < $1.name }
-        
+
         return WindowGroup {
             DocView(
                 categories: categories,
@@ -52,7 +52,7 @@ public struct DocKitFactory {
             )
         }
     }
-    
+
     /// Category 배열로 문서 앱 생성
     public static func createDocApp(
         categories: [EndpointCategory],

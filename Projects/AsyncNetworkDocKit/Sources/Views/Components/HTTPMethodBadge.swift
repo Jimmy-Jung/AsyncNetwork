@@ -11,11 +11,11 @@ import SwiftUI
 @available(iOS 17.0, macOS 14.0, *)
 public struct HTTPMethodBadge: View {
     let method: String
-    
+
     public init(method: String) {
         self.method = method
     }
-    
+
     public var body: some View {
         Text(method.uppercased())
             .font(.caption2)
@@ -27,7 +27,7 @@ public struct HTTPMethodBadge: View {
             .cornerRadius(4)
             .frame(width: 60)
     }
-    
+
     private var methodColor: Color {
         switch method.uppercased() {
         case "GET": return .blue
@@ -41,4 +41,3 @@ public struct HTTPMethodBadge: View {
         }
     }
 }
-

@@ -15,4 +15,3 @@ public protocol RequestParameter: Sendable {
     ///   - key: 프로퍼티 이름
     func apply(to request: inout URLRequest, key: String) throws
 }
-

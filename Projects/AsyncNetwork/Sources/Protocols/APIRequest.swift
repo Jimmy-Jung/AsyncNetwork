@@ -35,7 +35,7 @@ public protocol APIRequest: Sendable {
 public extension APIRequest {
     var timeout: TimeInterval { 30.0 }
     var headers: [String: String]? { nil }
-    
+
     /// String을 URL로 변환
     var baseURL: URL {
         guard let url = URL(string: baseURLString) else {
@@ -60,10 +60,10 @@ extension APIRequest {
         let mirror = Mirror(reflecting: self)
         for child in mirror.children {
             guard let label = child.label else { continue }
-            
+
             // Property Wrapper의 실제 이름 추출 (_를 제거)
             let propertyName = label.hasPrefix("_") ? String(label.dropFirst()) : label
-            
+
             // RequestParameter 프로토콜을 채택한 Property Wrapper 찾기
             if let param = child.value as? RequestParameter {
                 try param.apply(to: &request, key: propertyName)

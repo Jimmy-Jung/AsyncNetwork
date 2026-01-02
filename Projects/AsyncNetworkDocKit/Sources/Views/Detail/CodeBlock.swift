@@ -11,7 +11,7 @@ import SwiftUI
 @available(iOS 17.0, macOS 14.0, *)
 struct CodeBlock: View {
     let content: String
-    
+
     var body: some View {
         ScrollView {
             Text(content)
@@ -24,4 +24,3 @@ struct CodeBlock: View {
         .cornerRadius(8)
     }
 }
-

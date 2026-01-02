@@ -12,14 +12,14 @@ import AsyncNetworkCore
 @available(iOS 17.0, macOS 14.0, *)
 struct ParameterRow: View {
     let parameter: ParameterInfo
-    
+
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
                 Text(parameter.name)
                     .font(.system(.body, design: .monospaced))
                     .fontWeight(.semibold)
-                
+
                 Text(parameter.location.rawValue)
                     .font(.caption2)
                     .foregroundStyle(.secondary)
@@ -27,7 +27,7 @@ struct ParameterRow: View {
                     .padding(.vertical, 2)
                     .background(Color.secondary.opacity(0.1))
                     .cornerRadius(4)
-                
+
                 if parameter.isRequired {
                     Text("required")
                         .font(.caption2)
@@ -37,20 +37,20 @@ struct ParameterRow: View {
                         .background(Color.red.opacity(0.1))
                         .cornerRadius(4)
                 }
-                
+
                 Spacer()
-                
+
                 Text(parameter.type)
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
-            
+
             if let desc = parameter.description, !desc.isEmpty {
                 Text(desc)
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
-            
+
             if let example = parameter.exampleValue {
                 Text("Example: \(example)")
                     .font(.caption)
@@ -62,4 +62,3 @@ struct ParameterRow: View {
         .cornerRadius(8)
     }
 }
-

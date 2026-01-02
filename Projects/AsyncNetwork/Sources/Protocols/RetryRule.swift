@@ -22,7 +22,7 @@ public struct URLErrorRetryRule: RetryRule {
             .cannotFindHost,
             .cannotConnectToHost,
             .dnsLookupFailed,
-            .notConnectedToInternet,
+            .notConnectedToInternet
         ]
 
         return retryableCodes.contains(urlError.code)

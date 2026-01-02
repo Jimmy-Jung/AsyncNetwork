@@ -14,7 +14,7 @@ struct EndpointListView: View {
     let categories: [EndpointCategory]
     @Binding var selection: EndpointMetadata?
     @State private var searchText = ""
-    
+
     var body: some View {
         List(selection: $selection) {
             ForEach(categories) { category in
@@ -43,7 +43,7 @@ struct EndpointListView: View {
         }
         .searchable(text: $searchText, prompt: "Search APIs...")
     }
-    
+
     private func filteredEndpoints(for category: EndpointCategory) -> [EndpointMetadata] {
         if searchText.isEmpty {
             return category.endpoints
@@ -54,4 +54,3 @@ struct EndpointListView: View {
         }
     }
 }
-

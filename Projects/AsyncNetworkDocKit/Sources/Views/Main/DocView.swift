@@ -14,10 +14,10 @@ struct DocView: View {
     let categories: [EndpointCategory]
     let networkService: NetworkService
     let appTitle: String
-    
+
     @State private var selectedEndpoint: EndpointMetadata?
     @State private var columnVisibility: NavigationSplitViewVisibility = .all
-    
+
     var body: some View {
         NavigationSplitView(columnVisibility: $columnVisibility) {
             NavigationStack {
@@ -56,4 +56,3 @@ struct DocView: View {
         }
     }
 }
-

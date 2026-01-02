@@ -213,7 +213,7 @@ struct AsyncDelayerProtocolTests {
         let delayers: [any AsyncDelayer] = [
             TestDelayer(),
             ControlledDelayer(),
-            TestDelayer(),
+            TestDelayer()
         ]
 
         // When & Then - 모든 delayer가 sleep 호출 가능

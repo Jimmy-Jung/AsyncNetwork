@@ -401,13 +401,13 @@ private extension ResponseDecoderTests {
                 "id": i,
                 "name": "User \(i)",
                 "email": "user\(i)@example.com",
-                "isActive": i % 2 == 0,
+                "isActive": i % 2 == 0
             ])
         }
 
         let jsonObject: [String: Any] = [
             "items": items,
-            "count": 1000,
+            "count": 1000
         ]
 
         return try! JSONSerialization.data(withJSONObject: jsonObject)

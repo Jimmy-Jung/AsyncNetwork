@@ -19,7 +19,7 @@ public extension Target {
                 with: [
                     "CFBundleShortVersionString": "1.0.0",
                     "CFBundleVersion": "1",
-                    "UILaunchScreen": [:],
+                    "UILaunchScreen": [:]
                 ]
             ),
             sources: sources,
@@ -27,7 +27,7 @@ public extension Target {
             dependencies: dependencies
         )
     }
-    
+
     static func frameworkTarget(
         name: String,
         bundleId: String,
@@ -53,20 +53,20 @@ public extension Settings {
         .settings(
             base: [
                 "DEVELOPMENT_TEAM": "",
-                "CODE_SIGN_STYLE": "Automatic",
+                "CODE_SIGN_STYLE": "Automatic"
             ],
             configurations: [
                 .debug(name: "Debug"),
-                .release(name: "Release"),
+                .release(name: "Release")
             ]
         )
     }
-    
+
     static func frameworkSettings() -> Settings {
         .settings(
             configurations: [
                 .debug(name: "Debug"),
-                .release(name: "Release"),
+                .release(name: "Release")
             ]
         )
     }
@@ -89,4 +89,3 @@ public extension Scheme {
         )
     }
 }
-

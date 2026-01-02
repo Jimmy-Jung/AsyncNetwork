@@ -25,23 +25,22 @@ import Foundation
 @propertyWrapper
 public struct PathParameter<Value: Sendable>: RequestParameter {
     public var wrappedValue: Value
-    
+
     public init(wrappedValue: Value) {
         self.wrappedValue = wrappedValue
     }
-    
+
     public func apply(to request: inout URLRequest, key: String) throws {
         guard let url = request.url else { return }
-        
+
         let placeholder = "{\(key)}"
         let replaced = url.absoluteString.replacingOccurrences(
             of: placeholder,
             with: "\(wrappedValue)"
         )
-        
+
         if let newURL = URL(string: replaced) {
             request.url = newURL
         }
     }
 }
-

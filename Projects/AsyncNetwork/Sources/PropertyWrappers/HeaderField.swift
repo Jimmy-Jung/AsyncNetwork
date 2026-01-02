@@ -27,12 +27,12 @@ import Foundation
 public struct HeaderField<Value: Sendable>: RequestParameter {
     public var wrappedValue: Value?
     private let key: HTTPHeaders.HeaderKey
-    
+
     public init(wrappedValue: Value? = nil, _ key: HTTPHeaders.HeaderKey) {
         self.key = key
         self.wrappedValue = wrappedValue
     }
-    
+
     public func apply(to request: inout URLRequest, key: String) throws {
         guard let value = wrappedValue else { return }
         request.setValue("\(value)", forHTTPHeaderField: self.key.rawValue)
@@ -53,15 +53,14 @@ public struct HeaderField<Value: Sendable>: RequestParameter {
 public struct CustomHeader<Value: Sendable>: RequestParameter {
     public var wrappedValue: Value?
     private let headerName: String
-    
+
     public init(wrappedValue: Value? = nil, _ headerName: String) {
         self.headerName = headerName
         self.wrappedValue = wrappedValue
     }
-    
+
     public func apply(to request: inout URLRequest, key: String) throws {
         guard let value = wrappedValue else { return }
         request.setValue("\(value)", forHTTPHeaderField: headerName)
     }
 }
-

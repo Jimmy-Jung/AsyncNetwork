@@ -17,7 +17,7 @@ let project = Project(
                 .external(name: "SwiftCompilerPlugin")
             ]
         ),
-        
+
         // Public Macro Interface (iOS, references macOS impl)
         .target(
             name: "AsyncNetworkMacros",
@@ -31,7 +31,7 @@ let project = Project(
                 .external(name: "AsyncNetworkCore")
             ]
         ),
-        
+
         // Tests (macOS only)
         .target(
             name: "AsyncNetworkMacrosTests",
@@ -48,4 +48,3 @@ let project = Project(
         )
     ]
 )
-

@@ -23,13 +23,13 @@ import AsyncNetworkCore
 ///     @QueryParameter var userId: Int?
 /// }
 /// ```
-@attached(member, names: 
-    named(Response), 
-    named(baseURLString), 
-    named(path), 
-    named(method), 
-    named(headers), 
-    named(task), 
+@attached(member, names:
+    named(Response),
+    named(baseURLString),
+    named(path),
+    named(method),
+    named(headers),
+    named(task),
     named(metadata))
 @attached(extension, conformances: APIRequest)
 public macro APIRequest(

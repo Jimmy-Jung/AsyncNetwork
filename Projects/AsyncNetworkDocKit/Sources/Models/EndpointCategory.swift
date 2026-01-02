@@ -14,7 +14,7 @@ public struct EndpointCategory: Identifiable, Sendable, Hashable {
     public let name: String
     public let description: String?
     public let endpoints: [EndpointMetadata]
-    
+
     public init(
         name: String,
         description: String? = nil,
@@ -26,4 +26,3 @@ public struct EndpointCategory: Identifiable, Sendable, Hashable {
         self.endpoints = endpoints
     }
 }
-

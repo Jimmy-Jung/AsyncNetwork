@@ -24,25 +24,24 @@ import Foundation
 @propertyWrapper
 public struct QueryParameter<Value: Sendable>: RequestParameter {
     public var wrappedValue: Value?
-    
+
     public init(wrappedValue: Value? = nil) {
         self.wrappedValue = wrappedValue
     }
-    
+
     public func apply(to request: inout URLRequest, key: String) throws {
         guard let value = wrappedValue else { return }
-        
+
         guard var components = URLComponents(url: request.url!, resolvingAgainstBaseURL: false) else {
             return
         }
-        
+
         var queryItems = components.queryItems ?? []
         queryItems.append(URLQueryItem(name: key, value: "\(value)"))
         components.queryItems = queryItems
-        
+
         if let url = components.url {
             request.url = url
         }
     }
 }
-

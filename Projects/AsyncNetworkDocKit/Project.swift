@@ -13,10 +13,9 @@ let project = Project(
             infoPlist: .default,
             sources: ["Sources/**"],
             dependencies: [
-                .external(name: "AsyncNetwork"),
+                .external(name: "AsyncNetwork")
             ],
             settings: .frameworkSettings()
-        ),
+        )
     ]
 )
-

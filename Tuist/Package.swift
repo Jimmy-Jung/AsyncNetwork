@@ -13,7 +13,7 @@ import PackageDescription
         baseSettings: .settings(
             configurations: [
                 .debug(name: "Debug"),
-                .release(name: "Release"),
+                .release(name: "Release")
             ]
         )
     )
@@ -24,9 +24,8 @@ let package = Package(
     dependencies: [
         // AsyncNetwork (Local Package)
         .package(path: ".."),
-        
+
         // Swift Syntax (for Macros)
-        .package(url: "https://github.com/apple/swift-syntax.git", from: "600.0.0")        
+        .package(url: "https://github.com/apple/swift-syntax.git", from: "600.0.0")
     ]
 )
-

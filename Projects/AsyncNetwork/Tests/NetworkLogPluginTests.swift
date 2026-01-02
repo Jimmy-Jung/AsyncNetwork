@@ -19,7 +19,7 @@ struct NetworkLogPluginTests {
         var path: String = "/test"
         var method: HTTPMethod = .get
         var task: HTTPTask = .requestPlain
-        var headers: [String: String]? = nil
+        var headers: [String: String]?
     }
 
     // MARK: - Initialization Tests

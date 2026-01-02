@@ -11,14 +11,14 @@ import AsyncNetworkCore
 /// 동적으로 생성되는 APIRequest (API Tester용)
 struct DynamicAPIRequest: APIRequest {
     typealias Response = Data
-    
+
     let baseURLString: String
     let path: String
     let method: HTTPMethod
     let task: HTTPTask
     let headers: [String: String]?
     let timeout: TimeInterval
-    
+
     init(
         baseURL: String,
         path: String,
@@ -32,7 +32,7 @@ struct DynamicAPIRequest: APIRequest {
         self.method = method
         self.headers = headers
         self.timeout = 30
-        
+
         // HTTPTask 설정
         if let body = body {
             self.task = .requestData(body)
@@ -42,9 +42,8 @@ struct DynamicAPIRequest: APIRequest {
             self.task = .requestPlain
         }
     }
-    
+
     func parseResponse(data: Data, response: HTTPURLResponse) throws -> Data {
         return data
     }
 }
-

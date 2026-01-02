@@ -35,7 +35,7 @@ public extension HTTPTask {
             var components = URLComponents(url: url, resolvingAgainstBaseURL: false)
             components?.queryItems = parameters.map { URLQueryItem(name: $0.key, value: $0.value) }
             request.url = components?.url
-            
+
         case .requestWithPropertyWrappers:
             // Property Wrapper들은 asURLRequest()에서 이미 적용됨
             break

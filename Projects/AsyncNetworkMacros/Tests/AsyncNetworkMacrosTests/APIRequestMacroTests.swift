@@ -16,13 +16,13 @@ import Testing
 
 @Suite("APIRequest Macro Tests")
 struct APIRequestMacroTests {
-    
+
     let testMacros: [String: Macro.Type] = [
         "APIRequest": APIRequestMacroImpl.self
     ]
-    
+
     // MARK: - Basic Expansion Tests
-    
+
     @Test("기본 매크로 확장 - 모든 프로퍼티 생성")
     func testBasicExpansion() {
         assertMacroExpansion(
@@ -39,25 +39,25 @@ struct APIRequestMacroTests {
             """,
             expandedSource: """
             struct GetPostRequest {
-            
+
                 typealias Response = Post
-            
+
                 var baseURLString: String {
                     "https://api.example.com"
                 }
-            
+
                 var path: String {
                     "/posts/1"
                 }
-            
+
                 var method: HTTPMethod {
                     .get
                 }
-            
+
                 var task: HTTPTask {
                     .requestWithPropertyWrappers
                 }
-            
+
                 static var metadata: EndpointMetadata {
                     EndpointMetadata(
                         id: "GetPostRequest",
@@ -75,14 +75,14 @@ struct APIRequestMacroTests {
                     )
                 }
             }
-            
+
             extension GetPostRequest: APIRequest {
             }
             """,
             macros: testMacros
         )
     }
-    
+
     @Test("모든 파라미터를 포함한 전체 확장")
     func testFullExpansion() {
         assertMacroExpansion(
@@ -103,29 +103,29 @@ struct APIRequestMacroTests {
             """,
             expandedSource: """
             struct GetPostsRequest {
-            
+
                 typealias Response = [Post]
-            
+
                 var baseURLString: String {
                     "https://jsonplaceholder.typicode.com"
                 }
-            
+
                 var path: String {
                     "/posts"
                 }
-            
+
                 var method: HTTPMethod {
                     .get
                 }
-            
+
                 var headers: [String: String]? {
                     ["Content-Type": "application/json"]
                 }
-            
+
                 var task: HTTPTask {
                     .requestWithPropertyWrappers
                 }
-            
+
                 static var metadata: EndpointMetadata {
                     EndpointMetadata(
                         id: "GetPostsRequest",
@@ -145,14 +145,14 @@ struct APIRequestMacroTests {
                     )
                 }
             }
-            
+
             extension GetPostsRequest: APIRequest {
             }
             """,
             macros: testMacros
         )
     }
-    
+
     @Test("baseURL 없이 확장 (동적 baseURL용)")
     func testExpansionWithoutBaseURL() {
         assertMacroExpansion(
@@ -165,7 +165,7 @@ struct APIRequestMacroTests {
             )
             struct GetPostRequest {
                 let environment: Environment
-                
+
                 var baseURLString: String {
                     environment.baseURL
                 }
@@ -174,25 +174,25 @@ struct APIRequestMacroTests {
             expandedSource: """
             struct GetPostRequest {
                 let environment: Environment
-                
+
                 var baseURLString: String {
                     environment.baseURL
                 }
-            
+
                 typealias Response = Post
-            
+
                 var path: String {
                     "/posts/1"
                 }
-            
+
                 var method: HTTPMethod {
                     .get
                 }
-            
+
                 var task: HTTPTask {
                     .requestWithPropertyWrappers
                 }
-            
+
                 static var metadata: EndpointMetadata {
                     EndpointMetadata(
                         id: "GetPostRequest",
@@ -210,14 +210,14 @@ struct APIRequestMacroTests {
                     )
                 }
             }
-            
+
             extension GetPostRequest: APIRequest {
             }
             """,
             macros: testMacros
         )
     }
-    
+
     @Test("이미 선언된 프로퍼티는 건너뛰기")
     func testSkipExistingProperties() {
         assertMacroExpansion(
@@ -231,42 +231,42 @@ struct APIRequestMacroTests {
             )
             struct UpdatePostRequest {
                 let id: Int
-                
+
                 var path: String {
                     "/posts/\\(id)"
                 }
-                
+
                 var task: HTTPTask {
                     .requestJSONEncodable(body)
                 }
-                
+
                 let body: PostBody
             }
             """,
             expandedSource: """
             struct UpdatePostRequest {
                 let id: Int
-                
+
                 var path: String {
                     "/posts/\\(id)"
                 }
-                
+
                 var task: HTTPTask {
                     .requestJSONEncodable(body)
                 }
-                
+
                 let body: PostBody
-            
+
                 typealias Response = Post
-            
+
                 var baseURLString: String {
                     "https://api.example.com"
                 }
-            
+
                 var method: HTTPMethod {
                     .put
                 }
-            
+
                 static var metadata: EndpointMetadata {
                     EndpointMetadata(
                         id: "UpdatePostRequest",
@@ -284,14 +284,14 @@ struct APIRequestMacroTests {
                     )
                 }
             }
-            
+
             extension UpdatePostRequest: APIRequest {
             }
             """,
             macros: testMacros
         )
     }
-    
+
     @Test("Property Wrappers와 함께 사용")
     func testWithPropertyWrappers() {
         assertMacroExpansion(
@@ -312,25 +312,25 @@ struct APIRequestMacroTests {
             struct GetPostsRequest {
                 @QueryParameter var userId: Int?
                 @QueryParameter var page: Int?
-            
+
                 typealias Response = [Post]
-            
+
                 var baseURLString: String {
                     "https://api.example.com"
                 }
-            
+
                 var path: String {
                     "/posts"
                 }
-            
+
                 var method: HTTPMethod {
                     .get
                 }
-            
+
                 var task: HTTPTask {
                     .requestWithPropertyWrappers
                 }
-            
+
                 static var metadata: EndpointMetadata {
                     EndpointMetadata(
                         id: "GetPostsRequest",
@@ -348,14 +348,14 @@ struct APIRequestMacroTests {
                     )
                 }
             }
-            
+
             extension GetPostsRequest: APIRequest {
             }
             """,
             macros: testMacros
         )
     }
-    
+
     @Test("Request Body 예시 포함")
     func testWithRequestBody() {
         assertMacroExpansion(
@@ -375,25 +375,25 @@ struct APIRequestMacroTests {
             expandedSource: """
             struct CreatePostRequest {
                 @RequestBody var body: PostBody
-            
+
                 typealias Response = Post
-            
+
                 var baseURLString: String {
                     "https://api.example.com"
                 }
-            
+
                 var path: String {
                     "/posts"
                 }
-            
+
                 var method: HTTPMethod {
                     .post
                 }
-            
+
                 var task: HTTPTask {
                     .requestWithPropertyWrappers
                 }
-            
+
                 static var metadata: EndpointMetadata {
                     EndpointMetadata(
                         id: "CreatePostRequest",
@@ -413,16 +413,16 @@ struct APIRequestMacroTests {
                     )
                 }
             }
-            
+
             extension CreatePostRequest: APIRequest {
             }
             """,
             macros: testMacros
         )
     }
-    
+
     // MARK: - Error Tests
-    
+
     @Test("class에 적용 시 에러")
     func testClassError() {
         assertMacroExpansion(
@@ -450,7 +450,7 @@ struct APIRequestMacroTests {
             macros: testMacros
         )
     }
-    
+
     @Test("enum에 적용 시 에러")
     func testEnumError() {
         assertMacroExpansion(
@@ -480,7 +480,7 @@ struct APIRequestMacroTests {
             macros: testMacros
         )
     }
-    
+
     @Test("필수 파라미터 누락 시 에러 - response")
     func testMissingResponseError() {
         assertMacroExpansion(
@@ -507,7 +507,7 @@ struct APIRequestMacroTests {
             macros: testMacros
         )
     }
-    
+
     @Test("필수 파라미터 누락 시 에러 - title")
     func testMissingTitleError() {
         assertMacroExpansion(
@@ -534,7 +534,7 @@ struct APIRequestMacroTests {
             macros: testMacros
         )
     }
-    
+
     @Test("필수 파라미터 누락 시 에러 - path")
     func testMissingPathError() {
         assertMacroExpansion(
@@ -561,7 +561,7 @@ struct APIRequestMacroTests {
             macros: testMacros
         )
     }
-    
+
     @Test("필수 파라미터 누락 시 에러 - method")
     func testMissingMethodError() {
         assertMacroExpansion(
@@ -588,9 +588,9 @@ struct APIRequestMacroTests {
             macros: testMacros
         )
     }
-    
+
     // MARK: - HTTP Method Tests
-    
+
     @Test("다양한 HTTP 메서드 테스트 - POST")
     func testPostMethod() {
         assertMacroExpansion(
@@ -607,25 +607,25 @@ struct APIRequestMacroTests {
             """,
             expandedSource: """
             struct CreatePostRequest {
-            
+
                 typealias Response = Post
-            
+
                 var baseURLString: String {
                     "https://api.example.com"
                 }
-            
+
                 var path: String {
                     "/posts"
                 }
-            
+
                 var method: HTTPMethod {
                     .post
                 }
-            
+
                 var task: HTTPTask {
                     .requestWithPropertyWrappers
                 }
-            
+
                 static var metadata: EndpointMetadata {
                     EndpointMetadata(
                         id: "CreatePostRequest",
@@ -643,14 +643,14 @@ struct APIRequestMacroTests {
                     )
                 }
             }
-            
+
             extension CreatePostRequest: APIRequest {
             }
             """,
             macros: testMacros
         )
     }
-    
+
     @Test("다양한 HTTP 메서드 테스트 - DELETE")
     func testDeleteMethod() {
         assertMacroExpansion(
@@ -667,25 +667,25 @@ struct APIRequestMacroTests {
             """,
             expandedSource: """
             struct DeletePostRequest {
-            
+
                 typealias Response = EmptyResponse
-            
+
                 var baseURLString: String {
                     "https://api.example.com"
                 }
-            
+
                 var path: String {
                     "/posts/{id}"
                 }
-            
+
                 var method: HTTPMethod {
                     .delete
                 }
-            
+
                 var task: HTTPTask {
                     .requestWithPropertyWrappers
                 }
-            
+
                 static var metadata: EndpointMetadata {
                     EndpointMetadata(
                         id: "DeletePostRequest",
@@ -703,7 +703,7 @@ struct APIRequestMacroTests {
                     )
                 }
             }
-            
+
             extension DeletePostRequest: APIRequest {
             }
             """,
@@ -711,4 +711,3 @@ struct APIRequestMacroTests {
         )
     }
 }
-
