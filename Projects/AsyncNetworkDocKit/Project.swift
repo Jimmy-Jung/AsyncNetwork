@@ -16,6 +16,18 @@ let project = Project(
                 .external(name: "AsyncNetwork")
             ],
             settings: .frameworkSettings()
+        ),
+        .target(
+            name: "AsyncNetworkDocKitTests",
+            destinations: .iOS,
+            product: .unitTests,
+            bundleId: "com.asyncnetwork.AsyncNetworkDocKitTests",
+            deploymentTargets: .iOS("17.0"),
+            infoPlist: .default,
+            sources: ["Tests/**"],
+            dependencies: [
+                .target(name: "AsyncNetworkDocKit")
+            ]
         )
     ]
 )
