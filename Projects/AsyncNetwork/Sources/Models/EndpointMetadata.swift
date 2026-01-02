@@ -19,10 +19,11 @@ public struct EndpointMetadata: Identifiable, Sendable, Hashable {
     public let tags: [String]
     public let parameters: [ParameterInfo]
     public let requestBodyExample: String?
+    public let requestBodyFields: [RequestBodyFieldInfo]
     public let responseStructure: String?
     public let responseExample: String?
     public let responseTypeName: String
-    
+
     public init(
         id: String,
         title: String,
@@ -34,6 +35,7 @@ public struct EndpointMetadata: Identifiable, Sendable, Hashable {
         tags: [String] = [],
         parameters: [ParameterInfo] = [],
         requestBodyExample: String? = nil,
+        requestBodyFields: [RequestBodyFieldInfo] = [],
         responseStructure: String? = nil,
         responseExample: String? = nil,
         responseTypeName: String
@@ -48,6 +50,7 @@ public struct EndpointMetadata: Identifiable, Sendable, Hashable {
         self.tags = tags
         self.parameters = parameters
         self.requestBodyExample = requestBodyExample
+        self.requestBodyFields = requestBodyFields
         self.responseStructure = responseStructure
         self.responseExample = responseExample
         self.responseTypeName = responseTypeName
@@ -64,7 +67,7 @@ public struct ParameterInfo: Identifiable, Sendable, Hashable {
     public let description: String?
     public let defaultValue: String?
     public let exampleValue: String?
-    
+
     public init(
         id: String,
         name: String,
@@ -94,3 +97,25 @@ public enum ParameterLocation: String, Sendable, Hashable {
     case body
 }
 
+/// Request Body의 개별 필드 정보
+public struct RequestBodyFieldInfo: Identifiable, Sendable, Hashable {
+    public let id: String
+    public let name: String
+    public let type: String
+    public let isRequired: Bool
+    public let exampleValue: String?
+
+    public init(
+        id: String? = nil,
+        name: String,
+        type: String,
+        isRequired: Bool = true,
+        exampleValue: String? = nil
+    ) {
+        self.id = id ?? name
+        self.name = name
+        self.type = type
+        self.isRequired = isRequired
+        self.exampleValue = exampleValue
+    }
+}

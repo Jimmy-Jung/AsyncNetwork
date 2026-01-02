@@ -5,10 +5,11 @@
 //  Created by jimmy on 2026/01/01.
 //
 
+import Foundation
 import SwiftCompilerPlugin
+import SwiftDiagnostics
 import SwiftSyntax
 import SwiftSyntaxMacros
-import SwiftDiagnostics
 
 // MARK: - APIRequestMacroError
 
@@ -18,16 +19,16 @@ public enum APIRequestMacroError: CustomStringConvertible, Error {
     case missingArguments
     case missingRequiredArgument(String)
     case invalidArgument(String)
-    
+
     public var description: String {
         switch self {
         case .onlyApplicableToStruct:
             return "@APIRequest can only be applied to a struct"
         case .missingArguments:
             return "@APIRequest requires arguments"
-        case .missingRequiredArgument(let arg):
+        case let .missingRequiredArgument(arg):
             return "@APIRequest missing required argument: \(arg)"
-        case .invalidArgument(let arg):
+        case let .invalidArgument(arg):
             return "@APIRequest invalid argument: \(arg)"
         }
     }
@@ -37,11 +38,11 @@ extension APIRequestMacroError: DiagnosticMessage {
     public var message: String {
         description
     }
-    
+
     public var diagnosticID: MessageID {
         MessageID(domain: "AsyncNetworkMacros", id: "APIRequestMacroError")
     }
-    
+
     public var severity: DiagnosticSeverity {
         .error
     }
@@ -60,13 +61,12 @@ extension APIRequestMacroError: DiagnosticMessage {
 /// - var task: HTTPTask
 /// - static var metadata: EndpointMetadata
 public struct APIRequestMacroImpl: MemberMacro, ExtensionMacro {
-    
     // MARK: - MemberMacro Implementation
-    
+
     public static func expansion(
         of node: AttributeSyntax,
         providingMembersOf declaration: some DeclGroupSyntax,
-        conformingTo protocols: [TypeSyntax],
+        conformingTo _: [TypeSyntax],
         in context: some MacroExpansionContext
     ) throws -> [DeclSyntax] {
         // 구조체에만 적용 가능
@@ -78,7 +78,7 @@ public struct APIRequestMacroImpl: MemberMacro, ExtensionMacro {
             context.diagnose(diagnostic)
             return []
         }
-        
+
         // 매크로 인자 파싱
         guard let arguments = node.arguments?.as(LabeledExprListSyntax.self) else {
             let diagnostic = Diagnostic(
@@ -88,7 +88,7 @@ public struct APIRequestMacroImpl: MemberMacro, ExtensionMacro {
             context.diagnose(diagnostic)
             return []
         }
-        
+
         let args: MacroArguments
         do {
             args = try parseArguments(arguments)
@@ -100,12 +100,12 @@ public struct APIRequestMacroImpl: MemberMacro, ExtensionMacro {
             context.diagnose(diagnostic)
             return []
         }
-        
+
         // 이미 선언된 프로퍼티 이름 수집
         let existingProperties = collectExistingProperties(from: structDecl)
-        
+
         var members: [DeclSyntax] = []
-        
+
         // typealias Response 생성
         if !existingProperties.contains("Response") {
             members.append(
@@ -114,7 +114,7 @@ public struct APIRequestMacroImpl: MemberMacro, ExtensionMacro {
                 """
             )
         }
-        
+
         // baseURLString 생성 (옵셔널)
         if !existingProperties.contains("baseURLString"), let baseURL = args.baseURL {
             if args.isBaseURLLiteral {
@@ -137,7 +137,7 @@ public struct APIRequestMacroImpl: MemberMacro, ExtensionMacro {
                 )
             }
         }
-        
+
         // path 생성
         if !existingProperties.contains("path") {
             members.append(
@@ -148,7 +148,7 @@ public struct APIRequestMacroImpl: MemberMacro, ExtensionMacro {
                 """
             )
         }
-        
+
         // method 생성
         if !existingProperties.contains("method") {
             members.append(
@@ -159,7 +159,7 @@ public struct APIRequestMacroImpl: MemberMacro, ExtensionMacro {
                 """
             )
         }
-        
+
         // headers 생성 (옵셔널)
         if !existingProperties.contains("headers"), !args.headers.isEmpty {
             let headersDict = args.headers.map { "\"\($0.key)\": \"\($0.value)\"" }.joined(separator: ", ")
@@ -171,7 +171,7 @@ public struct APIRequestMacroImpl: MemberMacro, ExtensionMacro {
                 """
             )
         }
-        
+
         // task 생성 (기본값: .requestWithPropertyWrappers)
         if !existingProperties.contains("task") {
             members.append(
@@ -182,17 +182,19 @@ public struct APIRequestMacroImpl: MemberMacro, ExtensionMacro {
                 """
             )
         }
-        
+
         // metadata 생성
         let structName = structDecl.name.text
         let parameters = scanPropertyWrappers(from: structDecl)
         let parametersArray = generateParametersArray(parameters)
-        
+
         // responseStructure 생성
         let responseStructure = args.responseStructure ?? generateResponseStructure(from: args.responseType)
-        
+
         // responseExample과 requestBodyExample, responseStructure를 raw string으로 변환
         let requestBodyExampleCode: String
+        let requestBodyFieldsCode: String
+
         if let example = args.requestBodyExample {
             // 백슬래시와 따옴표를 이스케이프
             let escaped = example
@@ -200,10 +202,19 @@ public struct APIRequestMacroImpl: MemberMacro, ExtensionMacro {
                 .replacingOccurrences(of: "\"", with: "\\\"")
                 .replacingOccurrences(of: "\n", with: "\\n")
             requestBodyExampleCode = "\"\(escaped)\""
+
+            // requestBodyExample에서 필드 파싱
+            let fields = parseRequestBodyFields(from: example)
+            let fieldsCodes = fields.map { field -> String in
+                let exampleValueCode = field.exampleValue.map { "\"\($0)\"" } ?? "nil"
+                return "RequestBodyFieldInfo(name: \"\(field.name)\", type: \"\(field.type)\", isRequired: \(field.isRequired), exampleValue: \(exampleValueCode))"
+            }
+            requestBodyFieldsCode = "[\(fieldsCodes.joined(separator: ", "))]"
         } else {
             requestBodyExampleCode = "nil"
+            requestBodyFieldsCode = "[]"
         }
-        
+
         let responseStructureCode: String
         if let structure = responseStructure {
             let escaped = structure
@@ -214,7 +225,7 @@ public struct APIRequestMacroImpl: MemberMacro, ExtensionMacro {
         } else {
             responseStructureCode = "nil"
         }
-        
+
         let responseExampleCode: String
         if let example = args.responseExample {
             let escaped = example
@@ -225,7 +236,7 @@ public struct APIRequestMacroImpl: MemberMacro, ExtensionMacro {
         } else {
             responseExampleCode = "nil"
         }
-        
+
         // baseURLString 처리
         let baseURLStringCode: String
         if let baseURL = args.baseURL {
@@ -240,7 +251,7 @@ public struct APIRequestMacroImpl: MemberMacro, ExtensionMacro {
             // baseURL이 제공되지 않은 경우 기본값
             baseURLStringCode = "\"https://example.com\""
         }
-        
+
         members.append(
             """
             static var metadata: EndpointMetadata {
@@ -255,6 +266,7 @@ public struct APIRequestMacroImpl: MemberMacro, ExtensionMacro {
                     tags: [\(raw: args.tags.map { "\"\($0)\"" }.joined(separator: ", "))],
                     parameters: \(raw: parametersArray),
                     requestBodyExample: \(raw: requestBodyExampleCode),
+                    requestBodyFields: \(raw: requestBodyFieldsCode),
                     responseStructure: \(raw: responseStructureCode),
                     responseExample: \(raw: responseExampleCode),
                     responseTypeName: "\(raw: args.responseType)"
@@ -262,17 +274,17 @@ public struct APIRequestMacroImpl: MemberMacro, ExtensionMacro {
             }
             """
         )
-        
+
         return members
     }
-    
+
     // MARK: - ExtensionMacro Implementation
-    
+
     public static func expansion(
         of node: AttributeSyntax,
         attachedTo declaration: some DeclGroupSyntax,
         providingExtensionsOf type: some TypeSyntaxProtocol,
-        conformingTo protocols: [TypeSyntax],
+        conformingTo _: [TypeSyntax],
         in context: some MacroExpansionContext
     ) throws -> [ExtensionDeclSyntax] {
         // 구조체에만 적용 가능
@@ -284,28 +296,28 @@ public struct APIRequestMacroImpl: MemberMacro, ExtensionMacro {
             context.diagnose(diagnostic)
             return []
         }
-        
+
         // APIRequest 프로토콜 채택
         let ext: DeclSyntax =
             """
             extension \(type.trimmed): APIRequest {}
             """
-        
+
         guard let extensionDeclSyntax = ext.as(ExtensionDeclSyntax.self) else {
             return []
         }
-        
+
         return [extensionDeclSyntax]
     }
-    
+
     // MARK: - Helper Methods
-    
+
     /// 구조체에서 이미 선언된 프로퍼티/타입 이름을 수집합니다.
     private static func collectExistingProperties(
         from structDecl: StructDeclSyntax
     ) -> Set<String> {
         var properties: Set<String> = []
-        
+
         for member in structDecl.memberBlock.members {
             // 변수/상수
             if let variableDecl = member.decl.as(VariableDeclSyntax.self) {
@@ -315,51 +327,53 @@ public struct APIRequestMacroImpl: MemberMacro, ExtensionMacro {
                     }
                 }
             }
-            
+
             // typealias
             if let typealiasDecl = member.decl.as(TypeAliasDeclSyntax.self) {
                 properties.insert(typealiasDecl.name.text)
             }
         }
-        
+
         return properties
     }
-    
+
     /// Property Wrapper를 스캔하여 파라미터 정보를 수집합니다.
     private static func scanPropertyWrappers(
         from structDecl: StructDeclSyntax
     ) -> [PropertyWrapperInfo] {
         var parameters: [PropertyWrapperInfo] = []
-        
+
         for member in structDecl.memberBlock.members {
             guard let variableDecl = member.decl.as(VariableDeclSyntax.self) else {
                 continue
             }
-            
+
             for attribute in variableDecl.attributes {
                 guard let customAttribute = attribute.as(AttributeSyntax.self),
-                      let identifier = customAttribute.attributeName.as(IdentifierTypeSyntax.self)?.name.text else {
+                      let identifier = customAttribute.attributeName.as(IdentifierTypeSyntax.self)?.name.text
+                else {
                     continue
                 }
-                
+
                 let wrapperType = identifier
-                guard ["PathParameter", "QueryParameter", "HeaderParameter", "RequestBody"].contains(wrapperType) else {
+                guard ["PathParameter", "QueryParameter", "HeaderParameter"].contains(wrapperType) else {
                     continue
                 }
-                
+
                 // 프로퍼티 이름 추출
                 guard let binding = variableDecl.bindings.first,
-                      let pattern = binding.pattern.as(IdentifierPatternSyntax.self) else {
+                      let pattern = binding.pattern.as(IdentifierPatternSyntax.self)
+                else {
                     continue
                 }
                 let propertyName = pattern.identifier.text
-                
+
                 // 타입 추출
                 let propertyType = extractPropertyType(from: binding) ?? "String"
-                
+
                 // 옵셔널 여부 확인
                 let isOptional = propertyType.hasSuffix("?")
-                
+
                 parameters.append(PropertyWrapperInfo(
                     name: propertyName,
                     type: propertyType,
@@ -368,10 +382,10 @@ public struct APIRequestMacroImpl: MemberMacro, ExtensionMacro {
                 ))
             }
         }
-        
+
         return parameters
     }
-    
+
     /// Property의 타입을 추출합니다.
     private static func extractPropertyType(from binding: PatternBindingSyntax) -> String? {
         guard let typeAnnotation = binding.typeAnnotation else {
@@ -379,13 +393,13 @@ public struct APIRequestMacroImpl: MemberMacro, ExtensionMacro {
         }
         return typeAnnotation.type.description.trimmingCharacters(in: .whitespacesAndNewlines)
     }
-    
+
     /// PropertyWrapperInfo 배열을 ParameterInfo 배열 리터럴로 변환합니다.
     private static func generateParametersArray(_ parameters: [PropertyWrapperInfo]) -> String {
         if parameters.isEmpty {
             return "[]"
         }
-        
+
         let parameterStrings = parameters.map { param in
             let location: String
             switch param.wrapperType {
@@ -400,7 +414,7 @@ public struct APIRequestMacroImpl: MemberMacro, ExtensionMacro {
             default:
                 location = ".query"
             }
-            
+
             return """
             ParameterInfo(
                         id: "\(param.name)",
@@ -411,7 +425,7 @@ public struct APIRequestMacroImpl: MemberMacro, ExtensionMacro {
                     )
             """
         }
-        
+
         return """
         [
                     \(parameterStrings.joined(separator: ",\n                    "))
@@ -427,7 +441,7 @@ struct MacroArguments {
     let title: String
     let description: String
     let baseURL: String?
-    let isBaseURLLiteral: Bool  // baseURL이 문자열 리터럴인지 여부
+    let isBaseURLLiteral: Bool // baseURL이 문자열 리터럴인지 여부
     let path: String
     let method: String
     let headers: [String: String]
@@ -459,11 +473,11 @@ func parseArguments(_ arguments: LabeledExprListSyntax) throws -> MacroArguments
     var requestBodyExample: String?
     var responseStructure: String?
     var responseExample: String?
-    
+
     for argument in arguments {
         let label = argument.label?.text ?? ""
         let expr = argument.expression
-        
+
         switch label {
         case "response":
             responseType = extractTypeName(from: expr)
@@ -498,7 +512,7 @@ func parseArguments(_ arguments: LabeledExprListSyntax) throws -> MacroArguments
             break
         }
     }
-    
+
     guard let responseType = responseType else {
         throw APIRequestMacroError.missingRequiredArgument("response")
     }
@@ -511,7 +525,7 @@ func parseArguments(_ arguments: LabeledExprListSyntax) throws -> MacroArguments
     guard let method = method else {
         throw APIRequestMacroError.missingRequiredArgument("method")
     }
-    
+
     return MacroArguments(
         responseType: responseType,
         title: title,
@@ -578,17 +592,18 @@ func extractDictionary(from expr: ExprSyntax) -> [String: String] {
     guard let dictionaryExpr = expr.as(DictionaryExprSyntax.self) else {
         return [:]
     }
-    
+
     var result: [String: String] = [:]
-    
+
     for element in dictionaryExpr.content.as(DictionaryElementListSyntax.self) ?? [] {
         guard let keyString = extractStringLiteral(from: element.key),
-              let valueString = extractStringLiteral(from: element.value) else {
+              let valueString = extractStringLiteral(from: element.value)
+        else {
             continue
         }
         result[keyString] = valueString
     }
-    
+
     return result
 }
 
@@ -596,15 +611,15 @@ func extractArray(from expr: ExprSyntax) -> [String] {
     guard let arrayExpr = expr.as(ArrayExprSyntax.self) else {
         return []
     }
-    
+
     var result: [String] = []
-    
+
     for element in arrayExpr.elements {
         if let stringValue = extractStringLiteral(from: element.expression) {
             result.append(stringValue)
         }
     }
-    
+
     return result
 }
 
@@ -614,7 +629,7 @@ func generateResponseStructure(from responseType: String) -> String? {
         .trimmingCharacters(in: .whitespacesAndNewlines)
         .replacingOccurrences(of: "[", with: "")
         .replacingOccurrences(of: "]", with: "")
-    
+
     // 간단한 타입 매핑 (실제 타입 정의를 코드 문자열로 표현)
     let typeStructures: [String: String] = [
         "Post": """
@@ -663,8 +678,124 @@ func generateResponseStructure(from responseType: String) -> String? {
         }
         """
     ]
-    
+
     return typeStructures[cleanedType]
+}
+
+// MARK: - Request Body Field Parsing
+
+struct ParsedRequestBodyField {
+    let name: String
+    let type: String
+    let isRequired: Bool
+    let exampleValue: String?
+}
+
+/// requestBodyExample JSON 문자열에서 필드 정보를 파싱합니다
+func parseRequestBodyFields(from jsonString: String) -> [ParsedRequestBodyField] {
+    guard let data = jsonString.data(using: .utf8),
+          let jsonObject = try? JSONSerialization.jsonObject(with: data) as? [String: Any]
+    else {
+        return []
+    }
+
+    return flattenFields(from: jsonObject, prefix: "").sorted { $0.name < $1.name }
+}
+
+/// 중첩된 객체를 평면화하여 필드 목록 생성
+private func flattenFields(from dictionary: [String: Any], prefix: String) -> [ParsedRequestBodyField] {
+    var fields: [ParsedRequestBodyField] = []
+
+    for (key, value) in dictionary {
+        let fieldName = prefix.isEmpty ? key : "\(prefix).\(key)"
+
+        switch value {
+        case let dict as [String: Any]:
+            // 중첩된 객체는 재귀적으로 평면화
+            fields.append(contentsOf: flattenFields(from: dict, prefix: fieldName))
+        case let array as [Any]:
+            // 배열의 경우
+            if let firstElement = array.first as? [String: Any] {
+                // 배열의 첫 번째 요소가 객체면 그 구조를 사용
+                let arrayFields = flattenFields(from: firstElement, prefix: "\(fieldName)[0]")
+                fields.append(contentsOf: arrayFields)
+            } else {
+                // 기본 타입 배열
+                let fieldType = detectArrayElementType(from: array)
+                let exampleValue = formatArrayExample(from: array)
+                fields.append(ParsedRequestBodyField(
+                    name: fieldName,
+                    type: "[\(fieldType)]",
+                    isRequired: true,
+                    exampleValue: exampleValue
+                ))
+            }
+        default:
+            // 기본 타입
+            let fieldType = detectFieldType(from: value)
+            let exampleValue = stringValue(from: value)
+            fields.append(ParsedRequestBodyField(
+                name: fieldName,
+                type: fieldType,
+                isRequired: true,
+                exampleValue: exampleValue
+            ))
+        }
+    }
+
+    return fields
+}
+
+/// 배열 요소의 타입 감지
+private func detectArrayElementType(from array: [Any]) -> String {
+    guard let first = array.first else { return "Any" }
+    return detectFieldType(from: first)
+}
+
+/// 배열 예시값 포맷팅
+private func formatArrayExample(from array: [Any]) -> String {
+    if array.isEmpty { return "[]" }
+    if array.count <= 2 {
+        let values = array.map { stringValue(from: $0) }
+        return "[\(values.joined(separator: ", "))]"
+    }
+    return "[\(array.count) items]"
+}
+
+/// 값의 타입 감지
+private func detectFieldType(from value: Any) -> String {
+    switch value {
+    case is String:
+        return "String"
+    case is Int:
+        return "Int"
+    case is Double, is Float:
+        return "Double"
+    case is Bool:
+        return "Bool"
+    case is [Any]:
+        return "Array"
+    case is [String: Any]:
+        return "Object"
+    default:
+        return "Unknown"
+    }
+}
+
+/// 값을 문자열로 변환
+private func stringValue(from value: Any) -> String {
+    switch value {
+    case let str as String:
+        return str
+    case let num as NSNumber:
+        return num.stringValue
+    case let array as [Any]:
+        return "[\(array.count) items]"
+    case let dict as [String: Any]:
+        return "{\(dict.count) fields}"
+    default:
+        return "\(value)"
+    }
 }
 
 // MARK: - Plugin Registration
@@ -675,4 +806,3 @@ struct AsyncNetworkMacrosPlugin: CompilerPlugin {
         APIRequestMacroImpl.self
     ]
 }
-
