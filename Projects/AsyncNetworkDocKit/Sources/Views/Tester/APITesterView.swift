@@ -82,10 +82,18 @@ struct APITesterView: View {
                 setupDefaultValues()
             }
             .onChange(of: endpoint.id) { _, newEndpointId in
-                // endpoint가 바뀌면 해당 endpoint의 state로 교체
-                // ✅ 진행 중인 요청은 백그라운드에서 계속 실행됨
+                // endpoint가 바뀌면 이전 Task 취소
+                requestTask?.cancel()
+                requestTask = nil
+
+                // 해당 endpoint의 state로 교체
                 state = APITesterStateStore.shared.getState(for: newEndpointId)
                 setupDefaultValues()
+            }
+            .onDisappear {
+                // 뷰가 사라질 때 진행 중인 Task 취소
+                requestTask?.cancel()
+                requestTask = nil
             }
     }
 
@@ -1010,9 +1018,11 @@ struct APITesterView: View {
 
             // Format response body
             if let jsonObject = try? JSONSerialization.jsonObject(with: httpResponse.data),
-               let prettyData = try? JSONSerialization.data(withJSONObject: jsonObject, options: [.prettyPrinted, .sortedKeys]),
-               let prettyString = String(data: prettyData, encoding: .utf8)
-            {
+               let prettyData = try? JSONSerialization.data(
+                   withJSONObject: jsonObject,
+                   options: [.prettyPrinted, .sortedKeys]
+               ),
+               let prettyString = String(data: prettyData, encoding: .utf8) {
                 targetState.response = prettyString
             } else {
                 targetState.response = String(data: httpResponse.data, encoding: .utf8) ?? "Unable to decode response"
