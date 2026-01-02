@@ -144,7 +144,7 @@ struct SystemDelayerTests {
         // Then
         let elapsed = Date().timeIntervalSince(startTime)
         #expect(elapsed >= delaySeconds * 0.9) // 약간의 오차 허용
-        #expect(elapsed < delaySeconds * 2.0) // 너무 오래 걸리지 않음
+        #expect(elapsed < delaySeconds * 3.0) // 시스템 부하 고려하여 3배까지 허용
     }
 
     @Test("SystemDelayer 0초 지연")

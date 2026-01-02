@@ -104,16 +104,33 @@ struct NetworkServiceTests {
         let expectedUser = TestUser(id: 1, name: "Retry User")
         let responseData = try JSONEncoder().encode(expectedUser)
 
-        // 상태를 관리하기 위해 actor나 lock이 필요하지만, 여기서는 단순화를 위해 nonisolated(unsafe) 사용
-        // 실제로는 더 정교한 모킹 라이브러리를 사용하는 것이 좋음
-        class RetryState {
-            var attemptCount = 0
+        // ✅ Sendable한 상태 관리를 위해 actor 사용
+        actor RetryState {
+            private(set) var attemptCount = 0
+
+            func incrementAndGet() -> Int {
+                attemptCount += 1
+                return attemptCount
+            }
+
+            func getCount() -> Int {
+                attemptCount
+            }
         }
         let state = RetryState()
 
-        MockURLProtocol.register(path: path) { request in
-            state.attemptCount += 1
-            if state.attemptCount == 1 {
+        MockURLProtocol.register(path: path) { [state] request in
+            // ✅ 동기 클로저 내부에서 actor 호출은 불가능하므로
+            // 간단한 카운터를 사용 (테스트 목적이므로 허용)
+            let semaphore = DispatchSemaphore(value: 0)
+            var currentAttempt = 0
+            Task {
+                currentAttempt = await state.incrementAndGet()
+                semaphore.signal()
+            }
+            semaphore.wait()
+
+            if currentAttempt == 1 {
                 throw URLError(.timedOut) // 재시도 가능한 에러
             }
 
@@ -147,7 +164,8 @@ struct NetworkServiceTests {
 
         // Then
         #expect(user == expectedUser)
-        #expect(state.attemptCount == 2)
+        let finalCount = await state.getCount()
+        #expect(finalCount == 2)
     }
 
     @Test("최대 재시도 횟수 초과 시 에러 반환")
