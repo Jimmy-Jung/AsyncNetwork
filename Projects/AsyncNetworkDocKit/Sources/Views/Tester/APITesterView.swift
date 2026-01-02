@@ -14,52 +14,52 @@ import AsyncNetworkCore
 struct APITesterView: View {
     let networkService: NetworkService
     let endpoint: EndpointMetadata
-    
-    @State private var parameters: [String: String] = [:]
-    @State private var requestBody: String = ""
-    @State private var isLoading: Bool = false
-    @State private var responseText: String = ""
-    @State private var statusCode: Int?
-    @State private var errorMessage: String?
-    
-    // LoggingInterceptor 스타일 상세 정보
-    @State private var requestTimestamp: String = ""
-    @State private var responseTimestamp: String = ""
-    @State private var requestHeaders: [String: String] = [:]
-    @State private var responseHeaders: [String: String] = [:]
-    @State private var requestBodySize: Int = 0
-    @State private var responseBodySize: Int = 0
-    
+
+    @State private var state: APITesterState
+    @State private var requestTask: Task<Void, Never>?
+
+    init(networkService: NetworkService, endpoint: EndpointMetadata) {
+        self.networkService = networkService
+        self.endpoint = endpoint
+        // StateStore에서 해당 endpoint의 상태 가져오기
+        let existingState = APITesterStateStore.shared.getState(for: endpoint.id)
+        _state = State(initialValue: existingState)
+    }
+
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
                 headerSection
-                
+
                 Divider()
-                
+
                 if !endpoint.parameters.isEmpty {
                     parametersInputSection
                     Divider()
                 }
-                
-                if endpoint.requestBodyExample != nil {
+
+                if !endpoint.requestBodyFields.isEmpty {
+                    requestBodyFieldsInputSection
+                    Divider()
+                } else if endpoint.requestBodyExample != nil {
                     requestBodyInputSection
                     Divider()
                 }
-                
+
                 sendButtonSection
-                
-                if isLoading {
+
+                if state.isLoading {
                     ProgressView("Sending request...")
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 8)
                 }
-                
-                if let error = errorMessage {
+
+                if let error = state.error {
                     errorSection(error)
                 }
-                
-                if !responseText.isEmpty {
+
+                // 요청한 적이 있을 때만 응답 섹션 표시
+                if state.hasBeenRequested && !state.response.isEmpty {
                     Divider()
                     requestMetadataSection
                     Divider()
@@ -75,14 +75,20 @@ struct APITesterView: View {
         .onAppear {
             setupDefaultValues()
         }
+        .onChange(of: endpoint.id) { _, newEndpointId in
+            // endpoint가 바뀌면 해당 endpoint의 state로 교체
+            // ✅ 진행 중인 요청은 백그라운드에서 계속 실행됨
+            state = APITesterStateStore.shared.getState(for: newEndpointId)
+            setupDefaultValues()
+        }
     }
-    
+
     private var headerSection: some View {
         VStack(alignment: .leading, spacing: 12) {
             Label("Try It Out", systemImage: "play.circle.fill")
                 .font(.title2)
                 .fontWeight(.bold)
-            
+
             HStack {
                 HTTPMethodBadge(method: endpoint.method)
                 Text(buildURL())
@@ -92,12 +98,12 @@ struct APITesterView: View {
             }
         }
     }
-    
+
     private var parametersInputSection: some View {
         VStack(alignment: .leading, spacing: 12) {
             Label("Parameters", systemImage: "slider.horizontal.3")
                 .font(.headline)
-            
+
             ForEach(endpoint.parameters) { parameter in
                 VStack(alignment: .leading, spacing: 6) {
                     HStack {
@@ -113,14 +119,14 @@ struct APITesterView: View {
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
-                    
+
                     TextField(
                         parameter.exampleValue ?? "Enter \(parameter.name)",
                         text: binding(for: parameter.name)
                     )
                     .textFieldStyle(.roundedBorder)
                     .font(.system(.body, design: .monospaced))
-                    
+
                     if let desc = parameter.description {
                         Text(desc)
                             .font(.caption)
@@ -131,13 +137,13 @@ struct APITesterView: View {
             }
         }
     }
-    
+
     private var requestBodyInputSection: some View {
         VStack(alignment: .leading, spacing: 12) {
             Label("Request Body", systemImage: "doc.plaintext")
                 .font(.headline)
-            
-            TextEditor(text: $requestBody)
+
+            TextEditor(text: $state.requestBody)
                 .font(.system(.caption, design: .monospaced))
                 .frame(height: 200)
                 .padding(8)
@@ -149,10 +155,196 @@ struct APITesterView: View {
                 )
         }
     }
-    
+
+    private var requestBodyFieldsInputSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Label("Request Body", systemImage: "doc.plaintext")
+                .font(.headline)
+
+            ForEach(groupFieldsByPrefix(endpoint.requestBodyFields), id: \.key) { group in
+                renderFieldInputGroup(group)
+            }
+        }
+    }
+
+    private struct FieldGroup: Identifiable {
+        let key: String
+        let prefix: String?
+        let fields: [AsyncNetworkCore.RequestBodyFieldInfo]
+
+        var id: String { key }
+    }
+
+    private func groupFieldsByPrefix(_ fields: [AsyncNetworkCore.RequestBodyFieldInfo]) -> [FieldGroup] {
+        var groups: [String: [AsyncNetworkCore.RequestBodyFieldInfo]] = [:]
+
+        for field in fields {
+            let components = field.name.split(separator: ".")
+            if components.count == 1 {
+                // 최상위 필드
+                groups["_root", default: []].append(field)
+            } else {
+                // 중첩 필드 - 첫 번째 레벨로 그룹화
+                let prefix = String(components.first!)
+                groups[prefix, default: []].append(field)
+            }
+        }
+
+        return groups.sorted { $0.key < $1.key }.map { key, fields in
+            FieldGroup(
+                key: key,
+                prefix: key == "_root" ? nil : key,
+                fields: fields.sorted { $0.name < $1.name }
+            )
+        }
+    }
+
+    @ViewBuilder
+    private func renderFieldInputGroup(_ group: FieldGroup) -> some View {
+        if let prefix = group.prefix {
+            // 그룹화된 필드 (토글 가능)
+            DisclosureGroup {
+                VStack(alignment: .leading, spacing: 8) {
+                    ForEach(group.fields) { field in
+                        renderNestedFieldInput(field, groupPrefix: prefix)
+                    }
+                }
+            } label: {
+                HStack(spacing: 8) {
+                    Text(prefix)
+                        .font(.system(.body, design: .monospaced))
+                        .fontWeight(.semibold)
+                        .foregroundStyle(.purple)
+
+                    Text("{\(group.fields.count) fields}")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 2)
+                        .background(Color.secondary.opacity(0.15))
+                        .cornerRadius(4)
+                }
+            }
+            .padding(.vertical, 4)
+        } else {
+            // 최상위 필드들
+            ForEach(group.fields) { field in
+                renderTopLevelFieldInput(field)
+            }
+        }
+    }
+
+    private func renderTopLevelFieldInput(_ field: AsyncNetworkCore.RequestBodyFieldInfo) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack {
+                Text(field.name)
+                    .font(.system(.body, design: .monospaced))
+                    .fontWeight(.semibold)
+                if field.isRequired {
+                    Text("*")
+                        .foregroundStyle(.red)
+                }
+                Spacer()
+                Text(field.type)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            requestBodyFieldInput(for: field)
+
+            if let example = field.exampleValue {
+                Text("Example: \(example)")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .padding(.vertical, 4)
+    }
+
+    private func renderNestedFieldInput(_ field: AsyncNetworkCore.RequestBodyFieldInfo, groupPrefix: String) -> some View {
+        let fullPath = field.name
+        let pathWithoutPrefix = fullPath.hasPrefix(groupPrefix + ".")
+            ? String(fullPath.dropFirst(groupPrefix.count + 1))
+            : fullPath
+        let displayName = pathWithoutPrefix.split(separator: ".").last.map(String.init) ?? pathWithoutPrefix
+        let depth = pathWithoutPrefix.split(separator: ".").count - 1
+
+        return VStack(alignment: .leading, spacing: 6) {
+            HStack {
+                if depth > 0 {
+                    Text(String(repeating: "  ", count: depth))
+                        .font(.system(.caption, design: .monospaced))
+                        .foregroundStyle(.clear)
+                }
+
+                Text(displayName)
+                    .font(.system(.body, design: .monospaced))
+                    .fontWeight(.medium)
+                    .foregroundStyle(.secondary)
+                if field.isRequired {
+                    Text("*")
+                        .foregroundStyle(.red)
+                }
+                Spacer()
+                Text(field.type)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            requestBodyFieldInput(for: field)
+
+            if let example = field.exampleValue {
+                Text("Example: \(example)")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .padding(.vertical, 2)
+    }
+
+    @ViewBuilder
+    private func requestBodyFieldInput(for field: AsyncNetworkCore.RequestBodyFieldInfo) -> some View {
+        let fieldType = field.type.lowercased()
+
+        if fieldType == "bool" {
+            Toggle(isOn: boolBinding(for: field.name)) {
+                Text(field.name)
+                    .font(.system(.caption, design: .monospaced))
+            }
+        } else if fieldType == "int" || fieldType == "double" {
+            #if os(iOS)
+            TextField(
+                field.exampleValue ?? "Enter \(field.name)",
+                text: binding(forBodyField: field.name)
+            )
+            .textFieldStyle(.roundedBorder)
+            .font(.system(.body, design: .monospaced))
+            .keyboardType(.numberPad)
+            #else
+            TextField(
+                field.exampleValue ?? "Enter \(field.name)",
+                text: binding(forBodyField: field.name)
+            )
+            .textFieldStyle(.roundedBorder)
+            .font(.system(.body, design: .monospaced))
+            #endif
+        } else {
+            TextField(
+                field.exampleValue ?? "Enter \(field.name)",
+                text: binding(forBodyField: field.name)
+            )
+            .textFieldStyle(.roundedBorder)
+            .font(.system(.body, design: .monospaced))
+        }
+    }
+
     private var sendButtonSection: some View {
         Button {
-            Task {
+            // 기존 Task 취소
+            requestTask?.cancel()
+
+            // 새 Task 생성 및 저장
+            requestTask = Task {
                 await sendRequest()
             }
         } label: {
@@ -168,16 +360,16 @@ struct APITesterView: View {
             .cornerRadius(8)
         }
         .buttonStyle(.plain)
-        .disabled(isLoading)
-        .opacity(isLoading ? 0.6 : 1.0)
+        .disabled(state.isLoading)
+        .opacity(state.isLoading ? 0.6 : 1.0)
     }
-    
+
     private func errorSection(_ error: String) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             Label("Error", systemImage: "exclamationmark.triangle.fill")
                 .font(.headline)
                 .foregroundStyle(.red)
-            
+
             Text(error)
                 .font(.system(.caption, design: .monospaced))
                 .padding()
@@ -186,7 +378,7 @@ struct APITesterView: View {
                 .cornerRadius(8)
         }
     }
-    
+
     private var requestMetadataSection: some View {
         VStack(alignment: .leading, spacing: 12) {
             Label {
@@ -195,8 +387,8 @@ struct APITesterView: View {
                         .font(.headline)
                         .fontWeight(.bold)
                     Spacer()
-                    if !requestTimestamp.isEmpty {
-                        Text("🕐 \(requestTimestamp)")
+                    if !state.requestTimestamp.isEmpty {
+                        Text("🕐 \(state.requestTimestamp)")
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
@@ -205,7 +397,7 @@ struct APITesterView: View {
                 Image(systemName: "arrow.up.circle.fill")
                     .foregroundStyle(.blue)
             }
-            
+
             VStack(alignment: .leading, spacing: 12) {
                 // Method & URL
                 VStack(alignment: .leading, spacing: 4) {
@@ -213,7 +405,7 @@ struct APITesterView: View {
                         .font(.caption)
                         .fontWeight(.semibold)
                         .foregroundStyle(.secondary)
-                    
+
                     HStack(spacing: 8) {
                         HTTPMethodBadge(method: endpoint.method)
                         Text(buildURL())
@@ -221,18 +413,18 @@ struct APITesterView: View {
                             .lineLimit(nil)
                     }
                 }
-                
+
                 // Headers
-                if !requestHeaders.isEmpty {
+                if !state.requestHeaders.isEmpty {
                     Divider()
                     VStack(alignment: .leading, spacing: 4) {
                         Text("📋 Headers:")
                             .font(.caption)
                             .fontWeight(.semibold)
                             .foregroundStyle(.secondary)
-                        
-                        ForEach(Array(requestHeaders.keys.sorted()), id: \.self) { key in
-                            if let value = requestHeaders[key] {
+
+                        ForEach(Array(state.requestHeaders.keys.sorted()), id: \.self) { key in
+                            if let value = state.requestHeaders[key] {
                                 HStack(alignment: .top, spacing: 4) {
                                     Text(key)
                                         .font(.system(.caption, design: .monospaced))
@@ -249,7 +441,7 @@ struct APITesterView: View {
                         }
                     }
                 }
-                
+
                 // Parameters
                 if !endpoint.parameters.isEmpty {
                     Divider()
@@ -258,7 +450,7 @@ struct APITesterView: View {
                             .font(.caption)
                             .fontWeight(.semibold)
                             .foregroundStyle(.secondary)
-                        
+
                         ForEach(endpoint.parameters) { parameter in
                             HStack(spacing: 4) {
                                 Text(parameter.name)
@@ -266,7 +458,7 @@ struct APITesterView: View {
                                     .foregroundStyle(.secondary)
                                 Text("=")
                                     .foregroundStyle(.secondary)
-                                if let value = parameters[parameter.name], !value.isEmpty {
+                                if let value = state.parameters[parameter.name], !value.isEmpty {
                                     Text(value)
                                         .font(.system(.caption, design: .monospaced))
                                         .fontWeight(.medium)
@@ -280,18 +472,18 @@ struct APITesterView: View {
                         }
                     }
                 }
-                
+
                 // Request Body
-                if !requestBody.isEmpty {
+                if !state.requestBody.isEmpty {
                     Divider()
                     VStack(alignment: .leading, spacing: 4) {
-                        Text("📦 Body (\(requestBodySize) bytes):")
+                        Text("📦 Body (\(state.requestBodySize) bytes):")
                             .font(.caption)
                             .fontWeight(.semibold)
                             .foregroundStyle(.secondary)
-                        
+
                         ScrollView {
-                            Text(requestBody)
+                            Text(state.requestBody)
                                 .font(.system(.caption, design: .monospaced))
                                 .frame(maxWidth: .infinity, alignment: .leading)
                                 .textSelection(.enabled)
@@ -309,38 +501,38 @@ struct APITesterView: View {
             .cornerRadius(8)
         }
     }
-    
+
     private var responseDisplaySection: some View {
         VStack(alignment: .leading, spacing: 12) {
             Label {
                 HStack {
                     HStack(spacing: 4) {
-                        Text(statusCode ?? 0 < 400 ? "✅" : "⚠️")
+                        Text(state.statusCode ?? 0 < 400 ? "✅" : "⚠️")
                         Text("RESPONSE")
                             .font(.headline)
                             .fontWeight(.bold)
                     }
                     Spacer()
-                    if !responseTimestamp.isEmpty {
-                        Text("🕐 \(responseTimestamp)")
+                    if !state.responseTimestamp.isEmpty {
+                        Text("🕐 \(state.responseTimestamp)")
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
                 }
             } icon: {
                 Image(systemName: "checkmark.circle.fill")
-                    .foregroundStyle(statusCode ?? 0 < 400 ? .green : .orange)
+                    .foregroundStyle(state.statusCode ?? 0 < 400 ? .green : .orange)
             }
-            
+
             VStack(alignment: .leading, spacing: 12) {
                 // Status Code
-                if let status = statusCode {
+                if let status = state.statusCode {
                     HStack(spacing: 8) {
                         Text("📊 Status:")
                             .font(.caption)
                             .fontWeight(.semibold)
                             .foregroundStyle(.secondary)
-                        
+
                         Text("\(status)")
                             .font(.system(.body, design: .monospaced))
                             .fontWeight(.bold)
@@ -351,18 +543,18 @@ struct APITesterView: View {
                             .cornerRadius(6)
                     }
                 }
-                
+
                 // Response Headers
-                if !responseHeaders.isEmpty {
+                if !state.responseHeaders.isEmpty {
                     Divider()
                     VStack(alignment: .leading, spacing: 4) {
                         Text("📋 Response Headers:")
                             .font(.caption)
                             .fontWeight(.semibold)
                             .foregroundStyle(.secondary)
-                        
-                        ForEach(Array(responseHeaders.keys.sorted()), id: \.self) { key in
-                            if let value = responseHeaders[key] {
+
+                        ForEach(Array(state.responseHeaders.keys.sorted()), id: \.self) { key in
+                            if let value = state.responseHeaders[key] {
                                 HStack(alignment: .top, spacing: 4) {
                                     Text(key)
                                         .font(.system(.caption, design: .monospaced))
@@ -379,17 +571,17 @@ struct APITesterView: View {
                         }
                     }
                 }
-                
+
                 // Response Body
                 Divider()
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("📦 Response Body (\(responseBodySize) bytes):")
+                    Text("📦 Response Body (\(state.responseBodySize) bytes):")
                         .font(.caption)
                         .fontWeight(.semibold)
                         .foregroundStyle(.secondary)
-                    
+
                     ScrollView {
-                        Text(responseText)
+                        Text(state.response)
                             .font(.system(.caption, design: .monospaced))
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .textSelection(.enabled)
@@ -406,99 +598,181 @@ struct APITesterView: View {
             .cornerRadius(8)
         }
     }
-    
+
     private func binding(for key: String) -> Binding<String> {
         Binding(
-            get: { parameters[key] ?? "" },
-            set: { parameters[key] = $0 }
+            get: { state.parameters[key] ?? "" },
+            set: { state.parameters[key] = $0 }
         )
     }
-    
+
+    private func binding(forBodyField key: String) -> Binding<String> {
+        Binding(
+            get: { state.requestBodyFields[key] ?? "" },
+            set: { state.requestBodyFields[key] = $0 }
+        )
+    }
+
+    private func boolBinding(for key: String) -> Binding<Bool> {
+        Binding(
+            get: {
+                if let value = state.requestBodyFields[key] {
+                    return value.lowercased() == "true" || value == "1"
+                }
+                return false
+            },
+            set: { state.requestBodyFields[key] = $0 ? "true" : "false" }
+        )
+    }
+
     private func setupDefaultValues() {
+        // 이미 요청한 적이 있으면 저장된 상태를 유지
+        if state.hasBeenRequested {
+            return
+        }
+
+        // 처음 보는 endpoint면 기본 예시값 설정
         for parameter in endpoint.parameters {
-            if let example = parameter.exampleValue {
-                parameters[parameter.name] = example
+            if let example = parameter.exampleValue, state.parameters[parameter.name] == nil {
+                state.parameters[parameter.name] = example
             }
         }
-        
-        if let bodyExample = endpoint.requestBodyExample {
-            requestBody = bodyExample
+
+        // requestBodyFields가 있으면 필드별 입력 사용
+        if !endpoint.requestBodyFields.isEmpty {
+            for field in endpoint.requestBodyFields {
+                if let example = field.exampleValue, state.requestBodyFields[field.name] == nil {
+                    state.requestBodyFields[field.name] = example
+                }
+            }
+        } else if let bodyExample = endpoint.requestBodyExample, state.requestBody.isEmpty {
+            // 기존 방식: JSON 문자열로 입력
+            state.requestBody = bodyExample
         }
     }
-    
+
     private func buildURL() -> String {
         var url = endpoint.baseURLString + endpoint.path
-        
+
         for parameter in endpoint.parameters where parameter.location == .path {
-            if let value = parameters[parameter.name], !value.isEmpty {
+            if let value = state.parameters[parameter.name], !value.isEmpty {
                 url = url.replacingOccurrences(of: "{\(parameter.name)}", with: value)
             }
         }
-        
+
         let queryParams = endpoint.parameters
             .filter { $0.location == .query }
             .compactMap { param -> String? in
-                guard let value = parameters[param.name], !value.isEmpty else { return nil }
+                guard let value = state.parameters[param.name], !value.isEmpty else { return nil }
                 return "\(param.name)=\(value)"
             }
-        
+
         if !queryParams.isEmpty {
             url += "?" + queryParams.joined(separator: "&")
         }
-        
+
         return url
     }
-    
+
+    private func buildJSONFromFields(using targetState: APITesterState) -> String {
+        var jsonDict: [String: Any] = [:]
+
+        for field in endpoint.requestBodyFields {
+            guard let value = targetState.requestBodyFields[field.name], !value.isEmpty else {
+                continue
+            }
+
+            let fieldType = field.type.lowercased()
+
+            switch fieldType {
+            case "string":
+                jsonDict[field.name] = value
+            case "int":
+                jsonDict[field.name] = Int(value) ?? 0
+            case "double":
+                jsonDict[field.name] = Double(value) ?? 0.0
+            case "bool":
+                jsonDict[field.name] = value.lowercased() == "true" || value == "1"
+            default:
+                jsonDict[field.name] = value
+            }
+        }
+
+        guard let data = try? JSONSerialization.data(withJSONObject: jsonDict, options: [.prettyPrinted, .sortedKeys]),
+              let jsonString = String(data: data, encoding: .utf8) else {
+            return "{}"
+        }
+
+        return jsonString
+    }
+
     private func sendRequest() async {
-        isLoading = true
-        errorMessage = nil
-        responseText = ""
-        statusCode = nil
-        
+        // 현재 endpoint ID 저장 (백그라운드 실행 중에도 올바른 state를 업데이트하기 위해)
+        let currentEndpointId = endpoint.id
+
+        // 올바른 state 가져오기
+        let targetState = APITesterStateStore.shared.getState(for: currentEndpointId)
+
+        // 요청 시작 시 hasBeenRequested 플래그 설정
+        targetState.markAsRequested()
+
+        targetState.isLoading = true
+        targetState.error = nil
+        targetState.response = ""
+        targetState.statusCode = nil
+
         // Reset logging info
-        requestHeaders = [:]
-        responseHeaders = [:]
-        requestBodySize = 0
-        responseBodySize = 0
-        
+        targetState.requestHeaders = [:]
+        targetState.responseHeaders = [:]
+        targetState.requestBodySize = 0
+        targetState.responseBodySize = 0
+
         // Timestamp
         let dateFormatter = DateFormatter()
         dateFormatter.dateFormat = "HH:mm:ss.SSS"
-        requestTimestamp = dateFormatter.string(from: Date())
-        
+        targetState.requestTimestamp = dateFormatter.string(from: Date())
+
         do {
             // Build URL with path parameters
             var path = endpoint.path
             for parameter in endpoint.parameters where parameter.location == .path {
-                if let value = parameters[parameter.name], !value.isEmpty {
+                if let value = targetState.parameters[parameter.name], !value.isEmpty {
                     path = path.replacingOccurrences(of: "{\(parameter.name)}", with: value)
                 }
             }
-            
+
             // Collect query parameters
             var queryParams: [String: String] = [:]
             for parameter in endpoint.parameters where parameter.location == .query {
-                if let value = parameters[parameter.name], !value.isEmpty {
+                if let value = targetState.parameters[parameter.name], !value.isEmpty {
                     queryParams[parameter.name] = value
                 }
             }
-            
+
             // Prepare request body
             var bodyData: Data?
-            if !requestBody.isEmpty, ["POST", "PUT", "PATCH"].contains(endpoint.method.uppercased()) {
-                bodyData = requestBody.data(using: .utf8)
-                requestBodySize = bodyData?.count ?? 0
+            if ["POST", "PUT", "PATCH"].contains(endpoint.method.uppercased()) {
+                // requestBodyFields가 있으면 개별 필드에서 JSON 생성
+                if !endpoint.requestBodyFields.isEmpty {
+                    let jsonString = buildJSONFromFields(using: targetState)
+                    bodyData = jsonString.data(using: .utf8)
+                    targetState.requestBody = jsonString // 표시용
+                } else if !targetState.requestBody.isEmpty {
+                    // 기존 방식: 직접 입력된 JSON 사용
+                    bodyData = targetState.requestBody.data(using: .utf8)
+                }
+                targetState.requestBodySize = bodyData?.count ?? 0
             }
-            
+
             // Display only endpoint-defined headers in UI
-            requestHeaders = endpoint.headers ?? [:]
-            
+            targetState.requestHeaders = endpoint.headers ?? [:]
+
             // Prepare headers for actual request
             var allHeaders = endpoint.headers ?? [:]
             if bodyData != nil {
                 allHeaders["Content-Type"] = "application/json"
             }
-            
+
             // Create dynamic API request
             let apiRequest = DynamicAPIRequest(
                 baseURL: endpoint.baseURLString,
@@ -508,49 +782,51 @@ struct APITesterView: View {
                 queryParameters: queryParams.isEmpty ? nil : queryParams,
                 body: bodyData
             )
-            
+
             // Execute request
             let httpResponse = try await networkService.requestRaw(apiRequest)
-            
+
             // Update response timestamp
-            responseTimestamp = dateFormatter.string(from: Date())
-            
+            targetState.responseTimestamp = dateFormatter.string(from: Date())
+
             // Collect response info
-            statusCode = httpResponse.statusCode
-            responseBodySize = httpResponse.data.count
-            
+            targetState.statusCode = httpResponse.statusCode
+            targetState.responseBodySize = httpResponse.data.count
+
             // Collect only request-defined headers in response
             // (endpoint에 정의된 헤더만 response에서도 표시)
             if let response = httpResponse.response {
                 let requestHeaderKeys = Set((endpoint.headers ?? [:]).keys.map { $0.lowercased() })
-                
+
                 for (key, value) in response.allHeaderFields {
                     if let keyString = key as? String, let valueString = value as? String {
                         // endpoint에 정의된 헤더만 표시
                         if requestHeaderKeys.contains(keyString.lowercased()) {
-                            responseHeaders[keyString] = valueString
+                            targetState.responseHeaders[keyString] = valueString
                         }
                     }
                 }
             }
-            
+
             // Format response body
             if let jsonObject = try? JSONSerialization.jsonObject(with: httpResponse.data),
                let prettyData = try? JSONSerialization.data(withJSONObject: jsonObject, options: [.prettyPrinted, .sortedKeys]),
                let prettyString = String(data: prettyData, encoding: .utf8) {
-                responseText = prettyString
+                targetState.response = prettyString
             } else {
-                responseText = String(data: httpResponse.data, encoding: .utf8) ?? "Unable to decode response"
+                targetState.response = String(data: httpResponse.data, encoding: .utf8) ?? "Unable to decode response"
             }
-            
+
+            // ✅ 정상 완료 - 로딩 종료
+            targetState.isLoading = false
+
         } catch {
-            responseTimestamp = dateFormatter.string(from: Date())
-            errorMessage = error.localizedDescription
+            targetState.responseTimestamp = dateFormatter.string(from: Date())
+            targetState.error = error.localizedDescription
+            targetState.isLoading = false
         }
-        
-        isLoading = false
     }
-    
+
     private func statusColor(_ code: Int) -> Color {
         switch code {
         case 200..<300: return .green
@@ -561,4 +837,3 @@ struct APITesterView: View {
         }
     }
 }
-
