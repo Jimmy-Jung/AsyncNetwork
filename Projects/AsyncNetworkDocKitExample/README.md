@@ -49,6 +49,7 @@
 - 파라미터 정보 (Query, Path, Body)
 - Request Body 예시
 - Response 타입 및 예시
+- **토글 가능한 Response Structure**: 중첩된 타입(OrderItem, ShippingAddress 등)을 클릭하여 펼치거나 접을 수 있음
 
 #### 3열: 실시간 API 테스터
 - 파라미터 입력 필드 (자동으로 예시값 채워짐)
@@ -161,6 +162,8 @@ struct AsyncNetworkDocKitExampleApp: App {
     }
 }
 ```
+
+> 중요: 모든 Response 타입과 중첩 타입에 `@DocumentedType`를 적용하면, 매크로가 자동으로 중첩 타입 정보를 수집하여 2열에서 토글로 펼쳐볼 수 있습니다. 수동 등록은 필요하지 않습니다!
 
 ### 2. API Request 정의
 

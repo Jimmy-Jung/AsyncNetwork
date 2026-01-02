@@ -5,10 +5,12 @@
 //  Created by jimmy on 2026/01/01.
 //
 
+import AsyncNetworkDocKit
 import Foundation
 
 // MARK: - Post Models
 
+@DocumentedType
 struct Post: Codable, Identifiable, Sendable {
     let userId: Int
     let id: Int
@@ -16,6 +18,7 @@ struct Post: Codable, Identifiable, Sendable {
     let body: String
 }
 
+@DocumentedType
 struct PostBody: Codable, Sendable {
     let title: String
     let body: String
@@ -24,6 +27,7 @@ struct PostBody: Codable, Sendable {
 
 // MARK: - User Models
 
+@DocumentedType
 struct User: Codable, Identifiable, Sendable {
     let id: Int
     let name: String
@@ -35,6 +39,7 @@ struct User: Codable, Identifiable, Sendable {
     let company: Company?
 }
 
+@DocumentedType
 struct Address: Codable, Sendable {
     let street: String
     let suite: String
@@ -43,17 +48,20 @@ struct Address: Codable, Sendable {
     let geo: Geo
 }
 
+@DocumentedType
 struct Geo: Codable, Sendable {
     let lat: String
     let lng: String
 }
 
+@DocumentedType
 struct Company: Codable, Sendable {
     let name: String
     let catchPhrase: String
     let bs: String
 }
 
+@DocumentedType
 struct UserBody: Codable, Sendable {
     let name: String
     let username: String
@@ -62,6 +70,7 @@ struct UserBody: Codable, Sendable {
 
 // MARK: - Comment Models
 
+@DocumentedType
 struct Comment: Codable, Identifiable, Sendable {
     let postId: Int
     let id: Int
@@ -70,6 +79,7 @@ struct Comment: Codable, Identifiable, Sendable {
     let body: String
 }
 
+@DocumentedType
 struct CommentBody: Codable, Sendable {
     let postId: Int
     let name: String
@@ -79,12 +89,14 @@ struct CommentBody: Codable, Sendable {
 
 // MARK: - Album Models
 
+@DocumentedType
 struct Album: Codable, Identifiable, Sendable {
     let userId: Int
     let id: Int
     let title: String
 }
 
+@DocumentedType
 struct Photo: Codable, Identifiable, Sendable {
     let albumId: Int
     let id: Int
@@ -95,6 +107,7 @@ struct Photo: Codable, Identifiable, Sendable {
 
 // MARK: - Complex Order Models
 
+@DocumentedType
 struct Order: Codable, Identifiable, Sendable {
     let id: Int
     let userId: Int
@@ -108,6 +121,7 @@ struct Order: Codable, Identifiable, Sendable {
     let estimatedDelivery: String?
 }
 
+@DocumentedType
 struct OrderItem: Codable, Sendable {
     let productId: Int
     let productName: String
@@ -117,6 +131,7 @@ struct OrderItem: Codable, Sendable {
     let options: [String: String]?
 }
 
+@DocumentedType
 struct ShippingAddress: Codable, Sendable {
     let recipientName: String
     let phoneNumber: String
@@ -128,12 +143,14 @@ struct ShippingAddress: Codable, Sendable {
     let instructions: String?
 }
 
+@DocumentedType
 struct PaymentMethod: Codable, Sendable {
     let type: String
     let cardLastFour: String?
     let cardBrand: String?
 }
 
+@DocumentedType
 struct CreateOrderBody: Codable, Sendable {
     let items: [OrderItemInput]
     let shippingAddress: ShippingAddress
@@ -143,12 +160,14 @@ struct CreateOrderBody: Codable, Sendable {
     let subscribeNewsletter: Bool
 }
 
+@DocumentedType
 struct OrderItemInput: Codable, Sendable {
     let productId: Int
     let quantity: Int
     let options: [String: String]?
 }
 
+@DocumentedType
 struct PaymentMethodInput: Codable, Sendable {
     let type: String
     let cardToken: String?
@@ -157,6 +176,7 @@ struct PaymentMethodInput: Codable, Sendable {
 
 // MARK: - Complex Profile Models
 
+@DocumentedType
 struct UserProfile: Codable, Identifiable, Sendable {
     let id: Int
     let username: String
@@ -172,6 +192,7 @@ struct UserProfile: Codable, Identifiable, Sendable {
     let memberSince: String
 }
 
+@DocumentedType
 struct UserPreferences: Codable, Sendable {
     let language: String
     let timezone: String
@@ -180,6 +201,7 @@ struct UserPreferences: Codable, Sendable {
     let privacy: PrivacySettings
 }
 
+@DocumentedType
 struct NotificationSettings: Codable, Sendable {
     let email: Bool
     let push: Bool
@@ -187,12 +209,14 @@ struct NotificationSettings: Codable, Sendable {
     let frequency: String
 }
 
+@DocumentedType
 struct PrivacySettings: Codable, Sendable {
     let profileVisibility: String
     let showEmail: Bool
     let showActivity: Bool
 }
 
+@DocumentedType
 struct SocialLinks: Codable, Sendable {
     let twitter: String?
     let github: String?
@@ -200,6 +224,7 @@ struct SocialLinks: Codable, Sendable {
     let website: String?
 }
 
+@DocumentedType
 struct UserStats: Codable, Sendable {
     let posts: Int
     let followers: Int
@@ -207,6 +232,7 @@ struct UserStats: Codable, Sendable {
     let likes: Int
 }
 
+@DocumentedType
 struct Badge: Codable, Identifiable, Sendable {
     let id: Int
     let name: String
@@ -215,6 +241,7 @@ struct Badge: Codable, Identifiable, Sendable {
     let earnedAt: String
 }
 
+@DocumentedType
 struct UpdateProfileBody: Codable, Sendable {
     let fullName: String
     let bio: String?
@@ -225,6 +252,7 @@ struct UpdateProfileBody: Codable, Sendable {
 
 // MARK: - Search Filter Models
 
+@DocumentedType
 struct SearchResult: Codable, Sendable {
     let items: [SearchItem]
     let totalCount: Int
@@ -233,6 +261,7 @@ struct SearchResult: Codable, Sendable {
     let facets: [Facet]
 }
 
+@DocumentedType
 struct SearchItem: Codable, Identifiable, Sendable {
     let id: Int
     let type: String
@@ -245,22 +274,26 @@ struct SearchItem: Codable, Identifiable, Sendable {
     let score: Double
 }
 
+@DocumentedType
 struct Author: Codable, Sendable {
     let id: Int
     let name: String
     let avatar: String?
 }
 
+@DocumentedType
 struct Facet: Codable, Sendable {
     let name: String
     let values: [FacetValue]
 }
 
+@DocumentedType
 struct FacetValue: Codable, Sendable {
     let value: String
     let count: Int
 }
 
+@DocumentedType
 struct SearchFilterBody: Codable, Sendable {
     let query: String
     let filters: SearchFilters
@@ -268,6 +301,7 @@ struct SearchFilterBody: Codable, Sendable {
     let pagination: PaginationOptions
 }
 
+@DocumentedType
 struct SearchFilters: Codable, Sendable {
     let categories: [String]?
     let tags: [String]?
@@ -278,21 +312,25 @@ struct SearchFilters: Codable, Sendable {
     let inStock: Bool?
 }
 
+@DocumentedType
 struct DateRange: Codable, Sendable {
     let from: String
     let to: String
 }
 
+@DocumentedType
 struct PriceRange: Codable, Sendable {
     let min: Double
     let max: Double
 }
 
+@DocumentedType
 struct SortOptions: Codable, Sendable {
     let field: String
     let order: String
 }
 
+@DocumentedType
 struct PaginationOptions: Codable, Sendable {
     let page: Int
     let pageSize: Int

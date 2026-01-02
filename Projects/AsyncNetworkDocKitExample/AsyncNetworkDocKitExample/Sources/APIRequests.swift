@@ -8,13 +8,18 @@
 import AsyncNetworkDocKit
 import Foundation
 
+// MARK: - Base URLs
+
+let jsonPlaceholderURL = "https://jsonplaceholder.typicode.com"
+let apiExampleURL = "https://api.example.com"
+
 // MARK: - Posts API
 
 @APIRequest(
     response: [Post].self,
     title: "Get all posts",
     description: "JSONPlaceholder에서 모든 포스트를 가져옵니다. 페이지네이션과 필터링을 지원합니다.",
-    baseURL: APIConfiguration.jsonPlaceholder,
+    baseURL: jsonPlaceholderURL,
     path: "/posts",
     method: "get",
     tags: ["Posts", "Read"],
@@ -38,7 +43,7 @@ struct GetAllPostsRequest {
     response: Post.self,
     title: "Get post by ID",
     description: "특정 포스트의 상세 정보를 가져옵니다.",
-    baseURL: APIConfiguration.jsonPlaceholder,
+    baseURL: jsonPlaceholderURL,
     path: "/posts/{id}",
     method: "get",
     tags: ["Posts", "Read"]
@@ -53,7 +58,7 @@ struct GetPostByIdRequest {
     response: Post.self,
     title: "Create a new post",
     description: "새로운 포스트를 생성합니다.",
-    baseURL: APIConfiguration.jsonPlaceholder,
+    baseURL: jsonPlaceholderURL,
     path: "/posts",
     method: "post",
     tags: ["Posts", "Write"],
@@ -75,7 +80,7 @@ struct CreatePostRequest {
     response: Post.self,
     title: "Update a post",
     description: "기존 포스트를 업데이트합니다.",
-    baseURL: APIConfiguration.jsonPlaceholder,
+    baseURL: jsonPlaceholderURL,
     path: "/posts/{id}",
     method: "put",
     tags: ["Posts", "Write"]
@@ -89,7 +94,7 @@ struct UpdatePostRequest {
     response: EmptyResponse.self,
     title: "Delete a post",
     description: "포스트를 삭제합니다.",
-    baseURL: APIConfiguration.jsonPlaceholder,
+    baseURL: jsonPlaceholderURL,
     path: "/posts/{id}",
     method: "delete",
     tags: ["Posts", "Write"]
@@ -104,7 +109,7 @@ struct DeletePostRequest {
     response: [User].self,
     title: "Get all users",
     description: "모든 사용자 목록을 가져옵니다.",
-    baseURL: APIConfiguration.jsonPlaceholder,
+    baseURL: jsonPlaceholderURL,
     path: "/users",
     method: "get",
     tags: ["Users", "Read"]
@@ -115,7 +120,7 @@ struct GetAllUsersRequest {}
     response: User.self,
     title: "Get user by ID",
     description: "특정 사용자의 상세 정보를 가져옵니다.",
-    baseURL: APIConfiguration.jsonPlaceholder,
+    baseURL: jsonPlaceholderURL,
     path: "/users/{id}",
     method: "get",
     tags: ["Users", "Read"]
@@ -130,7 +135,7 @@ struct GetUserByIdRequest {
     response: User.self,
     title: "Create a new user",
     description: "새로운 사용자를 생성합니다.",
-    baseURL: APIConfiguration.jsonPlaceholder,
+    baseURL: jsonPlaceholderURL,
     path: "/users",
     method: "post",
     tags: ["Users", "Write"]
@@ -147,7 +152,7 @@ struct CreateUserRequest {
     response: [Comment].self,
     title: "Get post comments",
     description: "특정 포스트의 모든 댓글을 가져옵니다.",
-    baseURL: APIConfiguration.jsonPlaceholder,
+    baseURL: jsonPlaceholderURL,
     path: "/posts/{postId}/comments",
     method: "get",
     tags: ["Comments", "Read"]
@@ -160,7 +165,7 @@ struct GetPostCommentsRequest {
     response: Comment.self,
     title: "Create a comment",
     description: "새로운 댓글을 작성합니다.",
-    baseURL: APIConfiguration.jsonPlaceholder,
+    baseURL: jsonPlaceholderURL,
     path: "/comments",
     method: "post",
     tags: ["Comments", "Write"]
@@ -175,7 +180,7 @@ struct CreateCommentRequest {
     response: [Album].self,
     title: "Get user albums",
     description: "특정 사용자의 모든 앨범을 가져옵니다.",
-    baseURL: APIConfiguration.jsonPlaceholder,
+    baseURL: jsonPlaceholderURL,
     path: "/users/{userId}/albums",
     method: "get",
     tags: ["Albums", "Read"],
@@ -202,7 +207,7 @@ struct GetUserAlbumsRequest {
     response: [Photo].self,
     title: "Get album photos",
     description: "특정 앨범의 모든 사진을 가져옵니다.",
-    baseURL: APIConfiguration.jsonPlaceholder,
+    baseURL: jsonPlaceholderURL,
     path: "/albums/{albumId}/photos",
     method: "get",
     tags: ["Albums", "Read"],
@@ -228,7 +233,7 @@ struct GetAlbumPhotosRequest {
     response: Order.self,
     title: "Create an order",
     description: "복잡한 주문을 생성합니다. 여러 상품, 배송지, 결제 정보를 포함합니다.",
-    baseURL: "https://api.example.com",
+    baseURL: apiExampleURL,
     path: "/orders",
     method: "post",
     tags: ["Orders", "Write", "Complex"],
@@ -333,7 +338,7 @@ struct CreateOrderRequest {
     response: Order.self,
     title: "Get order by ID",
     description: "특정 주문의 상세 정보를 조회합니다.",
-    baseURL: "https://api.example.com",
+    baseURL: apiExampleURL,
     path: "/orders/{orderId}",
     method: "get",
     tags: ["Orders", "Read", "Complex"],
@@ -389,7 +394,7 @@ struct GetOrderRequest {
     response: UserProfile.self,
     title: "Update user profile",
     description: "사용자 프로필을 업데이트합니다. 선호 설정, 소셜 링크 등을 포함합니다.",
-    baseURL: "https://api.example.com",
+    baseURL: apiExampleURL,
     path: "/profile",
     method: "put",
     tags: ["Profile", "Write", "Complex"],
@@ -493,7 +498,7 @@ struct UpdateProfileRequest {
     response: SearchResult.self,
     title: "Advanced search",
     description: "고급 검색 필터를 사용하여 컨텐츠를 검색합니다. 다중 필터, 정렬, 페이지네이션을 지원합니다.",
-    baseURL: "https://api.example.com",
+    baseURL: apiExampleURL,
     path: "/search",
     method: "post",
     tags: ["Search", "Complex"],

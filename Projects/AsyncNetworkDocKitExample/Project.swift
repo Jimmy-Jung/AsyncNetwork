@@ -14,22 +14,24 @@ let project = Project(
                 with: [
                     "CFBundleShortVersionString": "1.0.0",
                     "CFBundleVersion": "1",
-                    "UILaunchScreen": [:]
+                    "UILaunchScreen": [:],
                 ]
             ),
             sources: ["AsyncNetworkDocKitExample/Sources/**"],
             resources: ["AsyncNetworkDocKitExample/Resources/**"],
             dependencies: [
-                // AsyncNetworkDocKit를 import하면 AsyncNetwork와 AsyncNetworkMacros도 자동으로 사용 가능
-                .project(target: "AsyncNetworkDocKit", path: "../AsyncNetworkDocKit")
+                // AsyncNetworkDocKit (로컬 SPM 패키지 - Tuist/Package.swift 참조)
+                .external(name: "AsyncNetworkDocKit"),
+                // AsyncNetwork (로컬 SPM 패키지 - Tuist/Package.swift 참조)
+                .external(name: "AsyncNetwork"),
             ],
             settings: .appSettings()
-        )
+        ),
     ],
     schemes: [
         .appScheme(
             name: "AsyncNetworkDocKitExample",
             testTargets: []
-        )
+        ),
     ]
 )
