@@ -6,13 +6,11 @@ public protocol ResponseProcessing: Sendable {
         decodeType: T.Type,
         request: (any APIRequest)?
     ) -> Result<T, NetworkError>
-}
 
-public protocol DataResponseProcessing: Sendable {
-    func process(
-        result: Result<HTTPResponse, Error>,
+    func validateAndExtractData(
+        _ response: HTTPResponse,
         request: (any APIRequest)?
-    ) -> Result<Data, NetworkError>
+    ) throws -> Data
 }
 
 public struct ResponseProcessor: ResponseProcessing {
@@ -35,17 +33,9 @@ public struct ResponseProcessor: ResponseProcessing {
         decodeType _: T.Type,
         request: (any APIRequest)?
     ) -> Result<T, NetworkError> {
-        let mappedResult = result.mapError { errorMapper.mapError($0, request: request) }
-        var currentResult = mappedResult
-        for step in steps {
-            currentResult = currentResult.flatMap { response in
-                step.process(response, request: request)
-            }
+        let validatedResult = validate(result: result, request: request)
 
-            if case .failure = currentResult { break }
-        }
-
-        return currentResult.flatMap { response in
+        return validatedResult.flatMap { response in
             do {
                 let decoded = try decoder.decode(response, to: T.self)
                 return .success(decoded)
@@ -54,26 +44,24 @@ public struct ResponseProcessor: ResponseProcessing {
             }
         }
     }
-}
 
-public struct DataResponseProcessor: DataResponseProcessing {
-    private let steps: [any ResponseProcessorStep]
-    private let errorMapper: ErrorMapper
-
-    public init(
-        steps: [any ResponseProcessorStep] = [StatusCodeValidationStep()],
-        errorMapper: ErrorMapper = .default
-    ) {
-        self.steps = steps
-        self.errorMapper = errorMapper
+    public func validateAndExtractData(
+        _ response: HTTPResponse,
+        request: (any APIRequest)?
+    ) throws -> Data {
+        let result = validate(result: .success(response), request: request)
+        return try result.map { $0.data }.get()
     }
 
-    public func process(
+    // MARK: - Private Helpers
+
+    private func validate(
         result: Result<HTTPResponse, Error>,
         request: (any APIRequest)?
-    ) -> Result<Data, NetworkError> {
+    ) -> Result<HTTPResponse, NetworkError> {
         let mappedResult = result.mapError { errorMapper.mapError($0, request: request) }
         var currentResult = mappedResult
+
         for step in steps {
             currentResult = currentResult.flatMap { response in
                 step.process(response, request: request)
@@ -82,6 +70,6 @@ public struct DataResponseProcessor: DataResponseProcessing {
             if case .failure = currentResult { break }
         }
 
-        return currentResult.map { $0.data }
+        return currentResult
     }
 }

@@ -27,7 +27,6 @@ public protocol APIRequest: Sendable {
     var baseURLString: String { get }
     var path: String { get }
     var method: HTTPMethod { get }
-    var task: HTTPTask { get }
     var headers: [String: String]? { get }
     var timeout: TimeInterval { get }
 }
@@ -45,8 +44,8 @@ public extension APIRequest {
     }
 }
 
-extension APIRequest {
-    public func asURLRequest() throws -> URLRequest {
+public extension APIRequest {
+    func asURLRequest() throws -> URLRequest {
         let url = baseURL.appendingPathComponent(path)
         var request = URLRequest(url: url, timeoutInterval: timeout)
         request.httpMethod = method.rawValue
@@ -69,9 +68,6 @@ extension APIRequest {
                 try param.apply(to: &request, key: propertyName)
             }
         }
-
-        // Task 적용
-        try task.apply(to: &request)
 
         return request
     }

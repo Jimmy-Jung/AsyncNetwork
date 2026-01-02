@@ -4,7 +4,6 @@ public struct NetworkService: Sendable {
     private let httpClient: HTTPClient
     private let retryPolicy: RetryPolicy
     private let responseProcessor: any ResponseProcessing
-    private let dataResponseProcessor: any DataResponseProcessing
     private let delayer: AsyncDelayer
     private let interceptors: [any RequestInterceptor]
 
@@ -12,14 +11,12 @@ public struct NetworkService: Sendable {
         httpClient: HTTPClient,
         retryPolicy: RetryPolicy,
         responseProcessor: any ResponseProcessing,
-        dataResponseProcessor: any DataResponseProcessing = DataResponseProcessor(),
         interceptors: [any RequestInterceptor] = [],
         delayer: AsyncDelayer = SystemDelayer()
     ) {
         self.httpClient = httpClient
         self.retryPolicy = retryPolicy
         self.responseProcessor = responseProcessor
-        self.dataResponseProcessor = dataResponseProcessor
         self.interceptors = interceptors
         self.delayer = delayer
     }
@@ -37,11 +34,12 @@ public struct NetworkService: Sendable {
             httpClient: HTTPClient(configuration: configuration),
             retryPolicy: RetryPolicy.default,
             responseProcessor: ResponseProcessor(),
-            dataResponseProcessor: DataResponseProcessor(),
             interceptors: defaultPlugins,
             delayer: SystemDelayer()
         )
     }
+
+    // MARK: - Public API
 
     /// 응답을 특정 타입으로 디코딩하여 반환합니다 (명시적 타입 지정)
     ///
@@ -63,25 +61,12 @@ public struct NetworkService: Sendable {
         request: R,
         decodeType: T.Type
     ) async throws -> T {
-        var urlRequest = try request.asURLRequest()
-        var attempt = 1
-
-        while true {
-            do {
-                let response = try await executeWithInterceptors(
-                    urlRequest: &urlRequest,
-                    target: request
-                )
-
-                return try responseProcessor.process(
-                    result: .success(response),
-                    decodeType: decodeType,
-                    request: request
-                ).get()
-            } catch {
-                try await handleRetry(error: error, attempt: &attempt)
-            }
-        }
+        let response = try await execute(request)
+        return try responseProcessor.process(
+            result: .success(response),
+            decodeType: decodeType,
+            request: request
+        ).get()
     }
 
     /// 응답을 APIRequest의 associatedtype Response로 디코딩하여 반환합니다 (타입 추론)
@@ -106,31 +91,25 @@ public struct NetworkService: Sendable {
         try await self.request(request: request, decodeType: R.Response.self)
     }
 
+    /// Raw Data를 반환합니다 (디코딩 없이)
     public func requestData<R: APIRequest>(
         _ request: R
     ) async throws -> Data {
-        var urlRequest = try request.asURLRequest()
-        var attempt = 1
-
-        while true {
-            do {
-                let response = try await executeWithInterceptors(
-                    urlRequest: &urlRequest,
-                    target: request
-                )
-
-                return try dataResponseProcessor.process(
-                    result: .success(response),
-                    request: request
-                ).get()
-
-            } catch {
-                try await handleRetry(error: error, attempt: &attempt)
-            }
-        }
+        let response = try await execute(request)
+        return try responseProcessor.validateAndExtractData(response, request: request)
     }
 
+    /// HTTPResponse를 그대로 반환합니다
     public func requestRaw<R: APIRequest>(
+        _ request: R
+    ) async throws -> HTTPResponse {
+        try await execute(request)
+    }
+
+    // MARK: - Private Helpers
+
+    /// 핵심 실행 메서드 (재시도 로직 포함)
+    private func execute<R: APIRequest>(
         _ request: R
     ) async throws -> HTTPResponse {
         var urlRequest = try request.asURLRequest()
