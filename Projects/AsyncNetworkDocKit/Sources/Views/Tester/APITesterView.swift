@@ -5,8 +5,8 @@
 //  Created by jimmy on 2026/01/01.
 //
 
-import SwiftUI
 import AsyncNetworkCore
+import SwiftUI
 
 /// API 테스터 뷰 (3열)
 @available(iOS 17.0, macOS 14.0, *)
@@ -32,6 +32,12 @@ struct APITesterView: View {
                 headerSection
 
                 Divider()
+
+                // Headers 섹션 (endpoint.headers가 있을 때만 표시)
+                if let headers = endpoint.headers, !headers.isEmpty {
+                    headersDisplaySection
+                    Divider()
+                }
 
                 if !endpoint.parameters.isEmpty {
                     parametersInputSection
@@ -70,17 +76,17 @@ struct APITesterView: View {
         }
         .navigationTitle("API Tester")
         #if os(iOS)
-        .navigationBarTitleDisplayMode(.inline)
+            .navigationBarTitleDisplayMode(.inline)
         #endif
-        .onAppear {
-            setupDefaultValues()
-        }
-        .onChange(of: endpoint.id) { _, newEndpointId in
-            // endpoint가 바뀌면 해당 endpoint의 state로 교체
-            // ✅ 진행 중인 요청은 백그라운드에서 계속 실행됨
-            state = APITesterStateStore.shared.getState(for: newEndpointId)
-            setupDefaultValues()
-        }
+            .onAppear {
+                setupDefaultValues()
+            }
+            .onChange(of: endpoint.id) { _, newEndpointId in
+                // endpoint가 바뀌면 해당 endpoint의 state로 교체
+                // ✅ 진행 중인 요청은 백그라운드에서 계속 실행됨
+                state = APITesterStateStore.shared.getState(for: newEndpointId)
+                setupDefaultValues()
+            }
     }
 
     private var headerSection: some View {
@@ -99,41 +105,60 @@ struct APITesterView: View {
         }
     }
 
+    private var headersDisplaySection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Label("Headers", systemImage: "doc.text")
+                .font(.headline)
+
+            if let headers = endpoint.headers {
+                VStack(alignment: .leading, spacing: 8) {
+                    ForEach(Array(headers.keys.sorted()), id: \.self) { key in
+                        if headers[key] != nil {
+                            HStack(spacing: 12) {
+                                Text(key)
+                                    .font(.system(.callout, design: .monospaced))
+                                    .fontWeight(.medium)
+                                    .frame(width: 150, alignment: .trailing)
+
+                                TextField(
+                                    "String",
+                                    text: binding(forHeader: key)
+                                )
+                                .textFieldStyle(.roundedBorder)
+                                .font(.system(.callout, design: .monospaced))
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     private var parametersInputSection: some View {
         VStack(alignment: .leading, spacing: 12) {
             Label("Parameters", systemImage: "slider.horizontal.3")
                 .font(.headline)
 
             ForEach(endpoint.parameters) { parameter in
-                VStack(alignment: .leading, spacing: 6) {
-                    HStack {
+                HStack(spacing: 12) {
+                    HStack(spacing: 4) {
                         Text(parameter.name)
-                            .font(.system(.body, design: .monospaced))
+                            .font(.system(.callout, design: .monospaced))
                             .fontWeight(.medium)
                         if parameter.isRequired {
                             Text("*")
                                 .foregroundStyle(.red)
                         }
-                        Spacer()
-                        Text(parameter.type)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
                     }
+                    .frame(width: 150, alignment: .trailing)
 
                     TextField(
-                        parameter.exampleValue ?? "Enter \(parameter.name)",
+                        parameter.type,
                         text: binding(for: parameter.name)
                     )
                     .textFieldStyle(.roundedBorder)
-                    .font(.system(.body, design: .monospaced))
-
-                    if let desc = parameter.description {
-                        Text(desc)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
+                    .font(.system(.callout, design: .monospaced))
                 }
-                .padding(.vertical, 4)
             }
         }
     }
@@ -235,30 +260,20 @@ struct APITesterView: View {
     }
 
     private func renderTopLevelFieldInput(_ field: AsyncNetworkCore.RequestBodyFieldInfo) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
-            HStack {
+        HStack(spacing: 12) {
+            HStack(spacing: 4) {
                 Text(field.name)
-                    .font(.system(.body, design: .monospaced))
+                    .font(.system(.callout, design: .monospaced))
                     .fontWeight(.semibold)
                 if field.isRequired {
                     Text("*")
                         .foregroundStyle(.red)
                 }
-                Spacer()
-                Text(field.type)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
             }
+            .frame(width: 150, alignment: .trailing)
 
             requestBodyFieldInput(for: field)
-
-            if let example = field.exampleValue {
-                Text("Example: \(example)")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
         }
-        .padding(.vertical, 4)
     }
 
     private func renderNestedFieldInput(_ field: AsyncNetworkCore.RequestBodyFieldInfo, groupPrefix: String) -> some View {
@@ -269,37 +284,26 @@ struct APITesterView: View {
         let displayName = pathWithoutPrefix.split(separator: ".").last.map(String.init) ?? pathWithoutPrefix
         let depth = pathWithoutPrefix.split(separator: ".").count - 1
 
-        return VStack(alignment: .leading, spacing: 6) {
-            HStack {
+        return HStack(spacing: 12) {
+            HStack(spacing: 4) {
                 if depth > 0 {
                     Text(String(repeating: "  ", count: depth))
                         .font(.system(.caption, design: .monospaced))
-                        .foregroundStyle(.clear)
                 }
 
                 Text(displayName)
-                    .font(.system(.body, design: .monospaced))
+                    .font(.system(.callout, design: .monospaced))
                     .fontWeight(.medium)
                     .foregroundStyle(.secondary)
                 if field.isRequired {
                     Text("*")
                         .foregroundStyle(.red)
                 }
-                Spacer()
-                Text(field.type)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
             }
+            .frame(width: 150, alignment: .trailing)
 
             requestBodyFieldInput(for: field)
-
-            if let example = field.exampleValue {
-                Text("Example: \(example)")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
         }
-        .padding(.vertical, 2)
     }
 
     @ViewBuilder
@@ -308,33 +312,34 @@ struct APITesterView: View {
 
         if fieldType == "bool" {
             Toggle(isOn: boolBinding(for: field.name)) {
-                Text(field.name)
+                Text(field.type)
                     .font(.system(.caption, design: .monospaced))
+                    .foregroundStyle(.secondary)
             }
         } else if fieldType == "int" || fieldType == "double" {
             #if os(iOS)
-            TextField(
-                field.exampleValue ?? "Enter \(field.name)",
-                text: binding(forBodyField: field.name)
-            )
-            .textFieldStyle(.roundedBorder)
-            .font(.system(.body, design: .monospaced))
-            .keyboardType(.numberPad)
+                TextField(
+                    field.type,
+                    text: binding(forBodyField: field.name)
+                )
+                .textFieldStyle(.roundedBorder)
+                .font(.system(.callout, design: .monospaced))
+                .keyboardType(.numberPad)
             #else
-            TextField(
-                field.exampleValue ?? "Enter \(field.name)",
-                text: binding(forBodyField: field.name)
-            )
-            .textFieldStyle(.roundedBorder)
-            .font(.system(.body, design: .monospaced))
+                TextField(
+                    field.type,
+                    text: binding(forBodyField: field.name)
+                )
+                .textFieldStyle(.roundedBorder)
+                .font(.system(.callout, design: .monospaced))
             #endif
         } else {
             TextField(
-                field.exampleValue ?? "Enter \(field.name)",
+                field.type,
                 text: binding(forBodyField: field.name)
             )
             .textFieldStyle(.roundedBorder)
-            .font(.system(.body, design: .monospaced))
+            .font(.system(.callout, design: .monospaced))
         }
     }
 
@@ -613,6 +618,13 @@ struct APITesterView: View {
         )
     }
 
+    private func binding(forHeader key: String) -> Binding<String> {
+        Binding(
+            get: { state.headerFields[key] ?? "" },
+            set: { state.headerFields[key] = $0 }
+        )
+    }
+
     private func boolBinding(for key: String) -> Binding<Bool> {
         Binding(
             get: {
@@ -629,6 +641,15 @@ struct APITesterView: View {
         // 이미 요청한 적이 있으면 저장된 상태를 유지
         if state.hasBeenRequested {
             return
+        }
+
+        // 헤더 기본값 설정
+        if let headers = endpoint.headers {
+            for (key, value) in headers {
+                if state.headerFields[key] == nil {
+                    state.headerFields[key] = value
+                }
+            }
         }
 
         // 처음 보는 endpoint면 기본 예시값 설정
@@ -699,7 +720,8 @@ struct APITesterView: View {
         }
 
         guard let data = try? JSONSerialization.data(withJSONObject: jsonDict, options: [.prettyPrinted, .sortedKeys]),
-              let jsonString = String(data: data, encoding: .utf8) else {
+              let jsonString = String(data: data, encoding: .utf8)
+        else {
             return "{}"
         }
 
@@ -764,14 +786,25 @@ struct APITesterView: View {
                 targetState.requestBodySize = bodyData?.count ?? 0
             }
 
-            // Display only endpoint-defined headers in UI
-            targetState.requestHeaders = endpoint.headers ?? [:]
-
             // Prepare headers for actual request
-            var allHeaders = endpoint.headers ?? [:]
+            var allHeaders: [String: String] = [:]
+
+            // 사용자가 입력한 헤더 값 사용 (기본값이 있으면 그것부터 시작)
+            if let endpointHeaders = endpoint.headers {
+                for (key, _) in endpointHeaders {
+                    if let userValue = targetState.headerFields[key], !userValue.isEmpty {
+                        allHeaders[key] = userValue
+                    }
+                }
+            }
+
+            // Content-Type은 body가 있을 때 자동 추가 (덮어쓰기)
             if bodyData != nil {
                 allHeaders["Content-Type"] = "application/json"
             }
+
+            // Display headers for UI
+            targetState.requestHeaders = allHeaders
 
             // Create dynamic API request
             let apiRequest = DynamicAPIRequest(
@@ -811,7 +844,8 @@ struct APITesterView: View {
             // Format response body
             if let jsonObject = try? JSONSerialization.jsonObject(with: httpResponse.data),
                let prettyData = try? JSONSerialization.data(withJSONObject: jsonObject, options: [.prettyPrinted, .sortedKeys]),
-               let prettyString = String(data: prettyData, encoding: .utf8) {
+               let prettyString = String(data: prettyData, encoding: .utf8)
+            {
                 targetState.response = prettyString
             } else {
                 targetState.response = String(data: httpResponse.data, encoding: .utf8) ?? "Unable to decode response"
@@ -829,10 +863,10 @@ struct APITesterView: View {
 
     private func statusColor(_ code: Int) -> Color {
         switch code {
-        case 200..<300: return .green
-        case 300..<400: return .blue
-        case 400..<500: return .orange
-        case 500..<600: return .red
+        case 200 ..< 300: return .green
+        case 300 ..< 400: return .blue
+        case 400 ..< 500: return .orange
+        case 500 ..< 600: return .red
         default: return .gray
         }
     }

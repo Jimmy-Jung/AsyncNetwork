@@ -15,6 +15,7 @@ import Observation
 final class APITesterState {
     // 입력 상태
     var parameters: [String: String] = [:]
+    var headerFields: [String: String] = [:] // 헤더 입력값
     var requestBodyFields: [String: String] = [:]
     var requestBody: String = ""
 
@@ -43,6 +44,7 @@ final class APITesterState {
     /// 상태 초기화
     func reset() {
         parameters.removeAll()
+        headerFields.removeAll()
         requestBodyFields.removeAll()
         requestBody = ""
         isLoading = false

@@ -5,8 +5,8 @@
 //  Created by jimmy on 2026/01/01.
 //
 
-import SwiftUI
 import AsyncNetworkCore
+import SwiftUI
 
 /// 엔드포인트 상세 뷰 (2열)
 @available(iOS 17.0, macOS 14.0, *)
@@ -24,22 +24,22 @@ struct EndpointDetailView: View {
 
                 // API Tester 버튼 (iPhone만, iPad는 3열이 보이므로 불필요)
                 #if os(iOS)
-                if horizontalSizeClass == .compact {
-                    NavigationLink(value: endpoint) {
-                        HStack {
-                            Image(systemName: "play.circle.fill")
-                            Text("Try API Tester")
-                                .fontWeight(.semibold)
+                    if horizontalSizeClass == .compact && UIDevice.current.userInterfaceIdiom == .phone {
+                        NavigationLink(value: endpoint) {
+                            HStack {
+                                Image(systemName: "play.circle.fill")
+                                Text("Try API Tester")
+                                    .fontWeight(.semibold)
+                            }
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 12)
+                            .background(Color.blue)
+                            .foregroundStyle(.white)
+                            .cornerRadius(8)
                         }
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 12)
-                        .background(Color.blue)
-                        .foregroundStyle(.white)
-                        .cornerRadius(8)
+                        .buttonStyle(.plain)
+                        Divider()
                     }
-                    .buttonStyle(.plain)
-                    Divider()
-                }
                 #endif
 
                 descriptionSection
@@ -131,7 +131,7 @@ struct EndpointDetailView: View {
                     if let value = headers[key] {
                         HStack(alignment: .top, spacing: 8) {
                             Text(key)
-                                .font(.system(.body, design: .monospaced))
+                                .font(.system(.callout, design: .monospaced))
                                 .fontWeight(.semibold)
                                 .foregroundStyle(.secondary)
 
@@ -139,7 +139,7 @@ struct EndpointDetailView: View {
                                 .foregroundStyle(.secondary)
 
                             Text(value)
-                                .font(.system(.body, design: .monospaced))
+                                .font(.system(.callout, design: .monospaced))
                                 .foregroundStyle(.primary)
                                 .lineLimit(nil)
                         }
@@ -249,7 +249,7 @@ struct EndpointDetailView: View {
             } label: {
                 HStack(spacing: 8) {
                     Text(prefix)
-                        .font(.system(.body, design: .monospaced))
+                        .font(.system(.callout, design: .monospaced))
                         .fontWeight(.semibold)
                         .foregroundStyle(.purple)
 
@@ -279,7 +279,7 @@ struct EndpointDetailView: View {
         HStack(alignment: .top, spacing: 4) {
             HStack(spacing: 4) {
                 Text(field.name)
-                    .font(.system(.body, design: .monospaced))
+                    .font(.system(.callout, design: .monospaced))
                     .fontWeight(.semibold)
                 if field.isRequired {
                     Text("*")
@@ -292,7 +292,7 @@ struct EndpointDetailView: View {
                 .foregroundStyle(.secondary)
 
             Text(field.type)
-                .font(.system(.body, design: .monospaced))
+                .font(.system(.callout, design: .monospaced))
                 .foregroundStyle(.blue)
 
             if let example = field.exampleValue {
@@ -328,7 +328,7 @@ struct EndpointDetailView: View {
 
             HStack(spacing: 4) {
                 Text(displayName)
-                    .font(.system(.body, design: .monospaced))
+                    .font(.system(.callout, design: .monospaced))
                     .fontWeight(.medium)
                     .foregroundStyle(.secondary)
                 if field.isRequired {
@@ -342,7 +342,7 @@ struct EndpointDetailView: View {
                 .foregroundStyle(.secondary)
 
             Text(field.type)
-                .font(.system(.body, design: .monospaced))
+                .font(.system(.callout, design: .monospaced))
                 .foregroundStyle(.blue)
 
             if let example = field.exampleValue {

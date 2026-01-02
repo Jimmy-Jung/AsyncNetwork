@@ -5,8 +5,8 @@
 //  Created by jimmy on 2026/01/01.
 //
 
-import SwiftUI
 import AsyncNetworkCore
+import SwiftUI
 
 /// 파라미터 행
 @available(iOS 17.0, macOS 14.0, *)
@@ -17,7 +17,7 @@ struct ParameterRow: View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
                 Text(parameter.name)
-                    .font(.system(.body, design: .monospaced))
+                    .font(.system(.callout, design: .monospaced))
                     .fontWeight(.semibold)
 
                 Text(parameter.location.rawValue)
