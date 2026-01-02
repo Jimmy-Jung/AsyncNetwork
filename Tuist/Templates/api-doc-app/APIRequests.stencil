@@ -16,7 +16,7 @@ import Foundation
     description: "JSONPlaceholder에서 모든 포스트를 가져옵니다. userId로 필터링할 수 있습니다.",
     baseURL: APIConfiguration.jsonPlaceholder,
     path: "/posts",
-    method: "get",
+    method: .get,
     tags: ["Posts", "Read"],
     responseExample: """
     [
@@ -40,7 +40,7 @@ struct GetAllPostsRequest {
     description: "특정 포스트의 상세 정보를 가져옵니다.",
     baseURL: APIConfiguration.jsonPlaceholder,
     path: "/posts/{id}",
-    method: "get",
+    method: .get,
     tags: ["Posts", "Read"]
 )
 struct GetPostByIdRequest {
@@ -55,7 +55,7 @@ struct GetPostByIdRequest {
     description: "새로운 포스트를 생성합니다.",
     baseURL: APIConfiguration.jsonPlaceholder,
     path: "/posts",
-    method: "post",
+    method: .post,
     tags: ["Posts", "Write"],
     requestBodyExample: """
     {
@@ -77,7 +77,7 @@ struct CreatePostRequest {
     description: "기존 포스트를 업데이트합니다.",
     baseURL: APIConfiguration.jsonPlaceholder,
     path: "/posts/{id}",
-    method: "put",
+    method: .put,
     tags: ["Posts", "Write"]
 )
 struct UpdatePostRequest {
@@ -92,7 +92,7 @@ struct UpdatePostRequest {
     description: "포스트를 삭제합니다.",
     baseURL: APIConfiguration.jsonPlaceholder,
     path: "/posts/{id}",
-    method: "delete",
+    method: .delete,
     tags: ["Posts", "Write"]
 )
 struct DeletePostRequest {
@@ -108,7 +108,7 @@ struct DeletePostRequest {
     description: "모든 사용자 목록을 가져옵니다.",
     baseURL: APIConfiguration.jsonPlaceholder,
     path: "/users",
-    method: "get",
+    method: .get,
     tags: ["Users", "Read"]
 )
 struct GetAllUsersRequest {
@@ -121,7 +121,7 @@ struct GetAllUsersRequest {
     description: "특정 사용자의 상세 정보를 가져옵니다.",
     baseURL: APIConfiguration.jsonPlaceholder,
     path: "/users/{id}",
-    method: "get",
+    method: .get,
     tags: ["Users", "Read"]
 )
 struct GetUserByIdRequest {
@@ -138,7 +138,7 @@ struct GetUserByIdRequest {
     description: "특정 포스트의 모든 댓글을 가져옵니다.",
     baseURL: APIConfiguration.jsonPlaceholder,
     path: "/posts/{postId}/comments",
-    method: "get",
+    method: .get,
     tags: ["Comments", "Read"]
 )
 struct GetPostCommentsRequest {
