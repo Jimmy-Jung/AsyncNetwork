@@ -30,6 +30,7 @@ AsyncNetwork은 순수 Foundation만을 사용하여 구축된 현대적인 Swif
 - 🔌 **RequestInterceptor**: 프로토콜 기반 요청/응답 인터셉터 (로깅, 인증 등)
 - 🪄 **매크로 지원**: `@APIRequest` 매크로로 보일러플레이트 제거
 - 🎯 **Property Wrappers**: 선언적 API (`@QueryParameter`, `@PathParameter`, `@RequestBody`, `@HeaderField`)
+- 📡 **Network Reachability**: 실시간 네트워크 연결 상태 감지
 - 🧪 **테스트 용이성**: MockURLProtocol 지원, 의존성 주입 설계
 
 ### 다른 라이브러리와 비교
@@ -40,6 +41,7 @@ AsyncNetwork은 순수 Foundation만을 사용하여 구축된 현대적인 Swif
 | Swift Concurrency | ✅ 네이티브 | ⚠️ 부분 지원 | ⚠️ 부분 지원 |
 | 매크로 지원 | ✅ `@APIRequest` | ❌ | ❌ |
 | 재시도 정책 | ✅ 프로토콜 기반 | ✅ | ⚠️ 제한적 |
+| Network Reachability | ✅ 내장 | ✅ | ❌ |
 | Chain of Responsibility | ✅ | ❌ | ❌ |
 | 학습 곡선 | 낮음 (Foundation 기반) | 중간 | 중간 |
 
@@ -218,9 +220,9 @@ AsyncNetwork/
 ├── Interceptors/        # 인터셉터 (LoggingInterceptor 등)
 ├── Processing/          # 응답 처리 (ResponseProcessor, StatusCodeValidator)
 ├── Service/             # 네트워크 서비스 (NetworkService)
-├── Errors/              # 에러 처리 (ErrorMapper)
+├── Errors/              # 에러 처리 (ErrorMapper, NetworkError)
 ├── PropertyWrappers/    # Property Wrappers (@QueryParameter 등)
-└── Utilities/           # 유틸리티 (AsyncDelayer)
+└── Utilities/           # 유틸리티 (AsyncDelayer, NetworkMonitor)
 ```
 
 ### 데이터 흐름
@@ -431,6 +433,172 @@ let result: SearchResult = try await service.request(
     )
 )
 // 결과: GET /search/books?query=Swift&page=1&limit=20 (Authorization 헤더 포함)
+```
+
+### Network Reachability (네트워크 연결 감지)
+
+실시간으로 네트워크 연결 상태를 모니터링하고 오프라인 상태를 처리할 수 있습니다.
+
+#### SwiftUI에서 사용
+
+```swift
+import SwiftUI
+import AsyncNetwork
+
+struct ContentView: View {
+    @StateObject private var networkMonitor = NetworkMonitor.shared
+    @State private var posts: [Post] = []
+    
+    var body: some View {
+        NavigationView {
+            Group {
+                if !networkMonitor.isConnected {
+                    OfflineView()
+                } else {
+                    PostListView(posts: posts)
+                }
+            }
+            .navigationTitle("Posts")
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    NetworkStatusIndicator(
+                        isConnected: networkMonitor.isConnected,
+                        type: networkMonitor.connectionType
+                    )
+                }
+            }
+        }
+        .task {
+            await loadPosts()
+        }
+        .onChange(of: networkMonitor.isConnected) { _, newValue in
+            if newValue {
+                // 네트워크 복구 시 자동 재시도
+                Task {
+                    await loadPosts()
+                }
+            }
+        }
+    }
+    
+    private func loadPosts() async {
+        do {
+            let service = NetworkService()
+            posts = try await service.request(GetPostsRequest())
+        } catch let error as NetworkError where error.isOffline {
+            // 오프라인 에러 처리
+            print("오프라인 상태입니다")
+        } catch {
+            print("에러: \(error)")
+        }
+    }
+}
+
+struct NetworkStatusIndicator: View {
+    let isConnected: Bool
+    let type: NetworkMonitor.ConnectionType
+    
+    var body: some View {
+        HStack(spacing: 4) {
+            Circle()
+                .fill(isConnected ? Color.green : Color.red)
+                .frame(width: 8, height: 8)
+            
+            Text(isConnected ? type.description : "오프라인")
+                .font(.caption)
+                .foregroundColor(isConnected ? .green : .red)
+        }
+    }
+}
+```
+
+#### Combine으로 구독
+
+```swift
+import Combine
+import AsyncNetwork
+
+class PostViewModel: ObservableObject {
+    @Published var posts: [Post] = []
+    @Published var isLoading = false
+    @Published var errorMessage: String?
+    
+    private let service = NetworkService()
+    private var cancellables = Set<AnyCancellable>()
+    
+    init() {
+        // 네트워크 상태 변경 감지
+        NetworkMonitor.shared.$isConnected
+            .dropFirst() // 초기값 무시
+            .sink { [weak self] isConnected in
+                if isConnected {
+                    // 네트워크 복구 시 자동 재시도
+                    Task { @MainActor [weak self] in
+                        await self?.loadPosts()
+                    }
+                } else {
+                    // 오프라인 상태 표시
+                    self?.errorMessage = "인터넷 연결이 끊어졌습니다"
+                }
+            }
+            .store(in: &cancellables)
+    }
+    
+    @MainActor
+    func loadPosts() async {
+        guard NetworkMonitor.shared.isConnected else {
+            errorMessage = "오프라인 상태입니다"
+            return
+        }
+        
+        isLoading = true
+        errorMessage = nil
+        
+        do {
+            posts = try await service.request(GetPostsRequest())
+        } catch let error as NetworkError where error.isOffline {
+            errorMessage = "네트워크 연결을 확인해주세요"
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+        
+        isLoading = false
+    }
+}
+```
+
+#### NetworkService 오프라인 체크
+
+```swift
+let service = NetworkService()
+
+// 자동 오프라인 체크 활성화 (기본값)
+do {
+    let posts = try await service.request(GetPostsRequest())
+} catch let error as NetworkError where error.isOffline {
+    // 오프라인 시 즉시 에러 반환 (실제 요청 전)
+    showOfflineAlert()
+}
+
+// 수동으로 체크
+if service.isNetworkAvailable {
+    let posts = try await service.request(GetPostsRequest())
+} else {
+    // 캐시에서 로드하거나 사용자에게 알림
+    showOfflineMessage()
+}
+
+// 연결 타입 확인
+switch service.connectionType {
+case .wifi:
+    print("Wi-Fi 연결")
+case .cellular:
+    print("셀룰러 연결")
+case .ethernet:
+    print("이더넷 연결")
+default:
+    print("알 수 없는 연결")
+}
 ```
 
 ---
