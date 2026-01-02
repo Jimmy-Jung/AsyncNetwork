@@ -1,3 +1,10 @@
+//
+//  Project.swift
+//  {{ name }}
+//
+//  Created by {{ author }} on 2026/01/02.
+//
+
 import ProjectDescription
 
 let project = Project(
@@ -10,14 +17,18 @@ let project = Project(
             product: .app,
             bundleId: "{{ organization }}.{{ name }}",
             deploymentTargets: .iOS("{{ deploymentTarget }}"),
-            infoPlist: .file(path: "Resources/Info.plist"),
+            infoPlist: .extendingDefault(
+                with: [
+                    "CFBundleShortVersionString": "1.0.0",
+                    "CFBundleVersion": "1",
+                    "UILaunchScreen": [:]
+                ]
+            ),
             sources: ["Sources/**"],
-            resources: ["Resources/**"],
             dependencies: [
-                .external(name: "AsyncNetwork"),
-                .external(name: "AsyncNetworkMacros"),
+                .external(name: "AsyncNetworkDocKit")
             ]
-        ),
+        )
     ]
 )
 

@@ -1,78 +1,144 @@
 # {{ name }}
 
-AsyncNetwork API Documentation & Tester App
+AsyncNetwork API 문서 및 테스터 앱
 
-## Overview
+## 개요
 
-This app is generated using the AsyncNetwork Tuist template. It provides:
-- API endpoint documentation
-- Interactive request tester
-- Example implementations using `@APIRequest` macro
+이 앱은 AsyncNetwork Tuist 템플릿으로 생성되었습니다. AsyncNetworkDocKit을 사용하여 다음 기능을 제공합니다:
 
-## Getting Started
+- 📚 3열 레이아웃의 Redoc 스타일 API 문서 뷰
+- 🧪 대화형 API 테스터 (Query/Path/Header/Body 파라미터 입력)
+- 🎨 실시간 요청/응답 JSON 미리보기
+- 🏷️ 태그 기반 엔드포인트 그룹화
+- 📝 `@APIRequest` 매크로 기반 타입 안전 API 정의
 
-### 1. Define Your API Requests
+## 시작하기
 
-Edit `Sources/APIRequests.swift` to add your API endpoints using the `@APIRequest` macro:
+### 1. API 요청 정의
+
+`Sources/APIRequests.swift`에서 `@APIRequest` 매크로를 사용하여 API 엔드포인트를 정의합니다:
 
 ```swift
 @APIRequest(
-    response: YourModel.self,
-    title: "Your endpoint title",
-    baseURL: "https://your-api.com",
-    path: "/your/path",
+    response: [Post].self,
+    title: "Get all posts",
+    description: "모든 포스트를 가져옵니다",
+    baseURL: APIConfiguration.jsonPlaceholder,
+    path: "/posts",
     method: "get",
-    tags: ["Category"]
+    tags: ["Posts", "Read"]
 )
-struct YourRequest {
-    @QueryParameter var param: String?
+struct GetAllPostsRequest {
+    @QueryParameter var userId: Int?
+    @QueryParameter var _limit: Int?
 }
 ```
 
-### 2. Define Your Models
+### 2. 모델 정의
 
-Edit `Sources/Models.swift` to add your data models:
+`Sources/Models.swift`에서 데이터 모델을 정의합니다:
 
 ```swift
-struct YourModel: Codable, Sendable {
+struct Post: Codable, Identifiable, Sendable {
+    let userId: Int
     let id: Int
-    let name: String
+    let title: String
+    let body: String
 }
 ```
 
-### 3. Make Requests
+### 3. 앱에 등록
 
-Use `NetworkService` to execute requests:
+`Sources/{{ name }}App.swift`에서 엔드포인트를 등록합니다:
+
+```swift
+DocKitFactory.createDocApp(
+    endpoints: [
+        "Posts": [
+            GetAllPostsRequest.metadata,
+            CreatePostRequest.metadata
+        ],
+        "Users": [
+            GetAllUsersRequest.metadata
+        ]
+    ],
+    networkService: networkService,
+    appTitle: "{{ name }}"
+)
+```
+
+### 4. API 호출
+
+`NetworkService`를 사용하여 요청을 실행합니다:
 
 ```swift
 let networkService = NetworkService()
-let request = YourRequest(param: "value")
-let result = try await networkService.request(request)
+let request = GetAllPostsRequest(userId: 1)
+let posts = try await networkService.request(request)
 ```
 
-## Features
+## 기능
 
 ### Property Wrappers
 
-- `@QueryParameter`: URL query parameters
-- `@PathParameter`: URL path placeholders (`{id}`)
-- `@RequestBody`: JSON request body
-- `@HeaderField`: Type-safe HTTP headers
-- `@CustomHeader`: Custom headers
+AsyncNetwork는 다양한 프로퍼티 래퍼를 제공합니다:
 
-### Auto-Generated
+- `@QueryParameter`: URL 쿼리 파라미터 (`?userId=1`)
+- `@PathParameter`: URL 경로 플레이스홀더 (`/posts/{id}`)
+- `@RequestBody`: JSON 요청 바디
+- `@HeaderField`: 타입 안전 HTTP 헤더 (`.userAgent`, `.contentType` 등)
+- `@CustomHeader`: 커스텀 헤더
 
-The `@APIRequest` macro automatically generates:
-- `typealias Response`
-- `var baseURLString: String`
-- `var path: String`
-- `var method: HTTPMethod`
-- `var task: HTTPTask`
-- `static var metadata: EndpointMetadata`
+### 자동 생성 코드
 
-## Documentation
+`@APIRequest` 매크로는 다음을 자동으로 생성합니다:
 
-For more information, see:
-- [AsyncNetwork GitHub](https://github.com/your-repo/AsyncNetwork)
-- [API Reference](https://your-docs.com)
+- `typealias Response`: 응답 타입
+- `var baseURLString: String`: 기본 URL
+- `var path: String`: 엔드포인트 경로
+- `var method: HTTPMethod`: HTTP 메서드
+- `var headers: [String: String]`: 헤더 딕셔너리
+- `static var metadata: EndpointMetadata`: 문서 메타데이터
 
+### API Configuration
+
+`APIConfiguration.swift`에서 환경별 baseURL을 관리합니다:
+
+```swift
+enum APIConfiguration {
+    static let jsonPlaceholder = "https://jsonplaceholder.typicode.com"
+    static let production = "https://api.example.com"
+    
+    enum Environment {
+        case development
+        case staging
+        case production
+    }
+    
+    static var currentEnvironment: Environment = .production
+}
+```
+
+## 프로젝트 구조
+
+```
+{{ name }}/
+├── Project.swift              # Tuist 프로젝트 정의
+├── Sources/
+│   ├── {{ name }}App.swift   # 앱 진입점 (DocKitFactory)
+│   ├── APIConfiguration.swift # baseURL 설정
+│   ├── APIRequests.swift      # @APIRequest 정의
+│   └── Models.swift           # 데이터 모델
+└── README.md                  # 이 파일
+```
+
+## 문서
+
+더 많은 정보는 다음을 참고하세요:
+
+- [AsyncNetwork GitHub](https://github.com/jimmy/AsyncNetwork)
+- [AsyncNetworkDocKit 문서](https://github.com/jimmy/AsyncNetwork/tree/main/Projects/AsyncNetworkDocKit)
+
+## 라이선스
+
+이 프로젝트는 AsyncNetwork와 동일한 라이선스를 따릅니다.

@@ -2,79 +2,208 @@
 //  APIRequests.swift
 //  {{ name }}
 //
-//  이 파일은 @APIRequest 매크로를 사용한 API 요청 정의 예시입니다.
+//  Created by {{ author }} on 2026/01/02.
 //
 
+import AsyncNetworkDocKit
 import Foundation
-import AsyncNetwork
-import AsyncNetworkMacros
 
-// MARK: - Example: GET all posts
+// MARK: - Posts API
 
 @APIRequest(
     response: [Post].self,
     title: "Get all posts",
-    description: "Retrieve a list of all posts",
-    baseURL: "https://jsonplaceholder.typicode.com",
+    description: "JSONPlaceholder에서 모든 포스트를 가져옵니다. userId로 필터링할 수 있습니다.",
+    baseURL: APIConfiguration.jsonPlaceholder,
     path: "/posts",
     method: "get",
-    tags: ["Posts", "Read"]
+    tags: ["Posts", "Read"],
+    responseExample: """
+    [
+      {
+        "userId": 1,
+        "id": 1,
+        "title": "sunt aut facere repellat provident",
+        "body": "quia et suscipit..."
+      }
+    ]
+    """
 )
-struct GetPostsRequest {
+struct GetAllPostsRequest {
     @QueryParameter var userId: Int?
+    @QueryParameter var _limit: Int?
 }
-
-// MARK: - Example: GET single post
 
 @APIRequest(
     response: Post.self,
-    title: "Get a post by ID",
-    description: "Retrieve a specific post",
-    baseURL: "https://jsonplaceholder.typicode.com",
+    title: "Get post by ID",
+    description: "특정 포스트의 상세 정보를 가져옵니다.",
+    baseURL: APIConfiguration.jsonPlaceholder,
     path: "/posts/{id}",
     method: "get",
     tags: ["Posts", "Read"]
 )
-struct GetPostRequest {
+struct GetPostByIdRequest {
     @PathParameter var id: Int
+    @HeaderField(.userAgent) var userAgent: String? = "{{ name }}/1.0.0"
+    @HeaderField(.acceptLanguage) var acceptLanguage: String? = "ko-KR,ko;q=0.9"
 }
-
-// MARK: - Example: POST create post
 
 @APIRequest(
     response: Post.self,
     title: "Create a new post",
-    description: "Create a new post",
-    baseURL: "https://jsonplaceholder.typicode.com",
+    description: "새로운 포스트를 생성합니다.",
+    baseURL: APIConfiguration.jsonPlaceholder,
     path: "/posts",
     method: "post",
-    tags: ["Posts", "Write"]
+    tags: ["Posts", "Write"],
+    requestBodyExample: """
+    {
+      "title": "My New Post",
+      "body": "This is the post content",
+      "userId": 1
+    }
+    """
 )
 struct CreatePostRequest {
-    @RequestBody var body: PostBody
+    @RequestBody var body: PostBody?
+    @HeaderField(.contentType) var contentType: String? = "application/json"
+    @HeaderField(.requestId) var requestId: String? = UUID().uuidString
+}
+
+@APIRequest(
+    response: Post.self,
+    title: "Update a post",
+    description: "기존 포스트를 업데이트합니다.",
+    baseURL: APIConfiguration.jsonPlaceholder,
+    path: "/posts/{id}",
+    method: "put",
+    tags: ["Posts", "Write"]
+)
+struct UpdatePostRequest {
+    @PathParameter var id: Int
+    @RequestBody var body: PostBody?
+    @HeaderField(.contentType) var contentType: String? = "application/json"
+}
+
+@APIRequest(
+    response: EmptyResponse.self,
+    title: "Delete a post",
+    description: "포스트를 삭제합니다.",
+    baseURL: APIConfiguration.jsonPlaceholder,
+    path: "/posts/{id}",
+    method: "delete",
+    tags: ["Posts", "Write"]
+)
+struct DeletePostRequest {
+    @PathParameter var id: Int
+    @HeaderField(.authorization) var authorization: String?
+}
+
+// MARK: - Users API
+
+@APIRequest(
+    response: [User].self,
+    title: "Get all users",
+    description: "모든 사용자 목록을 가져옵니다.",
+    baseURL: APIConfiguration.jsonPlaceholder,
+    path: "/users",
+    method: "get",
+    tags: ["Users", "Read"]
+)
+struct GetAllUsersRequest {
+    @HeaderField(.userAgent) var userAgent: String? = "{{ name }}/1.0.0"
+}
+
+@APIRequest(
+    response: User.self,
+    title: "Get user by ID",
+    description: "특정 사용자의 상세 정보를 가져옵니다.",
+    baseURL: APIConfiguration.jsonPlaceholder,
+    path: "/users/{id}",
+    method: "get",
+    tags: ["Users", "Read"]
+)
+struct GetUserByIdRequest {
+    @PathParameter var id: Int
+    @CustomHeader("X-Client-Version") var clientVersion: String? = "1.0.0"
+    @CustomHeader("X-Platform") var platform: String? = "iOS"
+}
+
+// MARK: - Comments API
+
+@APIRequest(
+    response: [Comment].self,
+    title: "Get post comments",
+    description: "특정 포스트의 모든 댓글을 가져옵니다.",
+    baseURL: APIConfiguration.jsonPlaceholder,
+    path: "/posts/{postId}/comments",
+    method: "get",
+    tags: ["Comments", "Read"]
+)
+struct GetPostCommentsRequest {
+    @PathParameter var postId: Int
 }
 
 // MARK: - Usage Example
 
-/// NetworkService 인스턴스 생성
-let networkService = NetworkService()
-
-/// 사용 예시 함수
+/// NetworkService를 사용한 API 호출 예시
+///
+/// **기본 사용법:**
+/// ```swift
+/// let networkService = NetworkService()
+///
+/// // GET 요청 (쿼리 파라미터)
+/// let request1 = GetAllPostsRequest(userId: 1, _limit: 10)
+/// let posts = try await networkService.request(request1)
+///
+/// // GET 요청 (Path 파라미터)
+/// let request2 = GetPostByIdRequest(id: 1)
+/// let post = try await networkService.request(request2)
+///
+/// // POST 요청 (Request Body)
+/// let newPost = PostBody(title: "Hello", body: "World", userId: 1)
+/// let request3 = CreatePostRequest(body: newPost)
+/// let created = try await networkService.request(request3)
+///
+/// // PUT 요청
+/// let updatedPost = PostBody(title: "Updated", body: "Content", userId: 1)
+/// let request4 = UpdatePostRequest(id: 1, body: updatedPost)
+/// let updated = try await networkService.request(request4)
+///
+/// // DELETE 요청
+/// let request5 = DeletePostRequest(id: 1)
+/// let _ = try await networkService.request(request5)
+/// ```
+///
+/// **헤더 커스터마이징:**
+/// ```swift
+/// // HeaderField 사용 (타입 안전)
+/// var request = GetPostByIdRequest(id: 1)
+/// request.userAgent = "MyApp/2.0.0"
+/// request.acceptLanguage = "en-US"
+///
+/// // CustomHeader 사용 (임의의 헤더)
+/// var userRequest = GetUserByIdRequest(id: 1)
+/// userRequest.clientVersion = "2.0.0"
+/// userRequest.platform = "iPad"
+/// ```
 func exampleUsage() async throws {
-    // GET all posts
-    let request1 = GetPostsRequest(userId: 1)
-    let posts = try await networkService.request(request1)
-    print("받은 포스트: \(posts.count)개")
-    
-    // GET single post
-    let request2 = GetPostRequest(id: 1)
-    let post = try await networkService.request(request2)
-    print("포스트 제목: \(post.title)")
-    
-    // POST create post
-    let newPost = PostBody(title: "New Post", body: "Content", userId: 1)
-    let request3 = CreatePostRequest(body: newPost)
-    let created = try await networkService.request(request3)
-    print("생성된 ID: \(created.id)")
-}
+    let networkService = NetworkService()
 
+    // GET all posts
+    let postsRequest = GetAllPostsRequest(userId: 1, _limit: 10)
+    let posts = try await networkService.request(postsRequest)
+    print("✅ 받은 포스트: \(posts.count)개")
+
+    // GET single post
+    let postRequest = GetPostByIdRequest(id: 1)
+    let post = try await networkService.request(postRequest)
+    print("✅ 포스트 제목: \(post.title)")
+
+    // POST create
+    let newPost = PostBody(title: "New Post", body: "Content", userId: 1)
+    let createRequest = CreatePostRequest(body: newPost)
+    let created = try await networkService.request(createRequest)
+    print("✅ 생성된 ID: \(created.id)")
+}

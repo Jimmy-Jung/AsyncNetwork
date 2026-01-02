@@ -2,10 +2,12 @@
 //  Models.swift
 //  {{ name }}
 //
+//  Created by {{ author }} on 2026/01/02.
+//
 
 import Foundation
 
-// MARK: - Post Model
+// MARK: - Post Models
 
 struct Post: Codable, Identifiable, Sendable {
     let userId: Int
@@ -14,20 +16,55 @@ struct Post: Codable, Identifiable, Sendable {
     let body: String
 }
 
-// MARK: - Post Body (for creating/updating)
-
 struct PostBody: Codable, Sendable {
     let title: String
     let body: String
     let userId: Int
 }
 
-// MARK: - User Model
+// MARK: - User Models
 
 struct User: Codable, Identifiable, Sendable {
     let id: Int
     let name: String
     let username: String
     let email: String
+    let address: Address?
+    let phone: String?
+    let website: String?
+    let company: Company?
 }
 
+struct Address: Codable, Sendable {
+    let street: String
+    let suite: String
+    let city: String
+    let zipcode: String
+    let geo: Geo
+}
+
+struct Geo: Codable, Sendable {
+    let lat: String
+    let lng: String
+}
+
+struct Company: Codable, Sendable {
+    let name: String
+    let catchPhrase: String
+    let bs: String
+}
+
+// MARK: - Comment Models
+
+struct Comment: Codable, Identifiable, Sendable {
+    let postId: Int
+    let id: Int
+    let name: String
+    let email: String
+    let body: String
+}
+
+// MARK: - Empty Response
+
+/// DELETE 요청처럼 빈 응답이 필요한 경우 사용
+struct EmptyResponse: Codable, Sendable {}

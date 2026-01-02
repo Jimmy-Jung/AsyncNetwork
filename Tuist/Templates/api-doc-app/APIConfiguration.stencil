@@ -1,0 +1,71 @@
+//
+//  APIConfiguration.swift
+//  {{ name }}
+//
+//  Created by {{ author }} on 2026/01/02.
+//
+
+import Foundation
+
+/// API 전역 설정
+///
+/// 여러 서버의 baseURL을 중앙에서 관리합니다.
+///
+/// **사용법:**
+/// ```swift
+/// @APIRequest(
+///     response: [Post].self,
+///     baseURL: APIConfiguration.jsonPlaceholder,
+///     path: "/posts",
+///     method: "get"
+/// )
+/// struct GetPostsRequest {}
+/// ```
+enum APIConfiguration {
+    // MARK: - Base URLs
+
+    /// JSONPlaceholder API 서버
+    static let jsonPlaceholder = "https://jsonplaceholder.typicode.com"
+
+    /// 프로덕션 API 서버 (예시)
+    static let production = "https://api.example.com"
+
+    // MARK: - Environment Management
+
+    /// 환경별 설정
+    enum Environment {
+        case development
+        case staging
+        case production
+
+        /// 환경별 baseURL
+        var baseURL: String {
+            switch self {
+            case .development:
+                return "https://dev-api.example.com"
+            case .staging:
+                return "https://staging-api.example.com"
+            case .production:
+                return "https://api.example.com"
+            }
+        }
+    }
+
+    /// 현재 환경 (기본값: production)
+    ///
+    /// App 시작 시 빌드 설정에 따라 변경:
+    /// ```swift
+    /// #if DEBUG
+    /// APIConfiguration.currentEnvironment = .development
+    /// #else
+    /// APIConfiguration.currentEnvironment = .production
+    /// #endif
+    /// ```
+    static var currentEnvironment: Environment = .production
+
+    /// 현재 환경에 맞는 baseURL 반환
+    static var currentBaseURL: String {
+        currentEnvironment.baseURL
+    }
+}
+
