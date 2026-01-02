@@ -188,6 +188,18 @@ public struct APIRequestMacroImpl: MemberMacro, ExtensionMacro {
         let parameters = scanPropertyWrappers(from: structDecl)
         let parametersArray = generateParametersArray(parameters)
 
+        // Property wrapper에서 헤더 정보 추출
+        let headerParameters = parameters.filter { ["HeaderField", "CustomHeader"].contains($0.wrapperType) }
+        var allHeaders = args.headers // 매크로 인자로 전달된 정적 헤더
+        for headerParam in headerParameters {
+            if let headerKey = headerParam.headerKey, let defaultValue = headerParam.defaultValue {
+                // 기본값이 있는 헤더만 메타데이터에 포함 (런타임 함수 호출 제외)
+                if !defaultValue.contains("("), !defaultValue.contains(")") {
+                    allHeaders[headerKey] = defaultValue
+                }
+            }
+        }
+
         // responseStructure 생성
         let responseStructure = args.responseStructure ?? generateResponseStructure(from: args.responseType)
 
@@ -262,7 +274,7 @@ public struct APIRequestMacroImpl: MemberMacro, ExtensionMacro {
                     method: "\(raw: args.method)",
                     path: "\(raw: args.path)",
                     baseURLString: \(raw: baseURLStringCode),
-                    headers: \(raw: args.headers.isEmpty ? "nil" : "[\(args.headers.map { "\"\($0.key)\": \"\($0.value)\"" }.joined(separator: ", "))]"),
+                    headers: \(raw: allHeaders.isEmpty ? "nil" : "[\(allHeaders.map { "\"\($0.key)\": \"\($0.value)\"" }.joined(separator: ", "))]"),
                     tags: [\(raw: args.tags.map { "\"\($0)\"" }.joined(separator: ", "))],
                     parameters: \(raw: parametersArray),
                     requestBodyExample: \(raw: requestBodyExampleCode),
@@ -356,7 +368,7 @@ public struct APIRequestMacroImpl: MemberMacro, ExtensionMacro {
                 }
 
                 let wrapperType = identifier
-                guard ["PathParameter", "QueryParameter", "HeaderParameter"].contains(wrapperType) else {
+                guard ["PathParameter", "QueryParameter", "HeaderParameter", "HeaderField", "CustomHeader"].contains(wrapperType) else {
                     continue
                 }
 
@@ -374,11 +386,46 @@ public struct APIRequestMacroImpl: MemberMacro, ExtensionMacro {
                 // 옵셔널 여부 확인
                 let isOptional = propertyType.hasSuffix("?")
 
+                // HeaderField, CustomHeader의 경우 헤더 키 추출
+                var headerKey: String? = nil
+                var defaultValue: String? = nil
+
+                if wrapperType == "HeaderField" || wrapperType == "CustomHeader" {
+                    // @HeaderField(.authorization) 또는 @CustomHeader("X-Custom-Header")에서 인자 추출
+                    if let arguments = customAttribute.arguments?.as(LabeledExprListSyntax.self) {
+                        for argument in arguments {
+                            let expr = argument.expression
+                            // HeaderField(.authorization) - enum case
+                            if let memberAccess = expr.as(MemberAccessExprSyntax.self) {
+                                let caseName = memberAccess.declName.baseName.text
+                                // HTTPHeaders.HeaderKey enum case를 실제 헤더 이름으로 매핑
+                                headerKey = mapHeaderKeyToString(caseName)
+                            }
+                            // CustomHeader("X-Custom-Header") - string literal
+                            else if let stringLiteral = extractStringLiteral(from: expr) {
+                                headerKey = stringLiteral
+                            }
+                        }
+                    }
+
+                    // 기본값 추출 (var userAgent: String? = "MyApp/1.0.0")
+                    if let initializer = binding.initializer {
+                        if let stringLiteral = extractStringLiteral(from: initializer.value) {
+                            defaultValue = stringLiteral
+                        } else if initializer.value.is(FunctionCallExprSyntax.self) {
+                            // UUID().uuidString 같은 함수 호출은 "UUID()"로 표시
+                            defaultValue = initializer.value.description.trimmingCharacters(in: .whitespacesAndNewlines)
+                        }
+                    }
+                }
+
                 parameters.append(PropertyWrapperInfo(
                     name: propertyName,
                     type: propertyType,
                     wrapperType: wrapperType,
-                    isRequired: !isOptional
+                    isRequired: !isOptional,
+                    headerKey: headerKey,
+                    defaultValue: defaultValue
                 ))
             }
         }
@@ -394,13 +441,40 @@ public struct APIRequestMacroImpl: MemberMacro, ExtensionMacro {
         return typeAnnotation.type.description.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
+    /// HTTPHeaders.HeaderKey enum case를 실제 HTTP 헤더 이름으로 매핑합니다.
+    private static func mapHeaderKeyToString(_ key: String) -> String {
+        let mapping: [String: String] = [
+            "contentType": "Content-Type",
+            "accept": "Accept",
+            "authorization": "Authorization",
+            "userAgent": "User-Agent",
+            "acceptLanguage": "Accept-Language",
+            "appVersion": "X-App-Version",
+            "deviceModel": "X-Device-Model",
+            "osVersion": "X-OS-Version",
+            "bundleId": "X-Bundle-Id",
+            "requestId": "X-Request-Id",
+            "timestamp": "X-Timestamp",
+            "sessionId": "X-Session-Id",
+            "clientVersion": "X-Client-Version",
+            "platform": "X-Platform",
+        ]
+        return mapping[key] ?? key
+    }
+
     /// PropertyWrapperInfo 배열을 ParameterInfo 배열 리터럴로 변환합니다.
+    /// HeaderField와 CustomHeader는 제외합니다 (이들은 headers 프로퍼티로 처리됨)
     private static func generateParametersArray(_ parameters: [PropertyWrapperInfo]) -> String {
-        if parameters.isEmpty {
+        // HeaderField와 CustomHeader는 파라미터가 아니므로 제외
+        let filteredParameters = parameters.filter {
+            !["HeaderField", "CustomHeader"].contains($0.wrapperType)
+        }
+
+        if filteredParameters.isEmpty {
             return "[]"
         }
 
-        let parameterStrings = parameters.map { param in
+        let parameterStrings = filteredParameters.map { param in
             let location: String
             switch param.wrapperType {
             case "PathParameter":
@@ -456,6 +530,8 @@ struct PropertyWrapperInfo {
     let type: String
     let wrapperType: String
     let isRequired: Bool
+    let headerKey: String? // HeaderField, CustomHeader용
+    let defaultValue: String? // 기본값
 }
 
 // MARK: - Argument Parsing
@@ -676,7 +752,7 @@ func generateResponseStructure(from responseType: String) -> String? {
             let url: String
             let thumbnailUrl: String
         }
-        """
+        """,
     ]
 
     return typeStructures[cleanedType]
@@ -803,6 +879,6 @@ private func stringValue(from value: Any) -> String {
 @main
 struct AsyncNetworkMacrosPlugin: CompilerPlugin {
     let providingMacros: [Macro.Type] = [
-        APIRequestMacroImpl.self
+        APIRequestMacroImpl.self,
     ]
 }
