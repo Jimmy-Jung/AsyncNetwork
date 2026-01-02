@@ -6,6 +6,7 @@
 //
 
 import AsyncNetworkDocKit
+import Foundation
 
 // MARK: - Posts API
 
@@ -44,6 +45,8 @@ struct GetAllPostsRequest {
 )
 struct GetPostByIdRequest {
     @PathParameter var id: Int
+    @HeaderField(.userAgent) var userAgent: String? = "AsyncNetworkDocKit/1.0.0"
+    @HeaderField(.acceptLanguage) var acceptLanguage: String? = "ko-KR,ko;q=0.9,en;q=0.8"
 }
 
 @APIRequest(
@@ -64,6 +67,8 @@ struct GetPostByIdRequest {
 )
 struct CreatePostRequest {
     @RequestBody var body: PostBody?
+    @HeaderField(.contentType) var contentType: String? = "application/json"
+    @HeaderField(.requestId) var requestId: String? = UUID().uuidString
 }
 
 @APIRequest(
@@ -117,6 +122,8 @@ struct GetAllUsersRequest {}
 )
 struct GetUserByIdRequest {
     @PathParameter var id: Int
+    @CustomHeader("X-Client-Version") var clientVersion: String? = "1.0.0"
+    @CustomHeader("X-Platform") var platform: String? = "iOS"
 }
 
 @APIRequest(
@@ -130,6 +137,8 @@ struct GetUserByIdRequest {
 )
 struct CreateUserRequest {
     @RequestBody var body: UserBody?
+    @HeaderField(.authorization) var authorization: String?
+    @HeaderField(.timestamp) var timestamp: String? = String(Int(Date().timeIntervalSince1970))
 }
 
 // MARK: - Comments API
@@ -314,6 +323,10 @@ struct GetAlbumPhotosRequest {
 )
 struct CreateOrderRequest {
     @RequestBody var body: CreateOrderBody?
+    @HeaderField(.authorization) var authorization: String?
+    @HeaderField(.requestId) var requestId: String? = UUID().uuidString
+    @HeaderField(.sessionId) var sessionId: String?
+    @CustomHeader("X-Idempotency-Key") var idempotencyKey: String? = UUID().uuidString
 }
 
 @APIRequest(
@@ -366,6 +379,8 @@ struct CreateOrderRequest {
 )
 struct GetOrderRequest {
     @PathParameter var orderId: Int
+    @HeaderField(.authorization) var authorization: String?
+    @HeaderField(.userAgent) var userAgent: String? = "AsyncNetworkDocKit/1.0.0"
 }
 
 // MARK: - Complex Profile API
@@ -466,6 +481,10 @@ struct GetOrderRequest {
 )
 struct UpdateProfileRequest {
     @RequestBody var body: UpdateProfileBody?
+    @HeaderField(.authorization) var authorization: String?
+    @HeaderField(.contentType) var contentType: String? = "application/json"
+    @HeaderField(.acceptLanguage) var acceptLanguage: String? = "ko-KR,ko;q=0.9"
+    @CustomHeader("X-Device-Id") var deviceId: String?
 }
 
 // MARK: - Complex Search API
@@ -576,4 +595,8 @@ struct UpdateProfileRequest {
 )
 struct SearchRequest {
     @RequestBody var body: SearchFilterBody?
+    @HeaderField(.authorization) var authorization: String?
+    @HeaderField(.requestId) var requestId: String? = UUID().uuidString
+    @HeaderField(.userAgent) var userAgent: String? = "AsyncNetworkDocKit/1.0.0"
+    @CustomHeader("X-Search-Session") var searchSession: String? = UUID().uuidString
 }
