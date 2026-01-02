@@ -18,7 +18,6 @@ struct NetworkLogPluginTests {
         var baseURLString: String = "https://example.com"
         var path: String = "/test"
         var method: HTTPMethod = .get
-        var task: HTTPTask = .requestPlain
         var headers: [String: String]?
     }
 
@@ -30,7 +29,7 @@ struct NetworkLogPluginTests {
         let interceptor = ConsoleLoggingInterceptor()
 
         // Then
-        #expect(interceptor != nil)
+        _ = interceptor // 사용되었음을 표시
     }
 
     @Test("커스텀 로그 레벨로 ConsoleLoggingInterceptor 생성")
@@ -43,11 +42,7 @@ struct NetworkLogPluginTests {
         let errorInterceptor = ConsoleLoggingInterceptor(minimumLevel: .error)
 
         // Then
-        #expect(verboseInterceptor != nil)
-        #expect(debugInterceptor != nil)
-        #expect(infoInterceptor != nil)
-        #expect(warningInterceptor != nil)
-        #expect(errorInterceptor != nil)
+        _ = (verboseInterceptor, debugInterceptor, infoInterceptor, warningInterceptor, errorInterceptor)
     }
 
     @Test("커스텀 민감한 키로 ConsoleLoggingInterceptor 생성")
@@ -59,7 +54,7 @@ struct NetworkLogPluginTests {
         )
 
         // Then
-        #expect(interceptor != nil)
+        _ = interceptor // 사용되었음을 표시
     }
 
     // MARK: - Request Logging Tests

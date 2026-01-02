@@ -197,9 +197,6 @@ struct RetryPolicyTests {
 
     @Test("지수 백오프 지연 시간 계산")
     func calculateExponentialBackoffDelay() {
-        // Given
-        let retryableError = URLError(.networkConnectionLost)
-
         // When
         let delay1 = defaultPolicy.calculateDelay(attempt: 1) // 2^0 * 1.0 = 1.0
         let delay2 = defaultPolicy.calculateDelay(attempt: 2) // 2^1 * 1.0 = 2.0
@@ -218,9 +215,6 @@ struct RetryPolicyTests {
 
     @Test("최대 지연 시간 제한")
     func validateMaxDelayLimit() {
-        // Given
-        let retryableError = URLError(.networkConnectionLost)
-
         // When
         let delay = defaultPolicy.calculateDelay(attempt: 10) // 매우 큰 지연 시간
 
@@ -230,9 +224,6 @@ struct RetryPolicyTests {
 
     @Test("지터가 지연 시간에 추가됨")
     func validateJitterAddedToDelay() {
-        // Given
-        let retryableError = URLError(.networkConnectionLost)
-
         // When
         let delay1 = defaultPolicy.calculateDelay(attempt: 2)
         let delay2 = defaultPolicy.calculateDelay(attempt: 2)
@@ -250,7 +241,7 @@ struct RetryPolicyTests {
         let policy = RetryPolicy.default
 
         // Then
-        #expect(policy != nil)
+        _ = policy // 사용되었음을 표시
     }
 
     @Test("적극적 재시도 정책")
@@ -259,7 +250,7 @@ struct RetryPolicyTests {
         let policy = RetryPolicy.aggressive
 
         // Then
-        #expect(policy != nil)
+        _ = policy // 사용되었음을 표시
     }
 
     @Test("보수적 재시도 정책")
@@ -268,7 +259,7 @@ struct RetryPolicyTests {
         let policy = RetryPolicy.conservative
 
         // Then
-        #expect(policy != nil)
+        _ = policy // 사용되었음을 표시
     }
 
     @Test("재시도 없음 정책")
@@ -277,7 +268,7 @@ struct RetryPolicyTests {
         let policy = RetryPolicy.none
 
         // Then
-        #expect(policy != nil)
+        _ = policy // 사용되었음을 표시
     }
 
     // MARK: - Edge Cases

@@ -219,7 +219,11 @@ struct ErrorMapperTests {
         // Then
         switch mappedError {
         case let .unknown(error):
-            #expect(error is CustomError)
+            if let customErr = error as? CustomError {
+                #expect(customErr.message == "Custom error")
+            } else {
+                Issue.record("Error should be CustomError type")
+            }
         default:
             Issue.record("알 수 없는 에러는 unknown으로 매핑되어야 함")
         }
@@ -245,7 +249,8 @@ struct ErrorMapperTests {
     @Test("이미 매핑된 NetworkError는 그대로 반환")
     func passThroughAlreadyMappedNetworkError() {
         // Given
-        let originalNetworkError = NetworkError.unknown(NSError(domain: "test", code: 1))
+        let originalNSError = NSError(domain: "test", code: 1)
+        let originalNetworkError = NetworkError.unknown(originalNSError)
 
         // When
         let mappedError = errorMapper.mapError(originalNetworkError)
@@ -253,7 +258,9 @@ struct ErrorMapperTests {
         // Then
         switch mappedError {
         case let .unknown(error):
-            #expect(error is NSError)
+            let nsError = error as NSError
+            #expect(nsError.domain == "test")
+            #expect(nsError.code == 1)
         default:
             Issue.record("이미 매핑된 NetworkError는 그대로 반환되어야 함")
         }
@@ -369,7 +376,7 @@ struct ErrorMapperTests {
         let mapper = ErrorMapper.default
 
         // Then
-        #expect(mapper is ErrorMapper)
+        #expect(mapper.mapError(URLError(.networkConnectionLost)).isRetryable == true)
     }
 
     @Test("조용한 ErrorMapper 생성")
@@ -378,7 +385,7 @@ struct ErrorMapperTests {
         let mapper = ErrorMapper.silent
 
         // Then
-        #expect(mapper is ErrorMapper)
+        #expect(mapper.mapError(URLError(.networkConnectionLost)).isRetryable == true)
     }
 
     @Test("조용한 ErrorMapper 로깅 없이 동작")
@@ -407,7 +414,6 @@ struct ErrorMapperTests {
             var baseURLString: String = "https://api.example.com"
             var path: String = "/test"
             var method: HTTPMethod = .get
-            var task: HTTPTask = .requestPlain
         }
 
         let urlError = URLError(.timedOut)

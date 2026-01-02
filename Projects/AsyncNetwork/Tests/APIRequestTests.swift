@@ -23,14 +23,12 @@ struct APIRequestTests {
         var baseURLString: String = "https://api.example.com"
         var path: String = "/users"
         var method: HTTPMethod = .get
-        var task: HTTPTask = .requestPlain
     }
 
     private struct RequestWithHeaders: APIRequest {
         var baseURLString: String = "https://api.example.com"
         var path: String = "/auth"
         var method: HTTPMethod = .post
-        var task: HTTPTask = .requestPlain
         var headers: [String: String]? = [
             "Authorization": "Bearer token",
             "X-Custom": "value"
@@ -41,7 +39,6 @@ struct APIRequestTests {
         var baseURLString: String = "https://api.example.com"
         var path: String = "/slow"
         var method: HTTPMethod = .get
-        var task: HTTPTask = .requestPlain
         var timeout: TimeInterval = 60.0
     }
 
@@ -49,11 +46,11 @@ struct APIRequestTests {
         var baseURLString: String = "https://api.example.com"
         var path: String = "/login"
         var method: HTTPMethod = .post
-        var task: HTTPTask
-        var headers: [String: String]?
+
+        @RequestBody var body: RequestJSONBody?
 
         init(body: RequestJSONBody) {
-            task = .requestJSONEncodable(body)
+            self.body = body
         }
     }
 
@@ -118,7 +115,7 @@ struct APIRequestTests {
         #expect(urlRequest.timeoutInterval == 60.0)
     }
 
-    @Test("asURLRequest - JSON 본문 포함")
+    @Test("asURLRequest - JSON 본문 포함 (RequestBody PropertyWrapper)")
     func asURLRequestWithJSONBody() throws {
         // Given
         let body = RequestJSONBody(username: "user", password: "pass")
@@ -154,7 +151,6 @@ struct APIRequestTests {
             var baseURLString: String = "https://api.example.com"
             var path: String = "/test"
             var method: HTTPMethod
-            var task: HTTPTask = .requestPlain
         }
 
         let request = MethodRequest(method: method)
@@ -173,7 +169,6 @@ struct APIRequestTests {
             var baseURLString: String = "https://api.example.com"
             var path: String
             var method: HTTPMethod = .get
-            var task: HTTPTask = .requestPlain
         }
 
         let request = PathRequest(path: "/v1/users/123")
@@ -185,17 +180,24 @@ struct APIRequestTests {
         #expect(urlRequest.url?.absoluteString == "https://api.example.com/v1/users/123")
     }
 
-    @Test("asURLRequest - 쿼리 파라미터 적용")
+    @Test("asURLRequest - QueryParameter PropertyWrapper")
     func asURLRequestWithQueryParameters() throws {
         // Given
         struct QueryRequest: APIRequest {
             var baseURLString: String = "https://api.example.com"
             var path: String = "/search"
             var method: HTTPMethod = .get
-            var task: HTTPTask = .requestQueryParameters(parameters: ["q": "test", "page": "1"])
+
+            @QueryParameter var q: String?
+            @QueryParameter var page: String?
+
+            init(q: String, page: String) {
+                self.q = q
+                self.page = page
+            }
         }
 
-        let request = QueryRequest()
+        let request = QueryRequest(q: "test", page: "1")
 
         // When
         let urlRequest = try request.asURLRequest()
@@ -204,53 +206,5 @@ struct APIRequestTests {
         let urlString = urlRequest.url?.absoluteString ?? ""
         #expect(urlString.contains("q=test"))
         #expect(urlString.contains("page=1"))
-    }
-
-    @Test("asURLRequest - Form 파라미터 적용")
-    func asURLRequestWithFormParameters() throws {
-        // Given
-        struct FormRequest: APIRequest {
-            var baseURLString: String = "https://api.example.com"
-            var path: String = "/form"
-            var method: HTTPMethod = .post
-            var task: HTTPTask = .requestParameters(parameters: ["field1": "value1", "field2": "value2"])
-        }
-
-        let request = FormRequest()
-
-        // When
-        let urlRequest = try request.asURLRequest()
-
-        // Then
-        #expect(urlRequest.httpBody != nil)
-        #expect(urlRequest.value(forHTTPHeaderField: "Content-Type") == "application/x-www-form-urlencoded")
-
-        let bodyString = String(data: urlRequest.httpBody!, encoding: .utf8)!
-        #expect(bodyString.contains("field1=value1"))
-        #expect(bodyString.contains("field2=value2"))
-    }
-
-    @Test("asURLRequest - Data 본문 적용")
-    func asURLRequestWithDataBody() throws {
-        // Given
-        let bodyData = Data("raw data".utf8)
-        struct DataRequest: APIRequest {
-            var baseURLString: String = "https://api.example.com"
-            var path: String = "/upload"
-            var method: HTTPMethod = .post
-            var task: HTTPTask
-
-            init(data: Data) {
-                task = .requestData(data)
-            }
-        }
-
-        let request = DataRequest(data: bodyData)
-
-        // When
-        let urlRequest = try request.asURLRequest()
-
-        // Then
-        #expect(urlRequest.httpBody == bodyData)
     }
 }

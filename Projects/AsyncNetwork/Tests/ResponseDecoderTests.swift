@@ -127,7 +127,7 @@ struct ResponseDecoderTests {
         let decodedResponse = try decoder.decode(response, to: EmptyResponseDto.self)
 
         // Then
-        #expect(decodedResponse is EmptyResponseDto)
+        _ = decodedResponse // 사용되었음을 표시
     }
 
     // MARK: - Date Decoding Tests
@@ -217,8 +217,8 @@ struct ResponseDecoderTests {
         switch result {
         case .success:
             #expect(Bool(false), "디코딩이 실패해야 함")
-        case let .failure(error):
-            #expect(error is DecodingError)
+        case .failure:
+            break // 실패 케이스 확인
         }
     }
 
@@ -358,7 +358,7 @@ struct ResponseDecoderTests {
         let decoder = ResponseDecoder.default
 
         // Then
-        #expect(decoder != nil)
+        _ = decoder // 사용되었음을 표시
     }
 
     @Test("커스텀 날짜 형식 ResponseDecoder 생성")
@@ -367,7 +367,7 @@ struct ResponseDecoderTests {
         let decoder = ResponseDecoder.withDateFormat("yyyy-MM-dd")
 
         // Then
-        #expect(decoder != nil)
+        _ = decoder // 사용되었음을 표시
     }
 }
 

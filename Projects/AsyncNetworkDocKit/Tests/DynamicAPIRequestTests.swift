@@ -87,8 +87,8 @@ struct DynamicAPIRequestTests {
         #expect(request.timeout == 30)
     }
 
-    @Test("query parameters만 있을 때 requestQueryParameters task가 생성된다")
-    func queryParametersTaskIsCreated() {
+    @Test("query parameters만 있을 때 URL에 올바르게 추가된다")
+    func queryParametersAreAddedToURL() throws {
         let queryParams = ["page": "1", "limit": "10"]
         let request = DynamicAPIRequest(
             baseURL: "https://api.example.com",
@@ -97,15 +97,16 @@ struct DynamicAPIRequestTests {
             queryParameters: queryParams
         )
 
-        if case let .requestQueryParameters(parameters) = request.task {
-            #expect(parameters == queryParams)
-        } else {
-            Issue.record("Expected requestQueryParameters task")
-        }
+        let urlRequest = try request.asURLRequest()
+        let urlComponents = URLComponents(url: urlRequest.url!, resolvingAgainstBaseURL: false)
+        let queryItems = urlComponents?.queryItems ?? []
+
+        #expect(queryItems.contains(where: { $0.name == "page" && $0.value == "1" }))
+        #expect(queryItems.contains(where: { $0.name == "limit" && $0.value == "10" }))
     }
 
-    @Test("빈 query parameters일 때 requestPlain task가 생성된다")
-    func emptyQueryParametersCreatesPlainTask() {
+    @Test("빈 query parameters일 때 URL에 query string이 없다")
+    func emptyQueryParametersDoesNotAddQueryString() throws {
         let request = DynamicAPIRequest(
             baseURL: "https://api.example.com",
             path: "/users",
@@ -113,15 +114,14 @@ struct DynamicAPIRequestTests {
             queryParameters: [:]
         )
 
-        if case .requestPlain = request.task {
-            // Success
-        } else {
-            Issue.record("Expected requestPlain task")
-        }
+        let urlRequest = try request.asURLRequest()
+        let urlComponents = URLComponents(url: urlRequest.url!, resolvingAgainstBaseURL: false)
+
+        #expect(urlComponents?.queryItems == nil || urlComponents?.queryItems?.isEmpty == true)
     }
 
-    @Test("body가 있을 때 requestData task가 생성된다")
-    func bodyDataTaskIsCreated() {
+    @Test("body가 있을 때 httpBody에 올바르게 설정된다")
+    func bodyDataIsSetInHTTPBody() throws {
         let bodyData = "{\"name\": \"John\"}".data(using: .utf8)!
         let request = DynamicAPIRequest(
             baseURL: "https://api.example.com",
@@ -130,15 +130,13 @@ struct DynamicAPIRequestTests {
             body: bodyData
         )
 
-        if case let .requestData(data) = request.task {
-            #expect(data == bodyData)
-        } else {
-            Issue.record("Expected requestData task")
-        }
+        let urlRequest = try request.asURLRequest()
+        #expect(urlRequest.httpBody == bodyData)
+        #expect(urlRequest.value(forHTTPHeaderField: "Content-Type") == "application/json")
     }
 
-    @Test("body와 query parameters가 모두 있을 때 body가 우선된다")
-    func bodyTakesPrecedenceOverQueryParameters() {
+    @Test("body와 query parameters가 모두 있을 때 둘 다 올바르게 설정된다")
+    func bodyAndQueryParametersAreBothSet() throws {
         let bodyData = "{\"name\": \"John\"}".data(using: .utf8)!
         let queryParams = ["page": "1"]
         let request = DynamicAPIRequest(
@@ -149,26 +147,30 @@ struct DynamicAPIRequestTests {
             body: bodyData
         )
 
-        if case let .requestData(data) = request.task {
-            #expect(data == bodyData)
-        } else {
-            Issue.record("Expected requestData task (body should take precedence)")
-        }
+        let urlRequest = try request.asURLRequest()
+
+        // Body 검증
+        #expect(urlRequest.httpBody == bodyData)
+
+        // Query parameters 검증
+        let urlComponents = URLComponents(url: urlRequest.url!, resolvingAgainstBaseURL: false)
+        let queryItems = urlComponents?.queryItems ?? []
+        #expect(queryItems.contains(where: { $0.name == "page" && $0.value == "1" }))
     }
 
-    @Test("body와 query parameters가 없을 때 requestPlain task가 생성된다")
-    func plainTaskIsCreatedWhenNoBodyOrQuery() {
+    @Test("body와 query parameters가 없을 때 기본 URLRequest가 생성된다")
+    func plainRequestIsCreatedWhenNoBodyOrQuery() throws {
         let request = DynamicAPIRequest(
             baseURL: "https://api.example.com",
             path: "/users",
             method: .get
         )
 
-        if case .requestPlain = request.task {
-            // Success
-        } else {
-            Issue.record("Expected requestPlain task")
-        }
+        let urlRequest = try request.asURLRequest()
+
+        #expect(urlRequest.httpBody == nil)
+        let urlComponents = URLComponents(url: urlRequest.url!, resolvingAgainstBaseURL: false)
+        #expect(urlComponents?.queryItems == nil || urlComponents?.queryItems?.isEmpty == true)
     }
 
     @Test("parseResponse는 원본 Data를 반환한다")
@@ -213,10 +215,7 @@ struct DynamicAPIRequestTests {
         #expect(request.method == .post)
         #expect(request.headers?["Content-Type"] == "application/json")
 
-        if case let .requestData(data) = request.task {
-            #expect(data == bodyData)
-        } else {
-            Issue.record("Expected requestData task")
-        }
+        let urlRequest = try request.asURLRequest()
+        #expect(urlRequest.httpBody == bodyData)
     }
 }

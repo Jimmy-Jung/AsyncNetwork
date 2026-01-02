@@ -57,7 +57,7 @@ struct ConsoleLoggingInterceptorTests {
         let interceptor = ConsoleLoggingInterceptor()
 
         // Then - 초기화가 성공적으로 됨
-        #expect(interceptor is ConsoleLoggingInterceptor)
+        _ = interceptor // 사용되었음을 표시
     }
 
     @Test("ConsoleLoggingInterceptor 커스텀 minimumLevel")
@@ -66,7 +66,7 @@ struct ConsoleLoggingInterceptorTests {
         let interceptor = ConsoleLoggingInterceptor(minimumLevel: .warning)
 
         // Then
-        #expect(interceptor is ConsoleLoggingInterceptor)
+        _ = interceptor // 사용되었음을 표시
     }
 
     @Test("ConsoleLoggingInterceptor 커스텀 sensitiveKeys")
@@ -77,7 +77,7 @@ struct ConsoleLoggingInterceptorTests {
         )
 
         // Then
-        #expect(interceptor is ConsoleLoggingInterceptor)
+        _ = interceptor // 사용되었음을 표시
     }
 
     // MARK: - RequestInterceptor Protocol Tests

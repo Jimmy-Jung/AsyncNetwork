@@ -18,7 +18,6 @@ struct HTTPClientTests {
         var baseURLString: String = "https://example.com"
         var path: String
         var method: HTTPMethod = .get
-        var task: HTTPTask = .requestPlain
         var headers: [String: String]?
 
         init(path: String = "/test") {

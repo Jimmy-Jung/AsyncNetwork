@@ -22,7 +22,6 @@ private struct TestAPIRequest: APIRequest {
     var baseURLString: String = "https://api.example.com"
     var path: String
     var method: HTTPMethod = .get
-    var task: HTTPTask = .requestPlain
 
     init(path: String) {
         self.path = path
@@ -35,7 +34,6 @@ private struct TypedTestAPIRequest: APIRequest {
     var baseURLString: String = "https://api.example.com"
     var path: String
     var method: HTTPMethod = .get
-    var task: HTTPTask = .requestPlain
 
     init(path: String) {
         self.path = path
@@ -48,7 +46,6 @@ private struct LogoutRequest: APIRequest {
     var baseURLString: String = "https://api.example.com"
     var path: String = "/auth/logout"
     var method: HTTPMethod = .post
-    var task: HTTPTask = .requestPlain
 }
 
 // MARK: - NetworkServiceTests
@@ -336,6 +333,6 @@ struct NetworkServiceTests {
         let emptyResponse = try await service.request(LogoutRequest())
 
         // Then
-        #expect(emptyResponse is EmptyResponse)
+        _ = emptyResponse // 사용되었음을 표시
     }
 }

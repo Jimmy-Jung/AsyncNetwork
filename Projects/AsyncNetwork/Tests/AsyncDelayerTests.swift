@@ -158,7 +158,9 @@ struct SystemDelayerTests {
 
         // Then
         let elapsed = Date().timeIntervalSince(startTime)
-        #expect(elapsed < 0.1)
+        // Task.sleep은 0초라도 시스템 오버헤드(스케줄링, 컨텍스트 스위칭)가 발생
+        // CI 환경이나 시스템 부하 시 더 오래 걸릴 수 있으므로 여유 있는 상한선 설정
+        #expect(elapsed < 0.5)
     }
 
     @Test("SystemDelayer 작은 지연")

@@ -81,7 +81,6 @@ struct NetworkServiceFactoryTests {
         let httpClient = HTTPClient(session: .shared)
         let retryPolicy = RetryPolicy.aggressive
         let responseProcessor = ResponseProcessor()
-        let dataResponseProcessor = DataResponseProcessor()
         struct TestInterceptor: RequestInterceptor {}
         let interceptors: [any RequestInterceptor] = [TestInterceptor()]
 
@@ -90,7 +89,6 @@ struct NetworkServiceFactoryTests {
             httpClient: httpClient,
             retryPolicy: retryPolicy,
             responseProcessor: responseProcessor,
-            dataResponseProcessor: dataResponseProcessor,
             interceptors: interceptors
         )
 
