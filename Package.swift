@@ -40,6 +40,9 @@ let package = Package(
     ],
     targets: [
         // MARK: - Core Network Library
+        // Projects/AsyncNetwork/Sources 폴더 전체를 사용하되,
+        // Umbrella 모듈인 AsyncNetwork 폴더는 제외
+        // (Core 기능만 포함: Models, Client, Service, Processing 등)
         .target(
             name: "AsyncNetworkCore",
             dependencies: [],
@@ -48,6 +51,7 @@ let package = Package(
         ),
 
         // MARK: - Umbrella Target (Core + Macros)
+        // AsyncNetworkCore와 AsyncNetworkMacros를 통합한 단일 import 모듈
         .target(
             name: "AsyncNetwork",
             dependencies: [
