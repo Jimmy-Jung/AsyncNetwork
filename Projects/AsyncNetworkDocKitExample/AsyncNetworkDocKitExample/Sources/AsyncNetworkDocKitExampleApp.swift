@@ -11,7 +11,7 @@ import AsyncNetworkDocKit
 @main
 struct AsyncNetworkDocKitExampleApp: App {
     let networkService = NetworkService()
-    
+
     var body: some Scene {
         DocKitFactory.createDocApp(
             endpoints: [
@@ -34,11 +34,20 @@ struct AsyncNetworkDocKitExampleApp: App {
                 "Albums": [
                     GetUserAlbumsRequest.metadata,
                     GetAlbumPhotosRequest.metadata
+                ],
+                "Orders": [
+                    CreateOrderRequest.metadata,
+                    GetOrderRequest.metadata
+                ],
+                "Profile": [
+                    UpdateProfileRequest.metadata
+                ],
+                "Search": [
+                    SearchRequest.metadata
                 ]
             ],
             networkService: networkService,
-            appTitle: "JSONPlaceholder API Docs"
+            appTitle: "AsyncNetwork API Documentation"
         )
     }
 }
-

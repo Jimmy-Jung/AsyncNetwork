@@ -212,3 +212,368 @@ struct GetUserAlbumsRequest {
 struct GetAlbumPhotosRequest {
     @PathParameter var albumId: Int
 }
+
+// MARK: - Complex Order API
+
+@APIRequest(
+    response: Order.self,
+    title: "Create an order",
+    description: "복잡한 주문을 생성합니다. 여러 상품, 배송지, 결제 정보를 포함합니다.",
+    baseURL: "https://api.example.com",
+    path: "/orders",
+    method: "post",
+    tags: ["Orders", "Write", "Complex"],
+    requestBodyExample: """
+    {
+      "items": [
+        {
+          "productId": 101,
+          "quantity": 2,
+          "options": {
+            "color": "blue",
+            "size": "L"
+          }
+        },
+        {
+          "productId": 205,
+          "quantity": 1,
+          "options": {
+            "material": "cotton"
+          }
+        }
+      ],
+      "shippingAddress": {
+        "recipientName": "홍길동",
+        "phoneNumber": "010-1234-5678",
+        "street": "테헤란로 123",
+        "city": "서울",
+        "state": "서울특별시",
+        "zipCode": "06234",
+        "country": "KR",
+        "instructions": "문 앞에 놔주세요"
+      },
+      "paymentMethod": {
+        "type": "card",
+        "cardToken": "tok_1234567890abcdef",
+        "bankAccountId": null
+      },
+      "couponCode": "SUMMER2026",
+      "giftMessage": "생일 축하해요!",
+      "subscribeNewsletter": true
+    }
+    """,
+    responseExample: """
+    {
+      "id": 9001,
+      "userId": 42,
+      "orderNumber": "ORD-2026-001234",
+      "status": "pending",
+      "totalAmount": 89500.50,
+      "items": [
+        {
+          "productId": 101,
+          "productName": "Premium T-Shirt",
+          "quantity": 2,
+          "unitPrice": 29900.00,
+          "discount": 2000.00,
+          "options": {
+            "color": "blue",
+            "size": "L"
+          }
+        },
+        {
+          "productId": 205,
+          "productName": "Cotton Pants",
+          "quantity": 1,
+          "unitPrice": 45900.00,
+          "discount": null,
+          "options": {
+            "material": "cotton"
+          }
+        }
+      ],
+      "shippingAddress": {
+        "recipientName": "홍길동",
+        "phoneNumber": "010-1234-5678",
+        "street": "테헤란로 123",
+        "city": "서울",
+        "state": "서울특별시",
+        "zipCode": "06234",
+        "country": "KR",
+        "instructions": "문 앞에 놔주세요"
+      },
+      "paymentMethod": {
+        "type": "card",
+        "cardLastFour": "1234",
+        "cardBrand": "Visa"
+      },
+      "createdAt": "2026-01-02T10:30:00Z",
+      "estimatedDelivery": "2026-01-05T18:00:00Z"
+    }
+    """
+)
+struct CreateOrderRequest {
+    @RequestBody var body: CreateOrderBody?
+}
+
+@APIRequest(
+    response: Order.self,
+    title: "Get order by ID",
+    description: "특정 주문의 상세 정보를 조회합니다.",
+    baseURL: "https://api.example.com",
+    path: "/orders/{orderId}",
+    method: "get",
+    tags: ["Orders", "Read", "Complex"],
+    responseExample: """
+    {
+      "id": 9001,
+      "userId": 42,
+      "orderNumber": "ORD-2026-001234",
+      "status": "shipped",
+      "totalAmount": 89500.50,
+      "items": [
+        {
+          "productId": 101,
+          "productName": "Premium T-Shirt",
+          "quantity": 2,
+          "unitPrice": 29900.00,
+          "discount": 2000.00,
+          "options": {
+            "color": "blue",
+            "size": "L"
+          }
+        }
+      ],
+      "shippingAddress": {
+        "recipientName": "홍길동",
+        "phoneNumber": "010-1234-5678",
+        "street": "테헤란로 123",
+        "city": "서울",
+        "state": "서울특별시",
+        "zipCode": "06234",
+        "country": "KR",
+        "instructions": "문 앞에 놔주세요"
+      },
+      "paymentMethod": {
+        "type": "card",
+        "cardLastFour": "1234",
+        "cardBrand": "Visa"
+      },
+      "createdAt": "2026-01-02T10:30:00Z",
+      "estimatedDelivery": "2026-01-05T18:00:00Z"
+    }
+    """
+)
+struct GetOrderRequest {
+    @PathParameter var orderId: Int
+}
+
+// MARK: - Complex Profile API
+
+@APIRequest(
+    response: UserProfile.self,
+    title: "Update user profile",
+    description: "사용자 프로필을 업데이트합니다. 선호 설정, 소셜 링크 등을 포함합니다.",
+    baseURL: "https://api.example.com",
+    path: "/profile",
+    method: "put",
+    tags: ["Profile", "Write", "Complex"],
+    requestBodyExample: """
+    {
+      "fullName": "김철수",
+      "bio": "Full-stack developer passionate about Swift and iOS",
+      "avatar": "https://example.com/avatars/chulsoo.jpg",
+      "preferences": {
+        "language": "ko",
+        "timezone": "Asia/Seoul",
+        "theme": "dark",
+        "notifications": {
+          "email": true,
+          "push": true,
+          "sms": false,
+          "frequency": "daily"
+        },
+        "privacy": {
+          "profileVisibility": "public",
+          "showEmail": false,
+          "showActivity": true
+        }
+      },
+      "socialLinks": {
+        "twitter": "https://twitter.com/chulsoo_kim",
+        "github": "https://github.com/chulsoo",
+        "linkedin": "https://linkedin.com/in/chulsoo-kim",
+        "website": "https://chulsoo.dev"
+      }
+    }
+    """,
+    responseExample: """
+    {
+      "id": 42,
+      "username": "chulsoo_kim",
+      "email": "chulsoo@example.com",
+      "fullName": "김철수",
+      "avatar": "https://example.com/avatars/chulsoo.jpg",
+      "bio": "Full-stack developer passionate about Swift and iOS",
+      "preferences": {
+        "language": "ko",
+        "timezone": "Asia/Seoul",
+        "theme": "dark",
+        "notifications": {
+          "email": true,
+          "push": true,
+          "sms": false,
+          "frequency": "daily"
+        },
+        "privacy": {
+          "profileVisibility": "public",
+          "showEmail": false,
+          "showActivity": true
+        }
+      },
+      "socialLinks": {
+        "twitter": "https://twitter.com/chulsoo_kim",
+        "github": "https://github.com/chulsoo",
+        "linkedin": "https://linkedin.com/in/chulsoo-kim",
+        "website": "https://chulsoo.dev"
+      },
+      "stats": {
+        "posts": 127,
+        "followers": 1542,
+        "following": 289,
+        "likes": 3891
+      },
+      "badges": [
+        {
+          "id": 1,
+          "name": "Early Adopter",
+          "icon": "🌟",
+          "description": "Joined in the first month",
+          "earnedAt": "2025-01-15T00:00:00Z"
+        },
+        {
+          "id": 5,
+          "name": "Top Contributor",
+          "icon": "🏆",
+          "description": "Made 100+ contributions",
+          "earnedAt": "2025-12-01T00:00:00Z"
+        }
+      ],
+      "isPremium": true,
+      "memberSince": "2025-01-15T00:00:00Z"
+    }
+    """
+)
+struct UpdateProfileRequest {
+    @RequestBody var body: UpdateProfileBody?
+}
+
+// MARK: - Complex Search API
+
+@APIRequest(
+    response: SearchResult.self,
+    title: "Advanced search",
+    description: "고급 검색 필터를 사용하여 컨텐츠를 검색합니다. 다중 필터, 정렬, 페이지네이션을 지원합니다.",
+    baseURL: "https://api.example.com",
+    path: "/search",
+    method: "post",
+    tags: ["Search", "Complex"],
+    requestBodyExample: """
+    {
+      "query": "iOS development",
+      "filters": {
+        "categories": ["programming", "mobile"],
+        "tags": ["swift", "swiftui", "ios"],
+        "authors": [1, 5, 12],
+        "dateRange": {
+          "from": "2025-01-01",
+          "to": "2026-01-31"
+        },
+        "priceRange": {
+          "min": 0.0,
+          "max": 50000.0
+        },
+        "rating": 4,
+        "inStock": true
+      },
+      "sort": {
+        "field": "relevance",
+        "order": "desc"
+      },
+      "pagination": {
+        "page": 1,
+        "pageSize": 20
+      }
+    }
+    """,
+    responseExample: """
+    {
+      "items": [
+        {
+          "id": 301,
+          "type": "course",
+          "title": "Advanced iOS Development with SwiftUI",
+          "description": "Master SwiftUI and build production-ready iOS apps",
+          "thumbnail": "https://example.com/courses/301/thumb.jpg",
+          "author": {
+            "id": 5,
+            "name": "Jane Developer",
+            "avatar": "https://example.com/avatars/jane.jpg"
+          },
+          "tags": ["swift", "swiftui", "ios", "advanced"],
+          "createdAt": "2025-11-15T10:00:00Z",
+          "score": 98.5
+        },
+        {
+          "id": 412,
+          "type": "article",
+          "title": "SwiftUI Best Practices in 2026",
+          "description": "Learn the latest patterns and techniques",
+          "thumbnail": "https://example.com/articles/412/thumb.jpg",
+          "author": {
+            "id": 12,
+            "name": "John Swift",
+            "avatar": "https://example.com/avatars/john.jpg"
+          },
+          "tags": ["swift", "swiftui", "best-practices"],
+          "createdAt": "2025-12-20T14:30:00Z",
+          "score": 95.2
+        }
+      ],
+      "totalCount": 156,
+      "page": 1,
+      "pageSize": 20,
+      "facets": [
+        {
+          "name": "category",
+          "values": [
+            {
+              "value": "programming",
+              "count": 98
+            },
+            {
+              "value": "mobile",
+              "count": 78
+            }
+          ]
+        },
+        {
+          "name": "rating",
+          "values": [
+            {
+              "value": "5",
+              "count": 45
+            },
+            {
+              "value": "4",
+              "count": 67
+            }
+          ]
+        }
+      ]
+    }
+    """
+)
+struct SearchRequest {
+    @RequestBody var body: SearchFilterBody?
+}

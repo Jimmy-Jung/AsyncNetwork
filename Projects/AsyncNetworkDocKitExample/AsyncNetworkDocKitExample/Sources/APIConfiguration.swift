@@ -37,24 +37,24 @@ import Foundation
 /// - 타입 안전성 (문자열 오타 방지)
 enum APIConfiguration {
     // MARK: - Base URLs
-    
+
     /// JSONPlaceholder API 서버
     static let jsonPlaceholder = "https://jsonplaceholder.typicode.com"
-    
+
     /// 인증 서버 (예시)
     static let auth = "https://auth.example.com"
-    
+
     /// 파일 서버 (예시)
     static let files = "https://files.example.com"
-    
+
     // MARK: - Environment Management
-    
+
     /// 환경별 설정
     enum Environment {
         case development
         case staging
         case production
-        
+
         /// 환경별 JSONPlaceholder baseURL
         var jsonPlaceholder: String {
             switch self {
@@ -66,7 +66,7 @@ enum APIConfiguration {
                 return "https://jsonplaceholder.typicode.com"
             }
         }
-        
+
         /// 환경별 Auth baseURL
         var auth: String {
             switch self {
@@ -78,7 +78,7 @@ enum APIConfiguration {
                 return "https://auth.example.com"
             }
         }
-        
+
         /// 환경별 Files baseURL
         var files: String {
             switch self {
@@ -91,7 +91,7 @@ enum APIConfiguration {
             }
         }
     }
-    
+
     /// 현재 환경 (기본값: production)
     ///
     /// App 시작 시 빌드 설정에 따라 변경:
@@ -105,7 +105,7 @@ enum APIConfiguration {
     /// #endif
     /// ```
     static var currentEnvironment: Environment = .production
-    
+
     /// 현재 환경에 맞는 baseURL 반환
     ///
     /// 환경별 baseURL을 동적으로 사용하고 싶을 때:
@@ -127,7 +127,7 @@ enum APIConfiguration {
             return currentEnvironment.files
         }
     }
-    
+
     /// 서버 타입
     enum ServerType {
         case jsonPlaceholder
@@ -135,4 +135,3 @@ enum APIConfiguration {
         case files
     }
 }
-
