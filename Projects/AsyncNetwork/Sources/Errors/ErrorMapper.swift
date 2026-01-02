@@ -4,6 +4,8 @@ public enum NetworkError: Error, LocalizedError {
     case httpError(StatusCodeValidationError)
     case decodingError(DecodingError)
     case connectionError(URLError)
+    case invalidURL(String)
+    case offline
     case unknown(Error)
 
     public var errorDescription: String? {
@@ -14,6 +16,10 @@ public enum NetworkError: Error, LocalizedError {
             return "Decoding Error: \(error.localizedDescription)"
         case let .connectionError(error):
             return "Connection Error: \(error.localizedDescription)"
+        case let .invalidURL(urlString):
+            return "Invalid URL: \(urlString)"
+        case .offline:
+            return "No internet connection. Please check your network settings."
         case let .unknown(error):
             return "Unknown Error: \(error.localizedDescription)"
         }
@@ -23,11 +29,16 @@ public enum NetworkError: Error, LocalizedError {
         switch self {
         case let .httpError(error):
             return error.statusCode >= 500
-        case .connectionError:
+        case .connectionError, .offline:
             return true
-        case .decodingError, .unknown:
+        case .decodingError, .invalidURL, .unknown:
             return false
         }
+    }
+
+    public var isOffline: Bool {
+        if case .offline = self { return true }
+        return false
     }
 }
 
