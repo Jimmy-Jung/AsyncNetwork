@@ -21,7 +21,7 @@ let apiExampleURL = "https://api.example.com"
     description: "JSONPlaceholder에서 모든 포스트를 가져옵니다. 페이지네이션과 필터링을 지원합니다.",
     baseURL: jsonPlaceholderURL,
     path: "/posts",
-    method: "get",
+    method: .get,
     tags: ["Posts", "Read"],
     responseExample: """
     [
@@ -45,7 +45,7 @@ struct GetAllPostsRequest {
     description: "특정 포스트의 상세 정보를 가져옵니다.",
     baseURL: jsonPlaceholderURL,
     path: "/posts/{id}",
-    method: "get",
+    method: .get,
     tags: ["Posts", "Read"]
 )
 struct GetPostByIdRequest {
@@ -61,7 +61,7 @@ struct GetPostByIdRequest {
     description: "새로운 포스트를 생성합니다.",
     baseURL: jsonPlaceholderURL,
     path: "/posts",
-    method: "post",
+    method: .post,
     tags: ["Posts", "Write"],
     requestBodyExample: """
     {
@@ -83,7 +83,7 @@ struct CreatePostRequest {
     description: "기존 포스트를 업데이트합니다.",
     baseURL: jsonPlaceholderURL,
     path: "/posts/{id}",
-    method: "put",
+    method: .put,
     tags: ["Posts", "Write"]
 )
 struct UpdatePostRequest {
@@ -97,7 +97,7 @@ struct UpdatePostRequest {
     description: "포스트를 삭제합니다.",
     baseURL: jsonPlaceholderURL,
     path: "/posts/{id}",
-    method: "delete",
+    method: .delete,
     tags: ["Posts", "Write"]
 )
 struct DeletePostRequest {
@@ -112,7 +112,7 @@ struct DeletePostRequest {
     description: "모든 사용자 목록을 가져옵니다.",
     baseURL: jsonPlaceholderURL,
     path: "/users",
-    method: "get",
+    method: .get,
     tags: ["Users", "Read"]
 )
 struct GetAllUsersRequest {}
@@ -123,7 +123,7 @@ struct GetAllUsersRequest {}
     description: "특정 사용자의 상세 정보를 가져옵니다.",
     baseURL: jsonPlaceholderURL,
     path: "/users/{id}",
-    method: "get",
+    method: .get,
     tags: ["Users", "Read"]
 )
 struct GetUserByIdRequest {
@@ -138,7 +138,7 @@ struct GetUserByIdRequest {
     description: "새로운 사용자를 생성합니다.",
     baseURL: jsonPlaceholderURL,
     path: "/users",
-    method: "post",
+    method: .post,
     tags: ["Users", "Write"]
 )
 struct CreateUserRequest {
@@ -155,7 +155,7 @@ struct CreateUserRequest {
     description: "특정 포스트의 모든 댓글을 가져옵니다.",
     baseURL: jsonPlaceholderURL,
     path: "/posts/{postId}/comments",
-    method: "get",
+    method: .get,
     tags: ["Comments", "Read"]
 )
 struct GetPostCommentsRequest {
@@ -168,7 +168,7 @@ struct GetPostCommentsRequest {
     description: "새로운 댓글을 작성합니다.",
     baseURL: jsonPlaceholderURL,
     path: "/comments",
-    method: "post",
+    method: .post,
     tags: ["Comments", "Write"]
 )
 struct CreateCommentRequest {
@@ -183,7 +183,7 @@ struct CreateCommentRequest {
     description: "특정 사용자의 모든 앨범을 가져옵니다.",
     baseURL: jsonPlaceholderURL,
     path: "/users/{userId}/albums",
-    method: "get",
+    method: .get,
     tags: ["Albums", "Read"],
     responseExample: """
     [
@@ -210,7 +210,7 @@ struct GetUserAlbumsRequest {
     description: "특정 앨범의 모든 사진을 가져옵니다.",
     baseURL: jsonPlaceholderURL,
     path: "/albums/{albumId}/photos",
-    method: "get",
+    method: .get,
     tags: ["Albums", "Read"],
     responseExample: """
     [
@@ -236,7 +236,7 @@ struct GetAlbumPhotosRequest {
     description: "복잡한 주문을 생성합니다. 여러 상품, 배송지, 결제 정보를 포함합니다.",
     baseURL: apiExampleURL,
     path: "/orders",
-    method: "post",
+    method: .post,
     tags: ["Orders", "Write", "Complex"],
     requestBodyExample: """
     {
@@ -341,7 +341,7 @@ struct CreateOrderRequest {
     description: "특정 주문의 상세 정보를 조회합니다.",
     baseURL: apiExampleURL,
     path: "/orders/{orderId}",
-    method: "get",
+    method: .get,
     tags: ["Orders", "Read", "Complex"],
     responseExample: """
     {
@@ -397,7 +397,7 @@ struct GetOrderRequest {
     description: "사용자 프로필을 업데이트합니다. 선호 설정, 소셜 링크 등을 포함합니다.",
     baseURL: apiExampleURL,
     path: "/profile",
-    method: "put",
+    method: .put,
     tags: ["Profile", "Write", "Complex"],
     requestBodyExample: """
     {
@@ -501,7 +501,7 @@ struct UpdateProfileRequest {
     description: "고급 검색 필터를 사용하여 컨텐츠를 검색합니다. 다중 필터, 정렬, 페이지네이션을 지원합니다.",
     baseURL: apiExampleURL,
     path: "/search",
-    method: "post",
+    method: .post,
     tags: ["Search", "Complex"],
     requestBodyExample: """
     {
