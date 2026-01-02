@@ -63,17 +63,6 @@ let package = Package(
             path: "Projects/AsyncNetwork/Tests"
         ),
 
-        // MARK: - Macro Implementation
-        .macro(
-            name: "AsyncNetworkMacrosImpl",
-            dependencies: [
-                .product(name: "SwiftSyntax", package: "swift-syntax"),
-                .product(name: "SwiftSyntaxMacros", package: "swift-syntax"),
-                .product(name: "SwiftCompilerPlugin", package: "swift-syntax")
-            ],
-            path: "Projects/AsyncNetworkMacros/Sources/AsyncNetworkMacrosImpl"
-        ),
-
         // MARK: - Macro Public Interface
         .target(
             name: "AsyncNetworkMacros",
@@ -82,6 +71,17 @@ let package = Package(
                 "AsyncNetworkCore"
             ],
             path: "Projects/AsyncNetworkMacros/Sources/AsyncNetworkMacros"
+        ),
+
+        // MARK: - Macro Implementation (Compiler Plugin)
+        .macro(
+            name: "AsyncNetworkMacrosImpl",
+            dependencies: [
+                .product(name: "SwiftSyntax", package: "swift-syntax"),
+                .product(name: "SwiftSyntaxMacros", package: "swift-syntax"),
+                .product(name: "SwiftCompilerPlugin", package: "swift-syntax")
+            ],
+            path: "Projects/AsyncNetworkMacros/Sources/AsyncNetworkMacrosImpl"
         ),
 
         // MARK: - Macro Tests
@@ -99,8 +99,7 @@ let package = Package(
         .target(
             name: "AsyncNetworkDocKit",
             dependencies: [
-                "AsyncNetworkCore",
-                "AsyncNetworkMacros"
+                "AsyncNetwork"
             ],
             path: "Projects/AsyncNetworkDocKit/Sources",
             swiftSettings: [

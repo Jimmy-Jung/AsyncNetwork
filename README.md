@@ -19,34 +19,42 @@ tuist generate
 open AsyncNetwork.xcworkspace
 ```
 
-데모 앱(`AsyncNetworkExample`)이 포함된 워크스페이스가 생성됩니다!
+Tuist로 생성된 워크스페이스에는 다음 프로젝트들이 포함됩니다:
+- **AsyncNetwork**: 메인 라이브러리 (Core + Macros + Umbrella)
+- **AsyncNetworkDocKit**: API 문서 생성 프레임워크
+- **AsyncNetworkDocKitExample**: 데모 앱
 
 ---
 
+## 📦 설치
+
+### Tuist (권장)
+
+AsyncNetwork는 Tuist 프로젝트로 제공되어 모듈화된 구조로 개발할 수 있습니다:
+
+```bash
+tuist install
+tuist generate
+```
+
+생성된 프로젝트 구조:
+- **AsyncNetworkCore**: 네트워킹 코어 라이브러리
+- **AsyncNetworkMacros**: 매크로 public interface
+- **AsyncNetwork**: Umbrella 프레임워크 (Core + Macros 통합)
+
+### Swift Package Manager
 ## ✨ 주요 기능
 
 - 🎯 **매크로 기반 API 정의**: `@APIRequest` 매크로로 보일러플레이트 제거
 - 🔌 **Property Wrappers**: 선언적 파라미터 정의
 - 🔄 **Swift Concurrency**: async/await 완전 지원
 - 📝 **타입 안전성**: 컴파일 타임 타입 체크
-- 🧪 **테스트 가능**: 완전한 단위 테스트 지원 (298개 테스트 통과)
-- 📱 **Tuist 템플릿**: API 문서 앱 자동 생성
+- 🧪 **테스트 가능**: 완전한 단위 테스트 지원 (285개 테스트 통과)
+- 📱 **Tuist 지원**: 모듈화된 프로젝트 구조
+- 🎨 **Tuist 템플릿**: API 문서 앱 자동 생성
 
-## 📦 설치
+---
 
-### Swift Package Manager
-
-```swift
-dependencies: [
-    .package(url: "https://github.com/your-repo/AsyncNetwork.git", from: "1.0.0")
-]
-```
-
-### CocoaPods
-
-```ruby
-pod 'AsyncNetwork', '~> 1.0'
-```
 
 ## 🎮 데모 앱 실행 (Tuist Workspace)
 
@@ -244,9 +252,37 @@ MyAPIDoc/
 swift test
 ```
 
-- ✅ 298개 테스트 통과
-- ✅ AsyncNetwork: 284개
-- ✅ AsyncNetworkMacros: 14개
+- ✅ 285개 테스트 통과
+- ✅ AsyncNetwork: 271개 (Core + Integration)
+- ✅ AsyncNetworkMacros: 14개 (macOS 전용)
+
+### 테스트 실행 시 주의사항
+
+**매크로 테스트 (AsyncNetworkMacrosTests)**는 macOS 전용입니다:
+- ✅ macOS 타겟으로 실행: 정상 동작
+- ❌ iOS 타겟으로 실행: 자동으로 스킵됨 (조건부 컴파일)
+
+이는 Swift Macro가 macOS에서만 실행되는 컴파일러 플러그인이기 때문입니다. 
+
+**Tuist로 테스트 실행**:
+```bash
+# Xcode에서 테스트 (iOS)
+xcodebuild test -workspace AsyncNetwork.xcworkspace \
+  -scheme AsyncNetwork \
+  -destination 'platform=iOS Simulator,name=iPhone 16'
+
+# Swift Testing으로 실행 (macOS)
+swift test
+```
+
+```bash
+# macOS에서 전체 테스트 실행 (권장)
+swift test
+
+# 특정 테스트만 실행
+swift test --filter AsyncNetworkMacrosTests  # Macro 테스트
+swift test --filter AsyncNetworkTests        # Core 테스트
+```
 
 ### 테스트 커버리지
 
@@ -289,19 +325,51 @@ AsyncNetwork/
 ├── Workspace.swift            # Tuist Workspace
 ├── Tuist.swift                # Tuist 전역 설정
 ├── Tuist/
-│   └── Package.swift          # 외부 의존성 (AsyncViewModel, TraceKit)
+│   ├── Package.swift          # 외부 의존성 (swift-syntax)
+│   └── ProjectDescriptionHelpers/  # Tuist Helpers
 ├── Projects/
-│   ├── AsyncNetwork/          # 메인 라이브러리 (SPM으로 관리)
+│   ├── AsyncNetwork/          # 메인 라이브러리
+│   │   ├── Project.swift      # Tuist 프로젝트 정의
+│   │   ├── Sources/           # 소스 코드
+│   │   │   ├── AsyncNetwork/  # Umbrella 모듈
+│   │   │   ├── Client/        # HTTP 클라이언트
+│   │   │   ├── Configuration/ # 네트워크 설정
+│   │   │   ├── Models/        # 데이터 모델
+│   │   │   ├── PropertyWrappers/  # @QueryParameter 등
+│   │   │   ├── Protocols/     # APIRequest 등
+│   │   │   └── Service/       # NetworkService
+│   │   └── Tests/             # 단위 테스트
 │   ├── AsyncNetworkMacros/    # 매크로 (SPM으로 관리)
-│   └── AsyncNetworkExample/   # 데모 앱 (Tuist로 관리)
+│   │   ├── Sources/
+│   │   │   ├── AsyncNetworkMacros/      # Public Interface
+│   │   │   └── AsyncNetworkMacrosImpl/  # Macro Implementation
+│   │   └── Tests/
+│   ├── AsyncNetworkDocKit/    # API 문서 프레임워크 (Tuist)
+│   │   ├── Project.swift
+│   │   └── Sources/
+│   └── AsyncNetworkDocKitExample/   # 데모 앱 (Tuist)
 │       ├── Project.swift
-│       └── AsyncNetworkExample/
+│       └── AsyncNetworkDocKitExample/
 │           ├── Sources/
-│           │   ├── AsyncNetworkExampleApp.swift
-│           │   ├── MainMenuView.swift
-│           │   └── Features/  # 12가지 예시 뷰
 │           └── Resources/
 └── Tests/                     # 단위 테스트
+```
+
+### 빌드 방식
+
+AsyncNetwork는 **SPM + Tuist 하이브리드** 방식으로 관리됩니다:
+
+- **SPM (Package.swift)**: 라이브러리 배포 및 의존성 관리
+- **Tuist (Project.swift)**: 개발 시 모듈화 및 워크스페이스 관리
+
+```bash
+# SPM으로 빌드/테스트
+swift build
+swift test
+
+# Tuist로 워크스페이스 생성
+tuist install
+tuist generate
 ```
 
 ## 🏗 아키텍처
