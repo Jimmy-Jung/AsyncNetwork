@@ -59,7 +59,7 @@ struct EndpointDetailView: View {
                     parametersSection
                 }
 
-                if !endpoint.requestBodyFields.isEmpty || endpoint.requestBodyExample != nil {
+                if endpoint.requestBodyStructure != nil || endpoint.requestBodyExample != nil {
                     Divider()
                     requestBodySection
                 }
@@ -171,29 +171,27 @@ struct EndpointDetailView: View {
                 .font(.headline)
 
             VStack(alignment: .leading, spacing: 16) {
-                // Request Body Fields
-                if !endpoint.requestBodyFields.isEmpty {
+                // Request Body Structure (TypeStructureView 사용)
+                if let requestBodyStructure = endpoint.requestBodyStructure {
                     VStack(alignment: .leading, spacing: 8) {
-                        Text("Fields:")
+                        Text("Request Body Structure:")
                             .font(.subheadline)
                             .fontWeight(.semibold)
 
-                        VStack(alignment: .leading, spacing: 4) {
-                            ForEach(groupFieldsByPrefix(endpoint.requestBodyFields), id: \.key) { group in
-                                renderFieldGroup(group)
-                            }
+                        // 중첩 타입 정보가 있으면 토글 가능한 뷰, 없으면 기본 CodeBlock
+                        if let relatedTypes = endpoint.requestBodyRelatedTypes, !relatedTypes.isEmpty {
+                            let parsedTypes = parseRelatedTypes(relatedTypes)
+                            TypeStructureView(structureText: requestBodyStructure, allTypes: parsedTypes)
+                        } else {
+                            TypeStructureView(structureText: requestBodyStructure, allTypes: [:])
                         }
-                        .padding()
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .background(Color.secondary.opacity(0.05))
-                        .cornerRadius(8)
                     }
                 }
 
-                // Request Body Example (DTO)
+                // Request Body Example (JSON)
                 if let requestBodyExample = endpoint.requestBodyExample {
                     VStack(alignment: .leading, spacing: 8) {
-                        Text("Expected Structure (JSON):")
+                        Text("Example Request (JSON):")
                             .font(.subheadline)
                             .fontWeight(.semibold)
 
@@ -202,162 +200,6 @@ struct EndpointDetailView: View {
                 }
             }
         }
-    }
-
-    private struct FieldGroup: Identifiable {
-        let key: String
-        let prefix: String?
-        let fields: [AsyncNetworkCore.RequestBodyFieldInfo]
-
-        var id: String { key }
-    }
-
-    private func groupFieldsByPrefix(_ fields: [AsyncNetworkCore.RequestBodyFieldInfo]) -> [FieldGroup] {
-        var groups: [String: [AsyncNetworkCore.RequestBodyFieldInfo]] = [:]
-
-        for field in fields {
-            let components = field.name.split(separator: ".")
-            if components.count == 1 {
-                // 최상위 필드
-                groups["_root", default: []].append(field)
-            } else {
-                // 중첩 필드 - 첫 번째 레벨로 그룹화
-                let prefix = String(components.first!)
-                groups[prefix, default: []].append(field)
-            }
-        }
-
-        return groups.sorted { $0.key < $1.key }.map { key, fields in
-            FieldGroup(
-                key: key,
-                prefix: key == "_root" ? nil : key,
-                fields: fields.sorted { $0.name < $1.name }
-            )
-        }
-    }
-
-    @ViewBuilder
-    private func renderFieldGroup(_ group: FieldGroup) -> some View {
-        if let prefix = group.prefix {
-            // 그룹화된 필드 (토글 가능)
-            DisclosureGroup {
-                VStack(alignment: .leading, spacing: 2) {
-                    ForEach(group.fields) { field in
-                        renderNestedField(field, groupPrefix: prefix)
-                    }
-                }
-            } label: {
-                HStack(spacing: 8) {
-                    Text(prefix)
-                        .font(.system(.callout, design: .monospaced))
-                        .fontWeight(.semibold)
-                        .foregroundStyle(.purple)
-
-                    Text("{...}")
-                        .font(.system(.caption, design: .monospaced))
-                        .foregroundStyle(.secondary)
-
-                    Text("\(group.fields.count) fields")
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
-                        .padding(.horizontal, 6)
-                        .padding(.vertical, 2)
-                        .background(Color.secondary.opacity(0.15))
-                        .cornerRadius(4)
-                }
-            }
-            .padding(.vertical, 2)
-        } else {
-            // 최상위 필드들
-            ForEach(group.fields) { field in
-                renderTopLevelField(field)
-            }
-        }
-    }
-
-    private func renderTopLevelField(_ field: AsyncNetworkCore.RequestBodyFieldInfo) -> some View {
-        HStack(alignment: .top, spacing: 4) {
-            HStack(spacing: 4) {
-                Text(field.name)
-                    .font(.system(.callout, design: .monospaced))
-                    .fontWeight(.semibold)
-                if field.isRequired {
-                    Text("*")
-                        .foregroundStyle(.red)
-                        .fontWeight(.bold)
-                }
-            }
-
-            Text(":")
-                .foregroundStyle(.secondary)
-
-            Text(field.type)
-                .font(.system(.callout, design: .monospaced))
-                .foregroundStyle(.blue)
-
-            if let example = field.exampleValue {
-                Text("=")
-                    .foregroundStyle(.secondary)
-                Text(example)
-                    .font(.system(.caption, design: .monospaced))
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
-                    .truncationMode(.middle)
-            }
-
-            Spacer()
-        }
-        .padding(.vertical, 2)
-    }
-
-    private func renderNestedField(_ field: AsyncNetworkCore.RequestBodyFieldInfo, groupPrefix: String) -> some View {
-        let fullPath = field.name
-        let pathWithoutPrefix = fullPath.hasPrefix(groupPrefix + ".")
-            ? String(fullPath.dropFirst(groupPrefix.count + 1))
-            : fullPath
-        let depth = pathWithoutPrefix.split(separator: ".").count - 1
-        let displayName = pathWithoutPrefix.split(separator: ".").last.map(String.init) ?? pathWithoutPrefix
-        let indent = String(repeating: "  ", count: depth)
-
-        return HStack(alignment: .top, spacing: 4) {
-            if !indent.isEmpty {
-                Text(indent)
-                    .font(.system(.caption, design: .monospaced))
-                    .foregroundStyle(.clear)
-            }
-
-            HStack(spacing: 4) {
-                Text(displayName)
-                    .font(.system(.callout, design: .monospaced))
-                    .fontWeight(.medium)
-                    .foregroundStyle(.secondary)
-                if field.isRequired {
-                    Text("*")
-                        .foregroundStyle(.red)
-                        .fontWeight(.bold)
-                }
-            }
-
-            Text(":")
-                .foregroundStyle(.secondary)
-
-            Text(field.type)
-                .font(.system(.callout, design: .monospaced))
-                .foregroundStyle(.blue)
-
-            if let example = field.exampleValue {
-                Text("=")
-                    .foregroundStyle(.secondary)
-                Text(example)
-                    .font(.system(.caption, design: .monospaced))
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
-                    .truncationMode(.middle)
-            }
-
-            Spacer()
-        }
-        .padding(.vertical, 1)
     }
 
     private var responseSection: some View {
@@ -381,14 +223,20 @@ struct EndpointDetailView: View {
                         .cornerRadius(4)
                 }
 
-                // Response Structure
+                // Response Structure (DocumentedType가 적용된 경우)
                 if let responseStructure = endpoint.responseStructure {
                     VStack(alignment: .leading, spacing: 8) {
                         Text("Response Structure:")
                             .font(.subheadline)
                             .fontWeight(.semibold)
 
-                        CodeBlock(content: responseStructure)
+                        // 중첩 타입 정보가 있으면 토글 가능한 뷰, 없으면 기본 CodeBlock
+                        if let relatedTypes = endpoint.relatedTypes, !relatedTypes.isEmpty {
+                            let parsedTypes = parseRelatedTypes(relatedTypes)
+                            TypeStructureView(structureText: responseStructure, allTypes: parsedTypes)
+                        } else {
+                            CodeBlock(content: responseStructure)
+                        }
                     }
                 }
 
@@ -412,5 +260,17 @@ struct EndpointDetailView: View {
                 }
             }
         }
+    }
+
+    private func parseRelatedTypes(_ relatedTypes: [String: String]) -> [String: TypeStructure] {
+        var result: [String: TypeStructure] = [:]
+
+        for (typeName, structureText) in relatedTypes {
+            if let parsed = TypeStructureParser.parse(structureText) {
+                result[typeName] = parsed
+            }
+        }
+
+        return result
     }
 }

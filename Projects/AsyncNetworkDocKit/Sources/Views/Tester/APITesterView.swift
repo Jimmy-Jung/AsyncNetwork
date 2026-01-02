@@ -186,123 +186,97 @@ struct APITesterView: View {
             Label("Request Body", systemImage: "doc.plaintext")
                 .font(.headline)
 
-            ForEach(groupFieldsByPrefix(endpoint.requestBodyFields), id: \.key) { group in
-                renderFieldInputGroup(group)
-            }
-        }
-    }
-
-    private struct FieldGroup: Identifiable {
-        let key: String
-        let prefix: String?
-        let fields: [AsyncNetworkCore.RequestBodyFieldInfo]
-
-        var id: String { key }
-    }
-
-    private func groupFieldsByPrefix(_ fields: [AsyncNetworkCore.RequestBodyFieldInfo]) -> [FieldGroup] {
-        var groups: [String: [AsyncNetworkCore.RequestBodyFieldInfo]] = [:]
-
-        for field in fields {
-            let components = field.name.split(separator: ".")
-            if components.count == 1 {
-                // 최상위 필드
-                groups["_root", default: []].append(field)
-            } else {
-                // 중첩 필드 - 첫 번째 레벨로 그룹화
-                let prefix = String(components.first!)
-                groups[prefix, default: []].append(field)
-            }
-        }
-
-        return groups.sorted { $0.key < $1.key }.map { key, fields in
-            FieldGroup(
-                key: key,
-                prefix: key == "_root" ? nil : key,
-                fields: fields.sorted { $0.name < $1.name }
-            )
-        }
-    }
-
-    @ViewBuilder
-    private func renderFieldInputGroup(_ group: FieldGroup) -> some View {
-        if let prefix = group.prefix {
-            // 그룹화된 필드 (토글 가능)
-            DisclosureGroup {
-                VStack(alignment: .leading, spacing: 8) {
-                    ForEach(group.fields) { field in
-                        renderNestedFieldInput(field, groupPrefix: prefix)
-                    }
-                }
-            } label: {
-                HStack(spacing: 8) {
-                    Text(prefix)
-                        .font(.system(.body, design: .monospaced))
-                        .fontWeight(.semibold)
-                        .foregroundStyle(.purple)
-
-                    Text("{\(group.fields.count) fields}")
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
-                        .padding(.horizontal, 6)
-                        .padding(.vertical, 2)
-                        .background(Color.secondary.opacity(0.15))
-                        .cornerRadius(4)
-                }
-            }
-            .padding(.vertical, 4)
-        } else {
-            // 최상위 필드들
-            ForEach(group.fields) { field in
+            // 최상위 필드만 렌더링 (중첩 필드는 각 필드 내부에서 처리)
+            let topLevelFields = endpoint.requestBodyFields.filter { !$0.name.contains(".") }
+            ForEach(topLevelFields) { field in
                 renderTopLevelFieldInput(field)
             }
         }
     }
 
+    @ViewBuilder
     private func renderTopLevelFieldInput(_ field: AsyncNetworkCore.RequestBodyFieldInfo) -> some View {
-        HStack(spacing: 12) {
-            HStack(spacing: 4) {
-                Text(field.name)
-                    .font(.system(.callout, design: .monospaced))
-                    .fontWeight(.semibold)
-                if field.isRequired {
-                    Text("*")
-                        .foregroundStyle(.red)
+        switch field.fieldKind {
+        case .primitive:
+            // 기본 타입: 단순 입력 필드
+            HStack(spacing: 12) {
+                HStack(spacing: 4) {
+                    Text(field.name)
+                        .font(.system(.callout, design: .monospaced))
+                        .fontWeight(.semibold)
+                    if field.isRequired {
+                        Text("*")
+                            .foregroundStyle(.red)
+                    }
+                }
+                .frame(width: 150, alignment: .trailing)
+
+                requestBodyFieldInput(for: field)
+            }
+
+        case .object:
+            // 중첩 객체: DisclosureGroup으로 토글
+            let nestedFields = endpoint.requestBodyFields.filter { $0.name.hasPrefix(field.name + ".") }
+            DisclosureGroup {
+                VStack(alignment: .leading, spacing: 8) {
+                    ForEach(nestedFields) { nestedField in
+                        renderObjectNestedField(nestedField, parentPath: field.name)
+                    }
+                }
+                .padding(.leading, 20)
+            } label: {
+                HStack(spacing: 8) {
+                    Text(field.name)
+                        .font(.system(.body, design: .monospaced))
+                        .fontWeight(.semibold)
+                        .foregroundStyle(.purple)
+                    if field.isRequired {
+                        Text("*")
+                            .foregroundStyle(.red)
+                    }
+                    Text(field.type)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
                 }
             }
-            .frame(width: 150, alignment: .trailing)
+            .padding(.vertical, 4)
 
-            requestBodyFieldInput(for: field)
-        }
-    }
+        case .array:
+            // 배열: +/- 버튼으로 항목 추가/삭제
+            VStack(alignment: .leading, spacing: 8) {
+                HStack(spacing: 8) {
+                    Text(field.name)
+                        .font(.system(.body, design: .monospaced))
+                        .fontWeight(.semibold)
+                        .foregroundStyle(.blue)
+                    if field.isRequired {
+                        Text("*")
+                            .foregroundStyle(.red)
+                    }
+                    Text(field.type)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
 
-    private func renderNestedFieldInput(_ field: AsyncNetworkCore.RequestBodyFieldInfo, groupPrefix: String) -> some View {
-        let fullPath = field.name
-        let pathWithoutPrefix = fullPath.hasPrefix(groupPrefix + ".")
-            ? String(fullPath.dropFirst(groupPrefix.count + 1))
-            : fullPath
-        let displayName = pathWithoutPrefix.split(separator: ".").last.map(String.init) ?? pathWithoutPrefix
-        let depth = pathWithoutPrefix.split(separator: ".").count - 1
+                    Spacer()
 
-        return HStack(spacing: 12) {
-            HStack(spacing: 4) {
-                if depth > 0 {
-                    Text(String(repeating: "  ", count: depth))
-                        .font(.system(.caption, design: .monospaced))
+                    Button {
+                        addArrayItem(for: field.name)
+                    } label: {
+                        Image(systemName: "plus.circle.fill")
+                            .foregroundStyle(.green)
+                    }
+                    .buttonStyle(.plain)
                 }
 
-                Text(displayName)
-                    .font(.system(.callout, design: .monospaced))
-                    .fontWeight(.medium)
-                    .foregroundStyle(.secondary)
-                if field.isRequired {
-                    Text("*")
-                        .foregroundStyle(.red)
+                // 배열 항목 표시
+                let itemCount = state.arrayItemCounts[field.name] ?? 0
+                if itemCount > 0 {
+                    ForEach(0 ..< itemCount, id: \.self) { index in
+                        renderArrayItem(field: field, index: index)
+                    }
                 }
             }
-            .frame(width: 150, alignment: .trailing)
-
-            requestBodyFieldInput(for: field)
+            .padding(.vertical, 4)
         }
     }
 
@@ -637,6 +611,125 @@ struct APITesterView: View {
         )
     }
 
+    // MARK: - Array & Object Helper Functions
+
+    @ViewBuilder
+    private func renderObjectNestedField(_ field: AsyncNetworkCore.RequestBodyFieldInfo, parentPath: String) -> some View {
+        let relativeName = String(field.name.dropFirst(parentPath.count + 1))
+        let displayName = relativeName.split(separator: ".").first.map(String.init) ?? relativeName
+
+        if field.fieldKind == .primitive {
+            HStack(spacing: 12) {
+                Text(displayName)
+                    .font(.system(.callout, design: .monospaced))
+                    .fontWeight(.medium)
+                    .foregroundStyle(.secondary)
+                if field.isRequired {
+                    Text("*")
+                        .foregroundStyle(.red)
+                }
+
+                requestBodyFieldInput(for: field)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func renderArrayItem(field: AsyncNetworkCore.RequestBodyFieldInfo, index: Int) -> some View {
+        let nestedFields = endpoint.requestBodyFields.filter {
+            $0.name.hasPrefix(field.name + ".")
+        }
+
+        DisclosureGroup {
+            VStack(alignment: .leading, spacing: 8) {
+                ForEach(nestedFields) { nestedField in
+                    renderArrayItemField(nestedField, arrayPath: field.name, index: index)
+                }
+            }
+            .padding(.leading, 20)
+        } label: {
+            HStack(spacing: 12) {
+                Text("[\(index)]")
+                    .font(.system(.body, design: .monospaced))
+                    .fontWeight(.semibold)
+                    .foregroundStyle(.blue)
+
+                Spacer()
+
+                Button {
+                    removeArrayItem(for: field.name, at: index)
+                } label: {
+                    Image(systemName: "minus.circle.fill")
+                        .foregroundStyle(.red)
+                }
+                .buttonStyle(.plain)
+                .padding(.trailing, 8)
+            }
+        }
+        .padding(.leading, 20)
+        .padding(.vertical, 4)
+    }
+
+    @ViewBuilder
+    private func renderArrayItemField(_ field: AsyncNetworkCore.RequestBodyFieldInfo, arrayPath: String, index: Int) -> some View {
+        let relativeName = String(field.name.dropFirst(arrayPath.count + 1))
+        let displayName = relativeName.split(separator: ".").first.map(String.init) ?? relativeName
+
+        HStack(spacing: 12) {
+            Text(displayName)
+                .font(.system(.callout, design: .monospaced))
+                .fontWeight(.medium)
+                .foregroundStyle(.secondary)
+            if field.isRequired {
+                Text("*")
+                    .foregroundStyle(.red)
+            }
+
+            TextField(
+                field.type,
+                text: arrayFieldBinding(arrayPath: arrayPath, index: index, fieldName: relativeName)
+            )
+            .textFieldStyle(.roundedBorder)
+            .font(.system(.callout, design: .monospaced))
+        }
+    }
+
+    private func arrayFieldBinding(arrayPath: String, index: Int, fieldName: String) -> Binding<String> {
+        Binding(
+            get: {
+                state.arrayItems[arrayPath]?[index]?[fieldName] ?? ""
+            },
+            set: { newValue in
+                if state.arrayItems[arrayPath] == nil {
+                    state.arrayItems[arrayPath] = [:]
+                }
+                if state.arrayItems[arrayPath]?[index] == nil {
+                    state.arrayItems[arrayPath]?[index] = [:]
+                }
+                state.arrayItems[arrayPath]?[index]?[fieldName] = newValue
+            }
+        )
+    }
+
+    private func addArrayItem(for arrayPath: String) {
+        let currentCount = state.arrayItemCounts[arrayPath] ?? 0
+        state.arrayItemCounts[arrayPath] = currentCount + 1
+
+        // 초기 빈 항목 생성
+        if state.arrayItems[arrayPath] == nil {
+            state.arrayItems[arrayPath] = [:]
+        }
+        state.arrayItems[arrayPath]?[currentCount] = [:]
+    }
+
+    private func removeArrayItem(for arrayPath: String, at index: Int) {
+        state.arrayItems[arrayPath]?.removeValue(forKey: index)
+
+        // 카운트 재계산
+        let remainingIndices = state.arrayItems[arrayPath]?.keys.sorted() ?? []
+        state.arrayItemCounts[arrayPath] = remainingIndices.isEmpty ? 0 : (remainingIndices.last! + 1)
+    }
+
     private func setupDefaultValues() {
         // 이미 요청한 적이 있으면 저장된 상태를 유지
         if state.hasBeenRequested {
@@ -698,24 +791,31 @@ struct APITesterView: View {
     private func buildJSONFromFields(using targetState: APITesterState) -> String {
         var jsonDict: [String: Any] = [:]
 
-        for field in endpoint.requestBodyFields {
-            guard let value = targetState.requestBodyFields[field.name], !value.isEmpty else {
-                continue
-            }
+        // 최상위 필드만 처리
+        let topLevelFields = endpoint.requestBodyFields.filter { !$0.name.contains(".") }
 
-            let fieldType = field.type.lowercased()
+        for field in topLevelFields {
+            switch field.fieldKind {
+            case .primitive:
+                // 기본 타입 필드
+                guard let value = targetState.requestBodyFields[field.name], !value.isEmpty else {
+                    continue
+                }
+                jsonDict[field.name] = convertPrimitiveValue(value, type: field.type)
 
-            switch fieldType {
-            case "string":
-                jsonDict[field.name] = value
-            case "int":
-                jsonDict[field.name] = Int(value) ?? 0
-            case "double":
-                jsonDict[field.name] = Double(value) ?? 0.0
-            case "bool":
-                jsonDict[field.name] = value.lowercased() == "true" || value == "1"
-            default:
-                jsonDict[field.name] = value
+            case .object:
+                // 중첩 객체 필드
+                let objectData = buildNestedObject(for: field.name, using: targetState)
+                if !objectData.isEmpty {
+                    jsonDict[field.name] = objectData
+                }
+
+            case .array:
+                // 배열 필드
+                let arrayData = buildArrayData(for: field.name, using: targetState)
+                if !arrayData.isEmpty {
+                    jsonDict[field.name] = arrayData
+                }
             }
         }
 
@@ -726,6 +826,73 @@ struct APITesterView: View {
         }
 
         return jsonString
+    }
+
+    private func convertPrimitiveValue(_ value: String, type: String) -> Any {
+        let fieldType = type.lowercased()
+        switch fieldType {
+        case "string":
+            return value
+        case "int":
+            return Int(value) ?? 0
+        case "double":
+            return Double(value) ?? 0.0
+        case "bool":
+            return value.lowercased() == "true" || value == "1"
+        default:
+            return value
+        }
+    }
+
+    private func buildNestedObject(for parentPath: String, using targetState: APITesterState) -> [String: Any] {
+        var objectDict: [String: Any] = [:]
+
+        let nestedFields = endpoint.requestBodyFields.filter {
+            $0.name.hasPrefix(parentPath + ".") && !$0.name.dropFirst(parentPath.count + 1).contains(".")
+        }
+
+        for field in nestedFields {
+            let fieldName = String(field.name.dropFirst(parentPath.count + 1))
+            guard let value = targetState.requestBodyFields[field.name], !value.isEmpty else {
+                continue
+            }
+            objectDict[fieldName] = convertPrimitiveValue(value, type: field.type)
+        }
+
+        return objectDict
+    }
+
+    private func buildArrayData(for arrayPath: String, using targetState: APITesterState) -> [[String: Any]] {
+        var arrayData: [[String: Any]] = []
+
+        guard let items = targetState.arrayItems[arrayPath] else {
+            return []
+        }
+
+        let sortedIndices = items.keys.sorted()
+
+        for index in sortedIndices {
+            guard let item = items[index] else { continue }
+
+            var itemDict: [String: Any] = [:]
+            for (fieldName, value) in item {
+                if !value.isEmpty {
+                    // 타입 찾기
+                    let fullFieldName = "\(arrayPath).\(fieldName)"
+                    if let field = endpoint.requestBodyFields.first(where: { $0.name == fullFieldName }) {
+                        itemDict[fieldName] = convertPrimitiveValue(value, type: field.type)
+                    } else {
+                        itemDict[fieldName] = value
+                    }
+                }
+            }
+
+            if !itemDict.isEmpty {
+                arrayData.append(itemDict)
+            }
+        }
+
+        return arrayData
     }
 
     private func sendRequest() async {
