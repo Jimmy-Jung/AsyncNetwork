@@ -14,8 +14,9 @@ struct AsyncNetworkDocKitExampleApp: App {
     let networkService = NetworkService()
 
     init() {
-        // 모든 DocumentedType 타입들을 강제로 참조하여 TypeRegistry에 등록
-        registerAllDocumentedTypes()
+        // 모든 @DocumentedType 타입을 미리 등록
+        // 이렇게 해야 중첩 타입들도 TypeRegistry에 등록되어 UI에서 펼쳐볼 수 있습니다
+        registerAllTypes()
     }
 
     var body: some Scene {
@@ -57,8 +58,11 @@ struct AsyncNetworkDocKitExampleApp: App {
         )
     }
 
-    private func registerAllDocumentedTypes() {
-        // Response 타입들의 typeStructure를 호출하여 등록 강제 실행
+    /// 모든 @DocumentedType 타입을 등록합니다
+    /// 
+    /// Swift의 제약으로 타입 이름만으로는 타입을 찾을 수 없어,
+    /// 모든 타입의 typeStructure를 명시적으로 참조하여 등록을 트리거합니다.
+    private func registerAllTypes() {
         _ = Post.typeStructure
         _ = PostBody.typeStructure
         _ = User.typeStructure
@@ -98,3 +102,4 @@ struct AsyncNetworkDocKitExampleApp: App {
         _ = PaginationOptions.typeStructure
     }
 }
+

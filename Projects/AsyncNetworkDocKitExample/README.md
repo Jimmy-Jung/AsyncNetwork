@@ -163,7 +163,12 @@ struct AsyncNetworkDocKitExampleApp: App {
 }
 ```
 
-> 중요: 모든 Response 타입과 중첩 타입에 `@DocumentedType`를 적용하면, 매크로가 자동으로 중첩 타입 정보를 수집하여 2열에서 토글로 펼쳐볼 수 있습니다. 수동 등록은 필요하지 않습니다!
+> ✨ **자동 타입 등록**: 모든 Response 타입과 RequestBody 타입에 `@DocumentedType`를 적용하면, `metadata` 접근 시 자동으로 해당 타입과 중첩 타입들이 `TypeRegistry`에 등록됩니다. 수동 등록 코드(`registerAllDocumentedTypes()`)는 더 이상 필요하지 않습니다!
+>
+> **작동 원리:**
+> 1. `@APIRequest` 매크로가 `metadata` 프로퍼티를 생성할 때, Response/RequestBody 타입의 `typeStructure`를 참조합니다
+> 2. `@DocumentedType` 매크로가 `typeStructure` 접근 시 자기 자신과 중첩 타입들을 자동으로 등록합니다
+> 3. 결과적으로 앱 실행 시 `metadata`만 참조하면 모든 타입이 자동 등록됩니다
 
 ### 2. API Request 정의
 
