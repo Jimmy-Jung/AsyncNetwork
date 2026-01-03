@@ -62,7 +62,7 @@ struct NetworkLogPluginTests {
     @Test("기본 GET 요청 로깅")
     func logBasicGETRequest() async {
         // Given
-        let interceptor = ConsoleLoggingInterceptor(minimumLevel: .debug)
+        let interceptor = ConsoleLoggingInterceptor(minimumLevel: .error)
         let request = TestAPIRequest()
 
         var urlRequest = URLRequest(url: URL(string: "https://example.com/test")!)
@@ -76,7 +76,7 @@ struct NetworkLogPluginTests {
     @Test("헤더가 포함된 요청 로깅")
     func logRequestWithHeaders() async {
         // Given
-        let interceptor = ConsoleLoggingInterceptor(minimumLevel: .debug)
+        let interceptor = ConsoleLoggingInterceptor(minimumLevel: .error)
         let request = TestAPIRequest()
 
         var urlRequest = URLRequest(url: URL(string: "https://example.com/test")!)
@@ -91,7 +91,7 @@ struct NetworkLogPluginTests {
     @Test("바디가 포함된 POST 요청 로깅")
     func logPOSTRequestWithBody() async {
         // Given
-        let interceptor = ConsoleLoggingInterceptor(minimumLevel: .debug)
+        let interceptor = ConsoleLoggingInterceptor(minimumLevel: .error)
         let request = TestAPIRequest()
 
         var urlRequest = URLRequest(url: URL(string: "https://example.com/test")!)
@@ -205,7 +205,7 @@ struct NetworkLogPluginTests {
     @Test("빈 응답 로깅")
     func logEmptyResponse() async {
         // Given
-        let interceptor = ConsoleLoggingInterceptor(minimumLevel: .debug)
+        let interceptor = ConsoleLoggingInterceptor(minimumLevel: .error)
         let request = TestAPIRequest()
 
         let response = HTTPResponse(
@@ -227,7 +227,7 @@ struct NetworkLogPluginTests {
     @Test("큰 응답 데이터 로깅")
     func logLargeResponseData() async {
         // Given
-        let interceptor = ConsoleLoggingInterceptor(minimumLevel: .debug)
+        let interceptor = ConsoleLoggingInterceptor(minimumLevel: .error)
         let request = TestAPIRequest()
 
         // 큰 JSON 데이터 생성 (1000자 이상)
@@ -276,7 +276,7 @@ struct NetworkLogPluginTests {
     @Test("로그 레벨 debug - 기본 정보만")
     func logLevelDebugMinimalLogging() async {
         // Given
-        let interceptor = ConsoleLoggingInterceptor(minimumLevel: .debug)
+        let interceptor = ConsoleLoggingInterceptor(minimumLevel: .error)
         let request = TestAPIRequest()
 
         var urlRequest = URLRequest(url: URL(string: "https://example.com/test")!)
@@ -293,7 +293,7 @@ struct NetworkLogPluginTests {
     @Test("잘못된 JSON 데이터 로깅")
     func logInvalidJSONData() async {
         // Given
-        let interceptor = ConsoleLoggingInterceptor(minimumLevel: .debug)
+        let interceptor = ConsoleLoggingInterceptor(minimumLevel: .error)
         let request = TestAPIRequest()
 
         let invalidJSON = "{ invalid json data".data(using: .utf8)!
@@ -312,7 +312,7 @@ struct NetworkLogPluginTests {
     @Test("바이너리 데이터 로깅")
     func logBinaryData() async {
         // Given
-        let interceptor = ConsoleLoggingInterceptor(minimumLevel: .debug)
+        let interceptor = ConsoleLoggingInterceptor(minimumLevel: .error)
         let request = TestAPIRequest()
 
         // 바이너리 데이터 (이미지 등)
@@ -337,7 +337,7 @@ struct NetworkLogPluginTests {
     @Test("한글 데이터 로깅")
     func logKoreanData() async {
         // Given
-        let interceptor = ConsoleLoggingInterceptor(minimumLevel: .debug)
+        let interceptor = ConsoleLoggingInterceptor(minimumLevel: .error)
         let request = TestAPIRequest()
 
         let koreanData = """
@@ -377,7 +377,7 @@ struct NetworkLogPluginTests {
     @Test("빈 헤더로 요청 로깅")
     func logRequestWithEmptyHeaders() async {
         // Given
-        let interceptor = ConsoleLoggingInterceptor(minimumLevel: .debug)
+        let interceptor = ConsoleLoggingInterceptor(minimumLevel: .error)
         let request = TestAPIRequest()
 
         var urlRequest = URLRequest(url: URL(string: "https://example.com/test")!)
