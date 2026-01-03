@@ -146,7 +146,7 @@ struct ConsoleLoggingInterceptorTests {
     @Test("200 응답 코드 처리")
     func handle200Response() async {
         // Given
-        let interceptor = ConsoleLoggingInterceptor(minimumLevel: .debug)
+        let interceptor = ConsoleLoggingInterceptor(minimumLevel: .error)
         let response = HTTPResponse(statusCode: 200, data: Data("success".utf8))
 
         // When & Then - 에러 없이 완료
@@ -178,7 +178,7 @@ struct ConsoleLoggingInterceptorTests {
     @Test("요청 본문이 있는 경우 처리")
     func handleRequestWithBody() async {
         // Given
-        let interceptor = ConsoleLoggingInterceptor(minimumLevel: .debug)
+        let interceptor = ConsoleLoggingInterceptor(minimumLevel: .error)
         let url = URL(string: "https://api.example.com/test")!
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
@@ -191,7 +191,7 @@ struct ConsoleLoggingInterceptorTests {
     @Test("요청 헤더가 있는 경우 처리")
     func handleRequestWithHeaders() async {
         // Given
-        let interceptor = ConsoleLoggingInterceptor(minimumLevel: .debug)
+        let interceptor = ConsoleLoggingInterceptor(minimumLevel: .error)
         let url = URL(string: "https://api.example.com/test")!
         var request = URLRequest(url: url)
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
@@ -206,7 +206,7 @@ struct ConsoleLoggingInterceptorTests {
     @Test("빈 응답 본문 처리")
     func handleEmptyResponseBody() async {
         // Given
-        let interceptor = ConsoleLoggingInterceptor(minimumLevel: .debug)
+        let interceptor = ConsoleLoggingInterceptor(minimumLevel: .error)
         let response = HTTPResponse(statusCode: 204, data: Data())
 
         // When & Then - 에러 없이 완료
@@ -216,7 +216,7 @@ struct ConsoleLoggingInterceptorTests {
     @Test("빈 요청 본문 처리")
     func handleEmptyRequestBody() async {
         // Given
-        let interceptor = ConsoleLoggingInterceptor(minimumLevel: .debug)
+        let interceptor = ConsoleLoggingInterceptor(minimumLevel: .error)
         let url = URL(string: "https://api.example.com/test")!
         var request = URLRequest(url: url)
         request.httpBody = nil
@@ -230,7 +230,7 @@ struct ConsoleLoggingInterceptorTests {
     @Test("JSON 응답 본문 처리")
     func handleJSONResponseBody() async {
         // Given
-        let interceptor = ConsoleLoggingInterceptor(minimumLevel: .debug)
+        let interceptor = ConsoleLoggingInterceptor(minimumLevel: .error)
         let jsonData = Data("{\"status\":\"ok\",\"count\":42}".utf8)
         let response = HTTPResponse(statusCode: 200, data: jsonData)
 
@@ -241,7 +241,7 @@ struct ConsoleLoggingInterceptorTests {
     @Test("잘못된 JSON 응답 본문 처리")
     func handleInvalidJSONResponseBody() async {
         // Given
-        let interceptor = ConsoleLoggingInterceptor(minimumLevel: .debug)
+        let interceptor = ConsoleLoggingInterceptor(minimumLevel: .error)
         let invalidData = Data("not valid json".utf8)
         let response = HTTPResponse(statusCode: 200, data: invalidData)
 
@@ -255,7 +255,7 @@ struct ConsoleLoggingInterceptorTests {
     func sensitiveHeaderFiltering() async {
         // Given
         let interceptor = ConsoleLoggingInterceptor(
-            minimumLevel: .debug,
+            minimumLevel: .error,
             sensitiveKeys: ["password", "token"]
         )
         let url = URL(string: "https://api.example.com/test")!
@@ -269,7 +269,7 @@ struct ConsoleLoggingInterceptorTests {
     @Test("기본 민감한 키 목록")
     func defaultSensitiveKeys() async {
         // Given
-        let interceptor = ConsoleLoggingInterceptor(minimumLevel: .debug)
+        let interceptor = ConsoleLoggingInterceptor(minimumLevel: .error)
         let url = URL(string: "https://api.example.com/test")!
         var request = URLRequest(url: url)
         request.httpBody = Data("{\"password\":\"secret\",\"token\":\"abc123\"}".utf8)
@@ -283,7 +283,8 @@ struct ConsoleLoggingInterceptorTests {
     @Test("동시 호출 안전성")
     func concurrentAccessSafety() async {
         // Given
-        let interceptor = ConsoleLoggingInterceptor(minimumLevel: .debug)
+        // CI 환경에서 과도한 로그 출력 방지
+        let interceptor = ConsoleLoggingInterceptor(minimumLevel: .error)
         let url = URL(string: "https://api.example.com/test")!
         let request = URLRequest(url: url)
         let response = HTTPResponse(statusCode: 200, data: Data())
