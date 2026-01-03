@@ -393,7 +393,8 @@ struct NetworkLogPluginTests {
     @Test("대량 요청 로깅 성능")
     func logMultipleRequestsPerformance() async {
         // Given
-        let interceptor = ConsoleLoggingInterceptor(minimumLevel: .debug)
+        // CI 환경에서 과도한 로그 출력 방지 위해 error 레벨 사용
+        let interceptor = ConsoleLoggingInterceptor(minimumLevel: .error)
         let request = TestAPIRequest()
 
         // When & Then
