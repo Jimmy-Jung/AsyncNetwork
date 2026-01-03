@@ -30,6 +30,7 @@ struct HTTPClientTests {
     @Test("성공적인 GET 요청 처리")
     func successfulGetRequest() async throws {
         // Given
+        await MockURLProtocol.clear() // 테스트 시작 전 cleanup
         let path = "/success_get"
         let configuration = URLSessionConfiguration.ephemeral
         configuration.protocolClasses = [MockURLProtocol.self]
@@ -59,6 +60,7 @@ struct HTTPClientTests {
     @Test("404 에러 처리")
     func handle404Error() async throws {
         // Given
+        await MockURLProtocol.clear() // 테스트 시작 전 cleanup
         let path = "/not_found"
         let configuration = URLSessionConfiguration.ephemeral
         configuration.protocolClasses = [MockURLProtocol.self]
@@ -85,6 +87,7 @@ struct HTTPClientTests {
     @Test("네트워크 에러 발생 시 예외 던짐")
     func handleNetworkError() async {
         // Given
+        await MockURLProtocol.clear() // 테스트 시작 전 cleanup
         let path = "/network_error"
         let configuration = URLSessionConfiguration.ephemeral
         configuration.protocolClasses = [MockURLProtocol.self]

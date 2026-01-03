@@ -50,6 +50,7 @@ struct HTTPClientAdvancedTests {
 
     @Test("빈 응답 데이터 처리")
     func handleEmptyResponseData() async throws {
+        await MockURLProtocol.clear() // 테스트 시작 전 cleanup
         // Given
         let path = "/empty"
         let configuration = URLSessionConfiguration.ephemeral
@@ -106,6 +107,7 @@ struct HTTPClientAdvancedTests {
 
     @Test("특수 문자가 포함된 경로 처리")
     func handleSpecialCharactersInPath() async throws {
+        await MockURLProtocol.clear() // 테스트 시작 전 cleanup
         // Given
         let path = "/users/john-doe_123"
         let configuration = URLSessionConfiguration.ephemeral
@@ -132,6 +134,7 @@ struct HTTPClientAdvancedTests {
 
     @Test("중첩된 경로 처리")
     func handleNestedPath() async throws {
+        await MockURLProtocol.clear() // 테스트 시작 전 cleanup
         // Given
         let path = "/api/v1/users/123/posts/456/comments"
         let configuration = URLSessionConfiguration.ephemeral
@@ -189,6 +192,7 @@ struct HTTPClientAdvancedTests {
 
     @Test("커스텀 헤더 전송 확인")
     func verifyCustomHeaders() async throws {
+        await MockURLProtocol.clear() // 테스트 시작 전 cleanup
         // Given
         let path = "/headers"
         let configuration = URLSessionConfiguration.ephemeral
@@ -226,6 +230,7 @@ struct HTTPClientAdvancedTests {
 
     @Test("응답 헤더 파싱 확인")
     func verifyResponseHeaders() async throws {
+        await MockURLProtocol.clear() // 테스트 시작 전 cleanup
         // Given
         let path = "/response-headers"
         let configuration = URLSessionConfiguration.ephemeral
@@ -426,7 +431,7 @@ struct HTTPClientAdvancedTests {
         .cannotConnectToHost,
         .networkConnectionLost,
         .dnsLookupFailed,
-        .notConnectedToInternet,
+        .notConnectedToInternet
     ])
     func handleDifferentURLErrors(errorCode: URLError.Code) async {
         // Given
@@ -452,6 +457,7 @@ struct HTTPClientAdvancedTests {
 
     @Test("JSON 요청 바디 전송 확인")
     func verifyJSONRequestBody() async throws {
+        await MockURLProtocol.clear() // 테스트 시작 전 cleanup
         // Given
         let path = "/post-json"
         let configuration = URLSessionConfiguration.ephemeral
@@ -487,6 +493,7 @@ struct HTTPClientAdvancedTests {
 
     @Test("빈 요청 바디 전송")
     func sendEmptyRequestBody() async throws {
+        await MockURLProtocol.clear() // 테스트 시작 전 cleanup
         // Given
         let path = "/post-empty"
         let configuration = URLSessionConfiguration.ephemeral

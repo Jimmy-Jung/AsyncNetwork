@@ -55,6 +55,7 @@ struct NetworkServiceTests {
 
     @Test("성공적인 네트워크 요청 및 디코딩")
     func successfulRequestAndDecoding() async throws {
+        await MockURLProtocol.clear() // 테스트 시작 전 cleanup
         // Given
         let path = "/users/success"
         let configuration = URLSessionConfiguration.ephemeral
@@ -170,6 +171,7 @@ struct NetworkServiceTests {
 
     @Test("최대 재시도 횟수 초과 시 에러 반환")
     func failAfterMaxRetries() async throws {
+        await MockURLProtocol.clear() // 테스트 시작 전 cleanup
         // Given
         let path = "/users/fail_max_retries"
         let configuration = URLSessionConfiguration.ephemeral
@@ -204,6 +206,7 @@ struct NetworkServiceTests {
 
     @Test("인터셉터 동작 확인")
     func verifyRequestInterceptor() async throws {
+        await MockURLProtocol.clear() // 테스트 시작 전 cleanup
         // Given
         let path = "/users/interceptor"
         let configuration = URLSessionConfiguration.ephemeral
@@ -248,6 +251,7 @@ struct NetworkServiceTests {
 
     @Test("associatedtype Response를 사용한 타입 추론 요청")
     func requestWithAssociatedTypeResponse() async throws {
+        await MockURLProtocol.clear() // 테스트 시작 전 cleanup
         // Given
         let path = "/users/typed"
         let configuration = URLSessionConfiguration.ephemeral
@@ -285,6 +289,7 @@ struct NetworkServiceTests {
 
     @Test("associatedtype Response와 명시적 타입 지정 비교")
     func compareAssociatedTypeVsExplicitType() async throws {
+        await MockURLProtocol.clear() // 테스트 시작 전 cleanup
         // Given
         let path = "/users/compare"
         let configuration = URLSessionConfiguration.ephemeral
@@ -325,6 +330,7 @@ struct NetworkServiceTests {
 
     @Test("빈 응답 EmptyResponse 처리")
     func requestWithEmptyResponse() async throws {
+        await MockURLProtocol.clear() // 테스트 시작 전 cleanup
         // Given
         let configuration = URLSessionConfiguration.ephemeral
         configuration.protocolClasses = [MockURLProtocol.self]
