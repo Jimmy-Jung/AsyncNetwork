@@ -434,6 +434,7 @@ public struct APIRequestMacroImpl: MemberMacro, ExtensionMacro {
     }
 
     /// 타입 등록 코드를 생성합니다 (배열 및 옵셔널 타입 안전하게 처리).
+    /// 중첩 타입들도 자동으로 등록하는 코드를 생성합니다.
     private static func generateTypeRegistration(for typeString: String) -> String {
         // 배열 타입 체크: [Post].self -> Post.self
         let cleanType = extractElementType(from: typeString)
@@ -448,6 +449,10 @@ public struct APIRequestMacroImpl: MemberMacro, ExtensionMacro {
             return ""
         }
 
+        // 메인 타입 등록
+        // typeStructure에 접근하면 _register가 실행되어 타입이 등록됩니다.
+        // relatedTypeNames에 접근하면 중첩 타입 이름 목록을 얻을 수 있지만,
+        // 타입 이름만으로는 타입을 찾을 수 없으므로 collectRelatedTypes에서 처리합니다.
         return "_ = \(cleanType).typeStructure"
     }
 
