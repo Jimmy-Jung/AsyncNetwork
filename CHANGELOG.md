@@ -93,6 +93,40 @@ AsyncNetwork 1.0.0 정식 출시! 순수 Foundation 기반의 현대적인 Swift
 
 ---
 
+## [1.1.0] - 2026-01-03
+
+### ✨ Added
+
+#### Documentation Kit
+- **AsyncNetworkDocKit**: API 문서 자동 생성 프레임워크 추가
+  - `@APIRequest` 매크로 메타데이터를 활용한 인터랙티브 문서 앱 생성
+  - 3열 레이아웃 (API 리스트 / 상세 설명 / 실시간 테스터)
+  - 실시간 API 테스트 기능
+  - 카테고리별 API 분류
+  - 검색 기능
+  - 다크모드 지원
+
+#### Utilities
+- **NetworkMonitor**: 실시간 네트워크 연결 상태 감지
+  - Wi-Fi, 셀룰러, 이더넷 연결 타입 감지
+  - SwiftUI 및 Combine 지원
+  - NetworkService와 통합된 오프라인 체크
+
+### 🔧 Changed
+
+- NetworkService에 네트워크 연결 상태 확인 기능 추가
+- 오프라인 상태에서 즉시 에러 반환 기능 추가
+
+### 📦 Packages
+
+- **AsyncNetworkDocKit**: iOS 전용 문서 생성 프레임워크 추가
+
+### 🎯 Platform Support
+
+- AsyncNetworkDocKit: iOS 17.0+ (SwiftUI 필수)
+
+---
+
 ## [Unreleased]
 
 ### Planned Features
@@ -105,5 +139,6 @@ AsyncNetwork 1.0.0 정식 출시! 순수 Foundation 기반의 현대적인 Swift
 
 ---
 
+[1.1.0]: https://github.com/Jimmy-Jung/AsyncNetwork/releases/tag/1.1.0
 [1.0.0]: https://github.com/Jimmy-Jung/AsyncNetwork/releases/tag/1.0.0
 
