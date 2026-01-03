@@ -162,6 +162,33 @@ AsyncNetwork 1.0.0 정식 출시! 순수 Foundation 기반의 현대적인 Swift
 
 ---
 
+## [1.0.3] - 2026-01-03
+
+### 🐛 Fixed
+
+#### Test Stability
+- **NetworkMonitor 관련 멈춤 완전 해결**
+  - DocKitFactoryTests: NetworkMonitor 비활성화
+  - AsyncNetworkFactoryTests: 4개 테스트에서 NetworkMonitor 비활성화
+  - CI 환경에서 NWPathMonitor로 인한 멈춤 완전 차단
+
+### 🔧 Changed
+
+- `DocKitFactoryTests.swift`: createTestNetworkService()에서 networkMonitor: nil 설정
+- `AsyncNetworkFactoryTests.swift`: 모든 NetworkService 생성 테스트 수정
+  - createNetworkServiceWithDefaults
+  - createNetworkServiceWithCustomConfiguration
+  - createNetworkServiceWithVariousConfigurations
+  - createNetworkServiceWithFullCustomization
+
+### 📊 Impact
+
+- CI 테스트 안정성 극대화
+- NetworkMonitor 관련 모든 잠재적 멈춤 제거
+- 테스트 로직은 동일하게 유지
+
+---
+
 ## [1.0.2] - 2026-01-03
 
 ### 🐛 Fixed
@@ -243,6 +270,7 @@ AsyncNetwork 1.0.0 정식 출시! 순수 Foundation 기반의 현대적인 Swift
 ---
 
 [1.1.0]: https://github.com/Jimmy-Jung/AsyncNetwork/releases/tag/1.1.0
+[1.0.3]: https://github.com/Jimmy-Jung/AsyncNetwork/releases/tag/1.0.3
 [1.0.2]: https://github.com/Jimmy-Jung/AsyncNetwork/releases/tag/1.0.2
 [1.0.1]: https://github.com/Jimmy-Jung/AsyncNetwork/releases/tag/1.0.1
 [1.0.0]: https://github.com/Jimmy-Jung/AsyncNetwork/releases/tag/1.0.0

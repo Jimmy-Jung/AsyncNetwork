@@ -17,7 +17,14 @@ struct DocKitFactoryTests {
 
     // Test용 NetworkService 생성 함수
     func createTestNetworkService() -> NetworkService {
-        return NetworkService(configuration: .default)
+        // CI 환경에서 NetworkMonitor로 인한 멈춤 방지
+        return NetworkService(
+            httpClient: HTTPClient(configuration: .default),
+            retryPolicy: .default,
+            responseProcessor: ResponseProcessor(),
+            networkMonitor: nil,
+            checkNetworkBeforeRequest: false
+        )
     }
 
     @Test("createDocApp(endpoints:networkService:)이 WindowGroup을 반환한다")
