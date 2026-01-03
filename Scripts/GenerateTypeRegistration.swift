@@ -18,36 +18,36 @@ import Foundation
 struct TypeScanner {
     let projectPath: String
     let verbose: Bool
-    
+
     /// 모든 @DocumentedType 타입을 스캔합니다
     func scanDocumentedTypes() throws -> [String] {
         var documentedTypes: [String] = []
-        
+
         if verbose {
             print("📂 Scanning project: \(projectPath)")
         }
-        
+
         // 모든 .swift 파일 찾기
         let swiftFiles = try findSwiftFiles(in: projectPath)
-        
+
         if verbose {
             print("📄 Found \(swiftFiles.count) Swift files")
         }
-        
+
         for file in swiftFiles {
             let content = try String(contentsOfFile: file, encoding: .utf8)
             let types = extractDocumentedTypes(from: content, file: file)
             documentedTypes.append(contentsOf: types)
         }
-        
+
         return documentedTypes.sorted()
     }
-    
+
     /// 지정된 디렉토리에서 모든 .swift 파일을 찾습니다
     private func findSwiftFiles(in directory: String) throws -> [String] {
         let fileManager = FileManager.default
         var swiftFiles: [String] = []
-        
+
         guard let enumerator = fileManager.enumerator(atPath: directory) else {
             throw NSError(
                 domain: "TypeScanner",
@@ -55,21 +55,21 @@ struct TypeScanner {
                 userInfo: [NSLocalizedDescriptionKey: "Cannot enumerate directory: \(directory)"]
             )
         }
-        
+
         while let file = enumerator.nextObject() as? String {
-            if file.hasSuffix(".swift") && !file.contains("/Generated/") && !file.hasSuffix("+Generated.swift") {
+            if file.hasSuffix(".swift"), !file.contains("/Generated/"), !file.hasSuffix("+Generated.swift") {
                 swiftFiles.append("\(directory)/\(file)")
             }
         }
-        
+
         return swiftFiles
     }
-    
+
     /// 파일 내용에서 @DocumentedType이 적용된 타입을 추출합니다
     private func extractDocumentedTypes(from content: String, file: String) -> [String] {
         var types: [String] = []
         let lines = content.components(separatedBy: .newlines)
-        
+
         for (index, line) in lines.enumerated() {
             // @DocumentedType 찾기
             let trimmedLine = line.trimmingCharacters(in: .whitespaces)
@@ -87,10 +87,10 @@ struct TypeScanner {
                 }
             }
         }
-        
+
         return types
     }
-    
+
     /// 코드 라인에서 타입 이름을 추출합니다
     private func extractTypeName(from line: String) -> String? {
         // struct Post, class User, enum Status 등에서 타입 이름 추출
@@ -100,10 +100,11 @@ struct TypeScanner {
                   in: line,
                   range: NSRange(line.startIndex..., in: line)
               ),
-              let typeNameRange = Range(match.range(at: 2), in: line) else {
+              let typeNameRange = Range(match.range(at: 2), in: line)
+        else {
             return nil
         }
-        
+
         return String(line[typeNameRange])
     }
 }
@@ -114,11 +115,11 @@ struct TypeScanner {
 struct CodeGenerator {
     let moduleName: String
     let targetName: String
-    
+
     /// 주어진 타입 목록으로부터 등록 코드를 생성합니다
     func generateRegistrationCode(types: [String]) -> String {
         let registrationLines = types.map { "        _ = \($0).typeStructure" }
-        
+
         return """
         //
         //  TypeRegistration+Generated.swift
@@ -130,9 +131,9 @@ struct CodeGenerator {
         //  DO NOT EDIT MANUALLY
         //  This file is automatically regenerated during build.
         //
-        
+
         import AsyncNetworkCore
-        
+
         extension \(targetName) {
             /// 모든 @DocumentedType 타입을 자동으로 등록합니다
             ///
@@ -144,7 +145,7 @@ struct CodeGenerator {
         \(registrationLines.joined(separator: "\n"))
             }
         }
-        
+
         """
     }
 }
@@ -158,7 +159,7 @@ do {
     var moduleName = "AsyncNetworkDocKitExample"
     var targetName = "AsyncNetworkDocKitExampleApp"
     var verbose = false
-    
+
     let args = CommandLine.arguments
     var i = 1
     while i < args.count {
@@ -189,7 +190,7 @@ do {
         case "--help", "-h":
             print("""
             Usage: GenerateTypeRegistration.swift [options]
-            
+
             Options:
               -p, --project <path>    프로젝트 소스 디렉토리 경로 (필수)
               -o, --output <path>     출력 파일 경로 (필수)
@@ -197,7 +198,7 @@ do {
               -t, --target <name>     타겟 이름 (기본: AsyncNetworkDocKitExampleApp)
               -v, --verbose           상세 출력
               -h, --help              도움말 표시
-            
+
             Example:
               ./GenerateTypeRegistration.swift \\
                 --project ./AsyncNetworkDocKitExample/Sources \\
@@ -209,20 +210,20 @@ do {
         }
         i += 1
     }
-    
+
     guard let projectPath = projectPath, let outputPath = outputPath else {
         print("❌ Error: --project and --output are required")
         print("Run with --help for usage information")
         exit(1)
     }
-    
+
     // 디렉토리 존재 확인
     let fileManager = FileManager.default
     guard fileManager.fileExists(atPath: projectPath) else {
         print("❌ Error: Project path does not exist: \(projectPath)")
         exit(1)
     }
-    
+
     if verbose {
         print("🔍 TypeRegistration Generator")
         print("   Project: \(projectPath)")
@@ -231,42 +232,41 @@ do {
         print("   Target:  \(targetName)")
         print()
     }
-    
+
     // 타입 스캔
     let scanner = TypeScanner(projectPath: projectPath, verbose: verbose)
     let types = try scanner.scanDocumentedTypes()
-    
+
     if verbose {
         print()
     }
     print("✅ Found \(types.count) @DocumentedType types")
-    
-    if verbose && !types.isEmpty {
+
+    if verbose, !types.isEmpty {
         print("\nTypes:")
         types.forEach { print("  - \($0)") }
     }
-    
+
     // 코드 생성
     let generator = CodeGenerator(moduleName: moduleName, targetName: targetName)
     let code = generator.generateRegistrationCode(types: types)
-    
+
     // 출력 디렉토리 생성
     let outputDir = URL(fileURLWithPath: outputPath).deletingLastPathComponent().path
     if !fileManager.fileExists(atPath: outputDir) {
         try fileManager.createDirectory(atPath: outputDir, withIntermediateDirectories: true)
     }
-    
+
     // 파일 쓰기
     try code.write(toFile: outputPath, atomically: true, encoding: .utf8)
-    
+
     print("📝 Generated: \(outputPath)")
-    
+
     if verbose {
         print("\n✨ Done!")
     }
-    
+
 } catch {
     print("❌ Error: \(error.localizedDescription)")
     exit(1)
 }
-
