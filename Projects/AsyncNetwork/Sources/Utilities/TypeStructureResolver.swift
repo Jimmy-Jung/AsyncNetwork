@@ -9,7 +9,15 @@ import Foundation
 
 /// DocumentedType 프로토콜을 체크하고 typeStructure를 반환하는 헬퍼 함수
 public func resolveTypeStructure(for type: Any.Type) -> String? {
-    // 타입이 typeStructure를 가지고 있는지 런타임에 체크
+    // 배열 타입인 경우 요소 타입의 typeStructure 반환
+    if let arrayElementType = extractArrayElementType(from: type) {
+        guard let documentedType = arrayElementType as? any TypeStructureProvider.Type else {
+            return nil
+        }
+        return documentedType.typeStructure
+    }
+    
+    // 일반 타입
     guard let documentedType = type as? any TypeStructureProvider.Type else {
         return nil
     }
@@ -19,7 +27,15 @@ public func resolveTypeStructure(for type: Any.Type) -> String? {
 /// DocumentedType이 적용된 타입의 중첩된 타입들을 모두 찾아 반환
 /// TypeRegistry를 사용하여 런타임에 등록된 타입들을 조회
 public func collectRelatedTypes(for type: Any.Type) -> [String: String]? {
-    guard let documentedType = type as? any TypeStructureProvider.Type else {
+    // 배열 타입인 경우 요소 타입으로 처리
+    let targetType: Any.Type
+    if let arrayElementType = extractArrayElementType(from: type) {
+        targetType = arrayElementType
+    } else {
+        targetType = type
+    }
+    
+    guard let documentedType = targetType as? any TypeStructureProvider.Type else {
         return nil
     }
 
@@ -33,6 +49,28 @@ public func collectRelatedTypes(for type: Any.Type) -> [String: String]? {
 
     print("📍 collectRelatedTypes: Response type = \(type)")
     print("📍 Related type names to process: \(typesToProcess)")
+
+    // 먼저 모든 중첩 타입 이름을 수집 (재귀적으로)
+    // 이렇게 하면 TypeRegistry에 없어도 모든 중첩 타입 이름을 알 수 있습니다.
+    var allNestedTypeNames = Set<String>(typesToProcess)
+    func collectAllNestedTypeNames(from typeNames: [String]) {
+        for typeName in typeNames {
+            if allNestedTypeNames.contains(typeName) {
+                continue
+            }
+            allNestedTypeNames.insert(typeName)
+            
+            // TypeRegistry에서 찾아서 재귀적으로 수집
+            if let nestedType = TypeRegistry.shared.type(forName: typeName) {
+                _ = nestedType.typeStructure  // 등록 트리거
+                collectAllNestedTypeNames(from: nestedType.relatedTypeNames)
+            }
+        }
+    }
+    
+    // 모든 중첩 타입 이름을 먼저 수집
+    collectAllNestedTypeNames(from: typesToProcess)
+    typesToProcess = Array(allNestedTypeNames)
 
     // BFS 방식으로 모든 중첩 타입을 재귀적으로 탐색
     while !typesToProcess.isEmpty {
@@ -50,7 +88,7 @@ public func collectRelatedTypes(for type: Any.Type) -> [String: String]? {
         if let nestedType = TypeRegistry.shared.type(forName: typeName) {
             print("✅ Found type: \(typeName)")
 
-            // 등록 강제 실행
+            // 등록 강제 실행 (타입 구조와 관련 타입 이름 접근하여 등록 트리거)
             _ = nestedType.typeStructure
             _ = nestedType.relatedTypeNames
 
@@ -61,12 +99,34 @@ public func collectRelatedTypes(for type: Any.Type) -> [String: String]? {
         } else {
             print("❌ Type not found in registry: \(typeName)")
             print("📍 All registered types: \(TypeRegistry.shared.allTypeNames())")
+            
+            // TypeRegistry에 없으면 해당 타입이 아직 등록되지 않은 것입니다.
+            // 이는 해당 타입의 _register가 실행되지 않았거나, 
+            // @DocumentedType 매크로가 적용되지 않았을 수 있습니다.
         }
     }
 
     print("📍 Final relatedTypes count: \(relatedTypes.count)")
 
     return relatedTypes.isEmpty ? nil : relatedTypes
+}
+
+/// 배열 타입에서 요소 타입을 추출합니다
+/// 예: Array<Post>.Type -> Post.Type, [Photo].Type -> Photo.Type
+private func extractArrayElementType(from type: Any.Type) -> Any.Type? {
+    let typeName = String(describing: type)
+    
+    // "Array<ElementType>" 형태 체크
+    if typeName.hasPrefix("Array<"), typeName.hasSuffix(">") {
+        // 배열의 경우 Element 타입을 가져올 수 있는 방법이 제한적
+        // TypeRegistry를 사용하여 이름으로 타입 찾기
+        let elementTypeName = String(typeName.dropFirst(6).dropLast()) // "Array<" 제거
+        if let elementType = TypeRegistry.shared.type(forName: elementTypeName) {
+            return elementType
+        }
+    }
+    
+    return nil
 }
 
 /// DocumentedType이 적용된 타입의 중첩된 타입들을 모두 찾아 반환 (Deprecated)

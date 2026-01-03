@@ -117,12 +117,13 @@ enum TypeStructureParser {
         let nestedTypeName: String?
 
         if isArray {
-            let innerType = typeWithoutOptional.dropFirst().dropLast()
-            baseType = String(innerType)
-            nestedTypeName = isPrimitiveType(String(innerType)) ? nil : String(innerType)
+            let innerType = String(typeWithoutOptional.dropFirst().dropLast()).trimmingCharacters(in: .whitespaces)
+            baseType = innerType
+            nestedTypeName = isPrimitiveType(innerType) ? nil : innerType
         } else {
-            baseType = typeWithoutOptional
-            nestedTypeName = isPrimitiveType(typeWithoutOptional) ? nil : typeWithoutOptional
+            let trimmedType = typeWithoutOptional.trimmingCharacters(in: .whitespaces)
+            baseType = trimmedType
+            nestedTypeName = isPrimitiveType(trimmedType) ? nil : trimmedType
         }
 
         return TypeProperty(
