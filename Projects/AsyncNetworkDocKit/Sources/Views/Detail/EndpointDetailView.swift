@@ -230,12 +230,12 @@ struct EndpointDetailView: View {
                             .font(.subheadline)
                             .fontWeight(.semibold)
 
-                        // 중첩 타입 정보가 있으면 토글 가능한 뷰, 없으면 기본 CodeBlock
+                        // 중첩 타입 정보가 있으면 토글 가능한 뷰, 없으면 기본 TypeStructureView
                         if let relatedTypes = endpoint.relatedTypes, !relatedTypes.isEmpty {
                             let parsedTypes = parseRelatedTypes(relatedTypes)
                             TypeStructureView(structureText: responseStructure, allTypes: parsedTypes)
                         } else {
-                            CodeBlock(content: responseStructure)
+                            TypeStructureView(structureText: responseStructure, allTypes: [:])
                         }
                     }
                 }
@@ -264,13 +264,19 @@ struct EndpointDetailView: View {
 
     private func parseRelatedTypes(_ relatedTypes: [String: String]) -> [String: TypeStructure] {
         var result: [String: TypeStructure] = [:]
-
+        
         for (typeName, structureText) in relatedTypes {
             if let parsed = TypeStructureParser.parse(structureText) {
-                result[typeName] = parsed
+                // 타입 이름을 정규화하여 키로 사용 (공백 제거)
+                let normalizedKey = typeName.trimmingCharacters(in: .whitespaces)
+                result[normalizedKey] = parsed
+                // 원본 키도 유지 (하위 호환성)
+                if normalizedKey != typeName {
+                    result[typeName] = parsed
+                }
             }
         }
-
+        
         return result
     }
 }

@@ -13,11 +13,21 @@ import AsyncNetworkCore
 public struct DocKitFactory {
     /// Dictionary 기반 카테고리 구조로 문서 앱 생성
     ///
+    /// **중요:** 중첩 타입들을 UI에서 펼쳐보려면, 앱 초기화 시 모든 `@DocumentedType` 타입을 등록해야 합니다.
+    ///
     /// **사용 예시:**
     /// ```swift
     /// @main
     /// struct MyAPIDocApp: App {
     ///     let networkService = NetworkService()
+    ///
+    ///     init() {
+    ///         // 모든 타입 등록 (중첩 타입 UI를 위해 필요)
+    ///         _ = Post.typeStructure
+    ///         _ = PostBody.typeStructure
+    ///         _ = User.typeStructure
+    ///         // ... 모든 @DocumentedType 타입
+    ///     }
     ///
     ///     var body: some Scene {
     ///         DocKitFactory.createDocApp(

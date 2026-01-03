@@ -14,10 +14,20 @@ struct TypeStructureView: View {
     let allTypes: [String: TypeStructure]
 
     @State private var expandedTypes: Set<String> = []
-
+    
     init(structureText: String, allTypes: [String: TypeStructure] = [:]) {
         self.structureText = structureText
         self.allTypes = allTypes
+    }
+    
+    private func normalizeTypeName(_ name: String) -> String {
+        name.trimmingCharacters(in: .whitespaces)
+    }
+    
+    private func findTypeInAllTypes(_ typeName: String) -> TypeStructure? {
+        let normalized = normalizeTypeName(typeName)
+        // 정규화된 키로 먼저 찾기, 없으면 원본 키로 찾기
+        return allTypes[normalized] ?? allTypes[typeName]
     }
 
     var body: some View {
@@ -101,10 +111,8 @@ struct TypeStructureView: View {
                     .font(.system(.caption, design: .monospaced))
                     .foregroundStyle(.secondary)
 
-                if let nestedTypeName = property.nestedTypeName,
-                   allTypes[nestedTypeName] != nil
-                {
-                    // 중첩 타입이 있는 경우 토글 버튼
+                if let nestedTypeName = property.nestedTypeName {
+                    // 중첩 타입이 있는 경우 토글 버튼 (allTypes에 없어도 표시)
                     Button {
                         toggleExpanded(nestedTypeName)
                     } label: {
@@ -130,27 +138,57 @@ struct TypeStructureView: View {
 
             // 중첩 타입이 확장된 경우 표시
             if let nestedTypeName = property.nestedTypeName,
-               let nestedType = allTypes[nestedTypeName],
                expandedTypes.contains(nestedTypeName)
             {
-                VStack(alignment: .leading, spacing: 2) {
-                    HStack(spacing: 4) {
-                        Text(String(repeating: "    ", count: depth + 2))
-                            .font(.system(.caption2, design: .monospaced))
+                if let nestedType = findTypeInAllTypes(nestedTypeName) {
+                    // allTypes에 타입 정보가 있는 경우
+                    VStack(alignment: .leading, spacing: 2) {
+                        HStack(spacing: 4) {
+                            Text(String(repeating: "    ", count: depth + 2))
+                                .font(.system(.caption2, design: .monospaced))
 
-                        Text("// \(nestedTypeName) structure:")
-                            .font(.system(.caption2, design: .monospaced))
-                            .foregroundStyle(.green)
-                            .italic()
+                            Text("// \(nestedTypeName) structure:")
+                                .font(.system(.caption2, design: .monospaced))
+                                .foregroundStyle(.green)
+                                .italic()
+                        }
+
+                        nestedTypeBody(nestedType, depth: depth + 2)
                     }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 6)
+                    .background(Color.blue.opacity(0.05))
+                    .cornerRadius(4)
+                } else {
+                    // allTypes에 타입 정보가 없는 경우
+                    VStack(alignment: .leading, spacing: 2) {
+                        HStack(spacing: 4) {
+                            Text(String(repeating: "    ", count: depth + 2))
+                                .font(.system(.caption2, design: .monospaced))
 
-                    nestedTypeBody(nestedType, depth: depth + 2)
+                            Text("// \(nestedTypeName) structure:")
+                                .font(.system(.caption2, design: .monospaced))
+                                .foregroundStyle(.green)
+                                .italic()
+                        }
+
+                        HStack(spacing: 4) {
+                            Text(String(repeating: "    ", count: depth + 3))
+                                .font(.system(.caption2, design: .monospaced))
+
+                            Text("// Type information not available")
+                                .font(.system(.caption2, design: .monospaced))
+                                .foregroundStyle(.orange)
+                                .italic()
+                        }
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 6)
+                    .background(Color.orange.opacity(0.05))
+                    .cornerRadius(4)
                 }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.horizontal, 12)
-                .padding(.vertical, 6)
-                .background(Color.blue.opacity(0.05))
-                .cornerRadius(4)
             }
         }
     }
