@@ -1,3 +1,10 @@
+//
+//  ServerResponse.swift
+//  AsyncNetwork
+//
+//  Created by jimmy on 2026/01/03.
+//
+
 import Foundation
 
 /// 서버 응답을 감싸는 제네릭 래퍼

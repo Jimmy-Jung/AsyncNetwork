@@ -1,3 +1,10 @@
+//
+//  AsyncDelayer.swift
+//  AsyncNetwork
+//
+//  Created by jimmy on 2026/01/03.
+//
+
 import Foundation
 
 public protocol AsyncDelayer: Sendable {

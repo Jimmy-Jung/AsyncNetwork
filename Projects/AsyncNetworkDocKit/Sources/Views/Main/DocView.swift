@@ -2,13 +2,12 @@
 //  DocView.swift
 //  AsyncNetworkDocKit
 //
-//  Created by jimmy on 2026/01/01.
+//  Created by jimmy on 2026/01/03.
 //
 
-import SwiftUI
 import AsyncNetworkCore
+import SwiftUI
 
-/// Redoc 스타일의 3열 문서 뷰
 @available(iOS 17.0, macOS 14.0, *)
 struct DocView: View {
     let categories: [EndpointCategory]

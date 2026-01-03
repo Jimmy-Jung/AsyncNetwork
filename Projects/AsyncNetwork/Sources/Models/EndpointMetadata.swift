@@ -2,7 +2,7 @@
 //  EndpointMetadata.swift
 //  AsyncNetwork
 //
-//  Created by jimmy on 2026/01/01.
+//  Created by jimmy on 2026/01/03.
 //
 
 import Foundation
@@ -62,16 +62,13 @@ public struct EndpointMetadata: Identifiable, Sendable, Hashable {
         self.relatedTypes = relatedTypes
     }
 
-    /// requestBodyStructure와 requestBodyExample에서 필드 정보를 추출합니다.
     public var requestBodyFields: [RequestBodyFieldInfo] {
-        // requestBodyStructure가 있으면 파싱하여 필드 추출
         if let structureText = requestBodyStructure {
             return extractFieldsFromStructure(structureText, relatedTypes: requestBodyRelatedTypes, example: requestBodyExample)
         }
         return []
     }
 
-    /// TypeStructure 텍스트에서 필드를 추출하는 헬퍼 함수
     private func extractFieldsFromStructure(
         _ structureText: String,
         relatedTypes: [String: String]?,
@@ -79,57 +76,46 @@ public struct EndpointMetadata: Identifiable, Sendable, Hashable {
         prefix: String = ""
     ) -> [RequestBodyFieldInfo] {
         var fields: [RequestBodyFieldInfo] = []
-
-        // struct 선언 찾기 (예: "struct CreateOrderBody {")
         let lines = structureText.split(separator: "\n").map { String($0) }
         var insideStruct = false
 
         for line in lines {
             let trimmed = line.trimmingCharacters(in: .whitespaces)
 
-            // struct 시작
             if trimmed.hasPrefix("struct "), trimmed.contains("{") {
                 insideStruct = true
                 continue
             }
 
-            // struct 끝
             if trimmed == "}" {
                 insideStruct = false
                 continue
             }
 
-            // 프로퍼티 파싱 (예: "let title: String")
             if insideStruct, trimmed.hasPrefix("let ") || trimmed.hasPrefix("var ") {
                 let components = trimmed.split(separator: ":").map { String($0) }
                 guard components.count >= 2 else { continue }
 
-                // 프로퍼티 이름 추출
                 let nameComponent = components[0]
                     .replacingOccurrences(of: "let ", with: "")
                     .replacingOccurrences(of: "var ", with: "")
                     .trimmingCharacters(in: .whitespaces)
 
-                // 타입 추출
                 let typeComponent = components[1].trimmingCharacters(in: .whitespaces)
                 let isOptional = typeComponent.contains("?")
                 let cleanType = typeComponent.replacingOccurrences(of: "?", with: "")
 
-                // 필드 종류 판단
                 let fieldKind: RequestBodyFieldInfo.FieldKind
                 if cleanType.hasPrefix("["), cleanType.hasSuffix("]") {
                     fieldKind = .array
                 } else if isPrimitiveType(cleanType) {
                     fieldKind = .primitive
                 } else {
-                    // 커스텀 타입 (중첩 객체)
                     fieldKind = .object
                 }
 
-                // 프로퍼티 이름 (prefix가 있으면 추가)
                 let fieldName = prefix.isEmpty ? nameComponent : "\(prefix).\(nameComponent)"
 
-                // Example 값에서 추출
                 var exampleValue: String?
                 if let example = example,
                    let data = example.data(using: .utf8),
@@ -147,16 +133,12 @@ public struct EndpointMetadata: Identifiable, Sendable, Hashable {
                     fieldKind: fieldKind
                 ))
 
-                // 중첩 타입이면 재귀적으로 필드 추출
-                // 배열인 경우 배열 내부 타입 추출
                 let nestedTypeName: String?
                 if cleanType.hasPrefix("["), cleanType.hasSuffix("]") {
-                    // [OrderItemInput] -> OrderItemInput
                     let startIndex = cleanType.index(after: cleanType.startIndex)
                     let endIndex = cleanType.index(before: cleanType.endIndex)
                     nestedTypeName = String(cleanType[startIndex ..< endIndex])
                 } else if !isPrimitiveType(cleanType) {
-                    // 객체 타입
                     nestedTypeName = cleanType
                 } else {
                     nestedTypeName = nil
@@ -180,18 +162,16 @@ public struct EndpointMetadata: Identifiable, Sendable, Hashable {
         return fields
     }
 
-    /// 기본 타입인지 확인하는 헬퍼 함수
     private func isPrimitiveType(_ type: String) -> Bool {
         let primitiveTypes = [
             "String", "Int", "Int8", "Int16", "Int32", "Int64",
             "UInt", "UInt8", "UInt16", "UInt32", "UInt64",
-            "Double", "Float", "Bool", "Date", "UUID", "URL",
+            "Double", "Float", "Bool", "Date", "UUID", "URL"
         ]
         return primitiveTypes.contains(type)
     }
 }
 
-/// 파라미터 정보
 public struct ParameterInfo: Identifiable, Sendable, Hashable {
     public let id: String
     public let name: String
@@ -223,7 +203,6 @@ public struct ParameterInfo: Identifiable, Sendable, Hashable {
     }
 }
 
-/// 파라미터 위치
 public enum ParameterLocation: String, Sendable, Hashable {
     case query
     case path
@@ -231,7 +210,6 @@ public enum ParameterLocation: String, Sendable, Hashable {
     case body
 }
 
-/// Request Body의 개별 필드 정보
 public struct RequestBodyFieldInfo: Identifiable, Sendable, Hashable {
     public let id: String
     public let name: String

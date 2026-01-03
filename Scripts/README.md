@@ -1,384 +1,564 @@
-# 📝 자동 코드 생성 스크립트
+# AsyncNetwork Scripts
 
-이 디렉토리에는 AsyncNetwork 프로젝트의 반복적인 코드를 자동으로 생성하는 스크립트가 포함되어 있습니다.
+AsyncNetwork의 자동 코드 생성 스크립트 모음입니다.
 
-## 📦 포함된 파일
+## 📁 Scripts 구조
 
-1. **`GenerateTypeRegistration.swift`**: `@DocumentedType` 타입 등록 코드 자동 생성
-2. **`GenerateEndpoints.swift`**: `@APIRequest` Endpoints 딕셔너리 자동 생성
+```
+Scripts/
+├── CreateDocKitExample.swift          # 샘플 앱 자동 생성
+├── GenerateTypeRegistration.swift    # @DocumentedType 등록 코드 생성
+├── GenerateEndpoints.swift            # @APIRequest 엔드포인트 생성
+└── README.md                          # 이 문서
+```
 
 ---
 
-## 🔧 1. GenerateTypeRegistration.swift
+## 🚀 CreateDocKitExample.swift
 
-### 기능
-`@DocumentedType`이 적용된 모든 타입을 스캔하여 자동으로 등록하는 코드를 생성합니다.
+API 문서 샘플 앱을 자동으로 생성하는 스크립트입니다.
 
-### 사용 방법
+### 실행 위치
 
-#### 수동 실행
+#### 케이스 1: 사용자가 자신의 프로젝트에서 사용 (일반적인 경우)
 
 ```bash
-cd AsyncNetwork
+# 1. 사용자 프로젝트 루트로 이동
+cd /path/to/YourProject
 
-# 기본 실행
-Scripts/GenerateTypeRegistration.swift \
-  --project Projects/AsyncNetworkDocKitExample/AsyncNetworkDocKitExample/Sources \
-  --output Projects/AsyncNetworkDocKitExample/AsyncNetworkDocKitExample/Sources/TypeRegistration+Generated.swift
+# 2. Package.swift에 AsyncNetwork 의존성 추가
+dependencies: [
+    .package(url: "https://github.com/Jimmy-Jung/AsyncNetwork.git", from: "1.0.0")
+]
 
-# Verbose 모드
-Scripts/GenerateTypeRegistration.swift \
-  --project Projects/AsyncNetworkDocKitExample/AsyncNetworkDocKitExample/Sources \
-  --output Projects/AsyncNetworkDocKitExample/AsyncNetworkDocKitExample/Sources/TypeRegistration+Generated.swift \
-  --verbose
+# 3. AsyncNetwork 다운로드
+swift package resolve
+
+# 4. 스크립트 실행
+swift .build/checkouts/AsyncNetwork/Scripts/CreateDocKitExample.swift
 ```
 
-#### 생성되는 코드
+**프로젝트 구조**:
+```
+YourProject/                    ← 현재 위치 (여기서 swift package resolve 실행)
+├── Package.swift
+├── Sources/
+│   ├── Domain/                 ← @DocumentedType 경로
+│   └── Network/                ← @APIRequest 경로
+└── .build/
+    └── checkouts/
+        └── AsyncNetwork/       ← AsyncNetwork가 다운로드됨
+            └── Scripts/
+                └── CreateDocKitExample.swift
+```
+
+#### 케이스 2: AsyncNetwork 저장소를 직접 클론한 경우
+
+```bash
+# 1. AsyncNetwork 저장소로 이동
+cd /path/to/AsyncNetwork
+
+# 2. 스크립트 실행
+swift Scripts/CreateDocKitExample.swift
+```
+
+**프로젝트 구조**:
+```
+AsyncNetwork/                   ← 현재 위치
+├── Package.swift
+├── Scripts/
+│   └── CreateDocKitExample.swift
+└── Projects/
+    ├── Domain/                 ← @DocumentedType 경로 (예시)
+    └── Data/                   ← @APIRequest 경로 (예시)
+```
+
+### 기능
+
+- ✅ 대화형 입력 모드
+- ✅ 경로 자동 정규화 (절대/상대/홈 경로)
+- ✅ Tuist 모듈 자동 감지
+- ✅ Placeholder 파일 자동 생성
+- ✅ 빌드 스크립트 자동 설정
+
+### 사용법
+
+#### 1️⃣ 대화형 모드 (권장)
+
+**사용자 프로젝트에서**:
+```bash
+cd /path/to/YourProject
+swift .build/checkouts/AsyncNetwork/Scripts/CreateDocKitExample.swift
+```
+
+**AsyncNetwork 저장소에서**:
+```bash
+cd /path/to/AsyncNetwork
+swift Scripts/CreateDocKitExample.swift
+```
+
+**입력 예시** (사용자 프로젝트 기준):
+```
+📱 앱 이름: MyAPIDocumentation
+
+📁 @DocumentedType 경로: Sources/Domain
+   💡 여러 개는 ','로 구분 (예: Sources/Domain,Sources/Models)
+   💡 절대 경로, 상대 경로, ~ 모두 사용 가능
+   
+📡 @APIRequest 경로: Sources/Network
+   💡 위와 같으면 Enter
+   💡 다르면 입력 (예: Sources/API,Sources/Data)
+
+📂 출력 경로: DocKitExample
+   💡 샘플 앱이 생성될 위치 (현재 디렉토리 기준)
+
+🔖 Bundle ID 접두사: com.mycompany (기본값: com.asyncnetwork)
+
+🛠  스크립트 경로: ../../Scripts (기본값)
+   💡 생성될 샘플앱에서 AsyncNetwork Scripts까지의 상대 경로
+   💡 사용자 프로젝트: .build/checkouts/AsyncNetwork/Scripts
+   💡 AsyncNetwork 클론: ../../Scripts
+
+🎯 생성하시겠습니까? y
+```
+
+#### 2️⃣ 명령줄 모드
+
+```bash
+swift Scripts/CreateDocKitExample.swift \
+    --name MyAPIDocumentation \
+    --sources Sources/Domain \
+    --sources Sources/Network \
+    --output DocKitExample \
+    --bundle-id com.mycompany \
+    --scripts ../../Scripts
+```
+
+### 경로 지정
+
+스크립트는 다양한 경로 형식을 자동으로 처리합니다:
+
+```bash
+# 절대 경로
+/Users/username/Project/Sources/Domain
+
+# 상대 경로
+Sources/Domain
+../MyProject/Sources/Network
+
+# 홈 경로
+~/Projects/MyApp/Sources/Domain
+
+# 따옴표 포함 (자동 제거됨)
+"Sources/Domain"
+'Sources/Network'
+```
+
+### Tuist 모듈 자동 감지
+
+스크립트는 경로에 `Project.swift`가 있으면 자동으로 Tuist 모듈로 인식합니다:
+
+```bash
+# 예시: Data, Domain이 Tuist 모듈인 경우
+📁 @DocumentedType 경로: Projects/Domain
+📡 @APIRequest 경로: Projects/Data
+
+# 결과: Project.swift에 자동 추가
+dependencies: [
+    .project(target: "Domain", path: "../../Projects/Domain"),
+    .project(target: "Data", path: "../../Projects/Data"),
+]
+```
+
+일반 폴더인 경우 `sources`에 추가:
+```swift
+sources: [
+    "MyApp/Sources/**",
+    "../../Sources/Models/**",
+]
+```
+
+### 생성되는 파일
+
+**사용자 프로젝트 기준**:
+```
+YourProject/                    ← 현재 위치
+├── Package.swift
+├── Sources/
+│   ├── Domain/                 ← 사용자의 @DocumentedType
+│   └── Network/                ← 사용자의 @APIRequest
+└── DocKitExample/              ← 생성된 샘플 앱
+    ├── Project.swift (Tuist)
+    └── MyAPIDocumentation/
+        ├── Sources/
+        │   ├── MyAPIDocumentationApp.swift
+        │   ├── TypeRegistration+Generated.swift  # 빌드 시 자동 생성
+        │   └── Endpoints+Generated.swift         # 빌드 시 자동 생성
+        └── Resources/
+```
+
+**AsyncNetwork 저장소 기준**:
+```
+AsyncNetwork/                   ← 현재 위치
+├── Scripts/
+├── Projects/
+│   ├── Domain/                 ← @DocumentedType
+│   └── Data/                   ← @APIRequest
+└── DocKitExample/              ← 생성된 샘플 앱
+    └── (위와 동일)
+```
+
+### 실행
+
+```bash
+cd DocKitExample
+tuist generate
+open MyAPIDocumentation.xcworkspace
+# Cmd + R로 실행!
+```
+
+---
+
+## 📝 GenerateTypeRegistration.swift
+
+`@DocumentedType`이 적용된 타입을 스캔하여 자동 등록 코드를 생성합니다.
+
+### 기능
+
+- ✅ `@DocumentedType` 자동 스캔
+- ✅ `registerAllTypesGenerated()` 메서드 생성
+- ✅ 타임스탬프 및 타입 개수 자동 기록
+- ✅ 제외 경로 지원 (.build, Derived 등)
+
+### 사용법
+
+```bash
+swift Scripts/GenerateTypeRegistration.swift \
+    --project <소스경로> \
+    --output <출력파일> \
+    --module <모듈명> \
+    --target <타겟명> \
+    [--verbose]
+```
+
+### 예시
+
+```bash
+swift Scripts/GenerateTypeRegistration.swift \
+    --project Sources/Domain \
+    --project Sources/Models \
+    --output Generated/TypeRegistration+Generated.swift \
+    --module MyApp \
+    --target MyAppApp \
+    --verbose
+```
+
+### 출력 예시
 
 ```swift
-extension AsyncNetworkDocKitExampleApp {
+//
+//  TypeRegistration+Generated.swift
+//  MyApp
+//
+//  Auto-generated by GenerateTypeRegistration.swift
+//  Created on 2026-01-03T12:46:12Z
+//
+//  DO NOT EDIT MANUALLY
+//
+
+import AsyncNetworkCore
+
+extension MyAppApp {
+    /// 모든 @DocumentedType 타입을 자동으로 등록합니다
+    ///
+    /// - Note: 생성된 타입 수: 37개
     func registerAllTypesGenerated() {
-        _ = Address.typeStructure
-        _ = Album.typeStructure
-        _ = Author.typeStructure
-        // ... (모든 @DocumentedType 타입)
+        _ = User.typeStructure
+        _ = Post.typeStructure
+        _ = Comment.typeStructure
+        // ... (37개 타입)
     }
 }
 ```
 
----
+### Xcode Build Phase에서 사용
 
-## 🔧 2. GenerateEndpoints.swift
-
-### 기능
-`@APIRequest`가 적용된 모든 Request 타입을 스캔하여 Endpoints 딕셔너리를 자동으로 생성합니다.
-
-### 사용 방법
-
-#### 수동 실행
-
-```bash
-cd AsyncNetwork
-
-# 기본 실행
-Scripts/GenerateEndpoints.swift \
-  --project Projects/AsyncNetworkDocKitExample/AsyncNetworkDocKitExample/Sources \
-  --output Projects/AsyncNetworkDocKitExample/AsyncNetworkDocKitExample/Sources/Endpoints+Generated.swift
-
-# Verbose 모드
-Scripts/GenerateEndpoints.swift \
-  --project Projects/AsyncNetworkDocKitExample/AsyncNetworkDocKitExample/Sources \
-  --output Projects/AsyncNetworkDocKitExample/AsyncNetworkDocKitExample/Sources/Endpoints+Generated.swift \
-  --verbose
-```
-
-#### 생성되는 코드
+`Project.swift`에 추가:
 
 ```swift
-extension AsyncNetworkDocKitExampleApp {
+scripts: [
+    .pre(
+        script: """
+        set -e
+        
+        SCRIPTS_DIR="${SRCROOT}/../../Scripts"
+        OUTPUT_DIR="${SRCROOT}/MyApp/Sources"
+        
+        xcrun --sdk macosx swift "$SCRIPTS_DIR/GenerateTypeRegistration.swift" \\
+            --project Sources/Domain \\
+            --project Sources/Models \\
+            --output "$OUTPUT_DIR/TypeRegistration+Generated.swift" \\
+            --module "MyApp" \\
+            --target "MyAppApp"
+        """,
+        name: "Generate Type Registration",
+        basedOnDependencyAnalysis: false
+    ),
+]
+```
+
+---
+
+## 📡 GenerateEndpoints.swift
+
+`@APIRequest`가 적용된 Request를 스캔하여 엔드포인트 딕셔너리를 생성합니다.
+
+### 기능
+
+- ✅ `@APIRequest` 자동 스캔
+- ✅ `tags` 기반 카테고리 자동 분류
+- ✅ `endpointsGenerated` static 프로퍼티 생성
+- ✅ 타임스탬프 및 통계 정보 자동 기록
+- ✅ 제외 경로 지원
+
+### 사용법
+
+```bash
+swift Scripts/GenerateEndpoints.swift \
+    --project <소스경로> \
+    --output <출력파일> \
+    --module <모듈명> \
+    --target <타겟명> \
+    [--verbose]
+```
+
+### 예시
+
+```bash
+swift Scripts/GenerateEndpoints.swift \
+    --project Sources/Network \
+    --project Sources/API \
+    --output Generated/Endpoints+Generated.swift \
+    --module MyApp \
+    --target MyAppApp \
+    --verbose
+```
+
+### 출력 예시
+
+```swift
+//
+//  Endpoints+Generated.swift
+//  MyApp
+//
+//  Auto-generated by GenerateEndpoints.swift
+//  Created on 2026-01-03T12:49:36Z
+//
+//  DO NOT EDIT MANUALLY
+//
+
+import AsyncNetworkDocKit
+
+extension MyAppApp {
+    /// 모든 API Endpoint 정보를 반환합니다
+    ///
+    /// - Note: 생성된 카테고리 수: 7개, 총 Endpoint 수: 16개
     static var endpointsGenerated: [String: [EndpointMetadata]] {
         [
-            "Posts": [
-                GetAllPostsRequest.metadata,
-                GetPostByIdRequest.metadata,
-                // ...
-            ],
             "Users": [
-                GetAllUsersRequest.metadata,
-                // ...
+                GetUsersRequest.metadata,
+                GetUserRequest.metadata,
+                CreateUserRequest.metadata,
             ],
-            // ... (모든 카테고리)
+            "Posts": [
+                GetPostsRequest.metadata,
+                CreatePostRequest.metadata,
+            ],
+            // ... (7개 카테고리)
         ]
     }
 }
 ```
 
----
+### Xcode Build Phase에서 사용
 
-## 🎯 Tuist Project.swift 통합 (권장)
-
-Tuist를 사용하는 경우 `Project.swift`에 직접 스크립트를 추가할 수 있습니다.
-
-### Project.swift 설정
+`Project.swift`에 추가:
 
 ```swift
-import ProjectDescription
-import ProjectDescriptionHelpers
-
-let project = Project(
-    name: "AsyncNetworkDocKitExample",
-    targets: [
-        .target(
-            name: "AsyncNetworkDocKitExample",
-            // ... 다른 설정 ...
-            scripts: [
-                // 자동 코드 생성 스크립트
-                .pre(
-                    script: """
-                    set -e
-                    
-                    SCRIPTS_DIR="${SRCROOT}/../../Scripts"
-                    PROJECT_SOURCE="${SRCROOT}/AsyncNetworkDocKitExample/Sources"
-                    OUTPUT_DIR="${SRCROOT}/AsyncNetworkDocKitExample/Sources"
-                    
-                    echo "🔄 Generating code..."
-                    
-                    # 1. TypeRegistration 생성
-                    if [ -f "$SCRIPTS_DIR/GenerateTypeRegistration.swift" ]; then
-                        echo "  📝 Generating type registration..."
-                        # macOS SDK를 사용하여 Swift 스크립트 실행
-                        xcrun --sdk macosx swift "$SCRIPTS_DIR/GenerateTypeRegistration.swift" \\
-                            --project "$PROJECT_SOURCE" \\
-                            --output "$OUTPUT_DIR/TypeRegistration+Generated.swift" \\
-                            --module "AsyncNetworkDocKitExample" \\
-                            --target "AsyncNetworkDocKitExampleApp"
-                        
-                        if [ $? -eq 0 ]; then
-                            echo "  ✅ Type registration generated"
-                        else
-                            echo "  ❌ Failed to generate type registration"
-                            exit 1
-                        fi
-                    else
-                        echo "  ⚠️  TypeRegistration script not found"
-                    fi
-                    
-                    # 2. Endpoints 생성
-                    if [ -f "$SCRIPTS_DIR/GenerateEndpoints.swift" ]; then
-                        echo "  📝 Generating endpoints..."
-                        # macOS SDK를 사용하여 Swift 스크립트 실행
-                        xcrun --sdk macosx swift "$SCRIPTS_DIR/GenerateEndpoints.swift" \\
-                            --project "$PROJECT_SOURCE" \\
-                            --output "$OUTPUT_DIR/Endpoints+Generated.swift" \\
-                            --module "AsyncNetworkDocKitExample" \\
-                            --target "AsyncNetworkDocKitExampleApp"
-                        
-                        if [ $? -eq 0 ]; then
-                            echo "  ✅ Endpoints generated"
-                        else
-                            echo "  ❌ Failed to generate endpoints"
-                            exit 1
-                        fi
-                    else
-                        echo "  ⚠️  Endpoints script not found"
-                    fi
-                    
-                    echo "✨ Code generation completed"
-                    """,
-                    name: "Generate Code",
-                    basedOnDependencyAnalysis: false
-                ),
-            ],
-            // ... 다른 설정 ...
-        ),
-    ]
-)
+scripts: [
+    .pre(
+        script: """
+        set -e
+        
+        SCRIPTS_DIR="${SRCROOT}/../../Scripts"
+        OUTPUT_DIR="${SRCROOT}/MyApp/Sources"
+        
+        xcrun --sdk macosx swift "$SCRIPTS_DIR/GenerateEndpoints.swift" \\
+            --project Sources/Network \\
+            --output "$OUTPUT_DIR/Endpoints+Generated.swift" \\
+            --module "MyApp" \\
+            --target "MyAppApp"
+        """,
+        name: "Generate Endpoints",
+        basedOnDependencyAnalysis: false
+    ),
+]
 ```
 
-### Tuist 프로젝트 재생성
+---
+
+## 🔧 문제 해결
+
+### 1. "스크립트를 찾을 수 없습니다"
 
 ```bash
-cd Projects/AsyncNetworkDocKitExample
+# AsyncNetwork가 제대로 다운로드되었는지 확인
+ls .build/checkouts/AsyncNetwork/Scripts/
+
+# 없다면 resolve 다시 실행
+swift package resolve
+```
+
+### 2. "@DocumentedType을 찾을 수 없음"
+
+스크립트는 **디렉토리** 단위로 스캔합니다:
+
+```bash
+# ✅ 올바른 경로 (폴더)
+--project Sources/Domain
+
+# ❌ 잘못된 경로 (파일)
+--project Sources/Domain/Models.swift
+```
+
+### 3. "tuist generate 후 생성 파일이 없음"
+
+Placeholder 파일을 먼저 생성하세요:
+
+```bash
+# Placeholder 파일이 없으면 tuist generate가 인식하지 못함
+# CreateDocKitExample.swift는 자동으로 생성하지만,
+# 수동으로 만든 경우 직접 생성 필요
+
+touch MyApp/Sources/TypeRegistration+Generated.swift
+touch MyApp/Sources/Endpoints+Generated.swift
+
+# 이제 tuist generate 실행
 tuist generate
 ```
 
----
+### 4. "SDK 관련 경고"
 
-## 🎯 Xcode Build Phase 통합 (Tuist 미사용 시)
+```
+warning: using sysroot for 'iPhoneSimulator' but targeting 'MacOSX'
+```
 
-두 스크립트를 빌드 시 자동으로 실행하도록 설정할 수 있습니다.
+**해결**: `xcrun --sdk macosx swift` 사용 (이미 적용됨)
 
-### 1단계: Xcode에서 Build Phase 추가
+### 5. "경로에 공백이 포함되어 오류"
 
-1. Xcode에서 `AsyncNetworkDocKitExample` 프로젝트 열기
-2. `AsyncNetworkDocKitExample` 타겟 선택
-3. **Build Phases** 탭 이동
-4. **+** → **New Run Script Phase** 선택
-5. 스크립트 이름을 "Generate Code"로 변경
-6. **Compile Sources** 이전으로 드래그
-
-### 2단계: 스크립트 입력
+경로에 공백이 있으면 따옴표로 감싸세요:
 
 ```bash
-#!/bin/bash
+# ✅ 올바른 방법
+swift Scripts/CreateDocKitExample.swift \
+    --sources "My Project/Sources/Domain"
 
-set -e  # 에러 발생 시 중단
-
-# 경로 설정
-SCRIPTS_DIR="${PROJECT_DIR}/../../Scripts"
-PROJECT_SOURCE="${PROJECT_DIR}/Sources"
-OUTPUT_DIR="${PROJECT_DIR}/Sources"
-
-echo "🔄 Generating code..."
-
-# 1. TypeRegistration 생성
-if [ -f "$SCRIPTS_DIR/GenerateTypeRegistration.swift" ]; then
-    echo "  📝 Generating type registration..."
-    # macOS SDK를 사용하여 Swift 스크립트 실행
-    xcrun --sdk macosx swift "$SCRIPTS_DIR/GenerateTypeRegistration.swift" \
-        --project "$PROJECT_SOURCE" \
-        --output "$OUTPUT_DIR/TypeRegistration+Generated.swift" \
-        --module "AsyncNetworkDocKitExample" \
-        --target "AsyncNetworkDocKitExampleApp"
-    
-    if [ $? -eq 0 ]; then
-        echo "  ✅ Type registration generated"
-    else
-        echo "  ❌ Failed to generate type registration"
-        exit 1
-    fi
-else
-    echo "  ⚠️  TypeRegistration script not found"
-fi
-
-# 2. Endpoints 생성
-if [ -f "$SCRIPTS_DIR/GenerateEndpoints.swift" ]; then
-    echo "  📝 Generating endpoints..."
-    # macOS SDK를 사용하여 Swift 스크립트 실행
-    xcrun --sdk macosx swift "$SCRIPTS_DIR/GenerateEndpoints.swift" \
-        --project "$PROJECT_SOURCE" \
-        --output "$OUTPUT_DIR/Endpoints+Generated.swift" \
-        --module "AsyncNetworkDocKitExample" \
-        --target "AsyncNetworkDocKitExampleApp"
-    
-    if [ $? -eq 0 ]; then
-        echo "  ✅ Endpoints generated"
-    else
-        echo "  ❌ Failed to generate endpoints"
-        exit 1
-    fi
-else
-    echo "  ⚠️  Endpoints script not found"
-fi
-
-echo "✨ Code generation completed"
-```
-
-### 3단계: 캐싱 최적화 (선택적)
-
-**Input Files** 추가:
-```
-$(SRCROOT)/Sources/Models.swift
-$(SRCROOT)/Sources/APIRequests.swift
-```
-
-**Output Files** 추가:
-```
-$(SRCROOT)/Sources/TypeRegistration+Generated.swift
-$(SRCROOT)/Sources/Endpoints+Generated.swift
+# 또는 대화형 모드 사용 (자동 처리)
+swift Scripts/CreateDocKitExample.swift
 ```
 
 ---
 
-## 📚 옵션 설명
+## 📚 통합 워크플로우
 
-두 스크립트 모두 동일한 옵션을 사용합니다:
+### 새 프로젝트 시작
 
-| 옵션 | 짧은 형식 | 설명 | 필수 |
-|-----|---------|------|------|
-| `--project` | `-p` | 프로젝트 소스 디렉토리 경로 | ✅ |
-| `--output` | `-o` | 출력 파일 경로 | ✅ |
-| `--module` | `-m` | 모듈 이름 | ❌ (기본: AsyncNetworkDocKitExample) |
-| `--target` | `-t` | 타겟 이름 | ❌ (기본: AsyncNetworkDocKitExampleApp) |
-| `--verbose` | `-v` | 상세 출력 활성화 | ❌ |
-| `--help` | `-h` | 도움말 표시 | ❌ |
+```bash
+# 1. AsyncNetwork 설치
+swift package resolve
 
----
+# 2. 샘플 앱 생성
+swift .build/checkouts/AsyncNetwork/Scripts/CreateDocKitExample.swift
 
-## 🔍 작동 원리
+# 3. 입력
+앱 이름: MyAPIDocumentation
+@DocumentedType 경로: Sources/Domain
+@APIRequest 경로: Sources/Network
+출력 경로: DocKitExample
 
-### GenerateTypeRegistration.swift
+# 4. 실행
+cd DocKitExample
+tuist generate
+open *.xcworkspace
+```
 
-1. **스캔**: 프로젝트의 모든 `.swift` 파일을 재귀적으로 스캔
-2. **추출**: `@DocumentedType` 다음 줄에서 타입 이름 추출
-3. **생성**: `registerAllTypesGenerated()` 메서드 생성
-4. **저장**: `TypeRegistration+Generated.swift` 파일로 저장
+### 기존 프로젝트에 추가
 
-### GenerateEndpoints.swift
+```bash
+# 1. Scripts 복사
+cp -r .build/checkouts/AsyncNetwork/Scripts ./Scripts
 
-1. **스캔**: 프로젝트의 모든 `.swift` 파일을 재귀적으로 스캔
-2. **추출**: `@APIRequest` 블록에서 tags와 struct 이름 추출
-3. **그룹화**: 첫 번째 tag를 기준으로 카테고리별 그룹화
-4. **생성**: `endpointsGenerated` 프로퍼티 생성
-5. **저장**: `Endpoints+Generated.swift` 파일로 저장
+# 2. Project.swift에 빌드 스크립트 추가
+# (위의 "Xcode Build Phase에서 사용" 참고)
 
----
-
-## ✅ 장점
-
-### 공통
-
-1. **완전 자동화**: 타입/Request 추가 시 빌드만 하면 자동 업데이트
-2. **수동 관리 불필요**: 반복적인 코드를 직접 수정할 필요 없음
-3. **타입 안전**: Swift 컴파일러가 타입 체크
-4. **외부 의존성 없음**: Swift만 사용
-
-### GenerateTypeRegistration.swift
-- 37개 타입을 수동으로 관리할 필요 없음
-- 타입 누락 방지
-
-### GenerateEndpoints.swift
-- 16개 Endpoint를 7개 카테고리로 자동 분류
-- tags 기반 자동 카테고리화
-- Request 추가 시 자동으로 endpoints에 포함
+# 3. tuist generate 후 빌드
+tuist generate
+# Xcode에서 빌드 시 자동 생성됨
+```
 
 ---
 
-## ⚠️ 주의사항
+## 🎯 모범 사례
 
-### 공통
+### 1. 경로 조직화
 
-1. **Generated 파일 제외**: 스크립트는 `/Generated/` 폴더와 `+Generated.swift` 파일을 자동으로 제외합니다
-2. **Build Phase 순서**: "Compile Sources" 이전에 실행되어야 합니다
-3. **경로 설정**: Xcode Build Phase에서 경로를 프로젝트 구조에 맞게 조정하세요
+```
+YourProject/
+├── Sources/
+│   ├── Domain/          # @DocumentedType
+│   │   └── Models/
+│   ├── Network/         # @APIRequest
+│   │   └── Requests/
+│   └── YourApp/
+└── Scripts/             # 생성 스크립트 복사
+```
 
-### GenerateEndpoints.swift
-
-1. **tags 필수**: `@APIRequest`에 `tags` 파라미터가 필요합니다
-2. **카테고리 결정**: 첫 번째 tag가 카테고리명이 됩니다
-3. **정렬**: 카테고리와 Request 모두 알파벳 순으로 정렬됩니다
-
----
-
-## 🎨 .gitignore 설정
-
-생성된 파일을 Git에서 제외하려면:
+### 2. .gitignore 설정
 
 ```gitignore
-# Auto-generated files
+# 자동 생성 파일 제외
 **/TypeRegistration+Generated.swift
 **/Endpoints+Generated.swift
 ```
 
-또는 생성된 파일을 커밋하려면 `.gitignore`에 추가하지 마세요.
+### 3. CI/CD 통합
 
----
-
-## 🐛 문제 해결
-
-### 스크립트 실행 권한 오류
-
-```bash
-chmod +x Scripts/GenerateTypeRegistration.swift
-chmod +x Scripts/GenerateEndpoints.swift
+```yaml
+# .github/workflows/build.yml
+- name: Generate Code
+  run: |
+    swift Scripts/GenerateTypeRegistration.swift \
+        --project Sources/Domain \
+        --output Generated/TypeRegistration+Generated.swift \
+        --module MyApp \
+        --target MyAppApp
+    
+    swift Scripts/GenerateEndpoints.swift \
+        --project Sources/Network \
+        --output Generated/Endpoints+Generated.swift \
+        --module MyApp \
+        --target MyAppApp
 ```
 
-### 타입/Request를 찾을 수 없음
+---
 
-- `--verbose` 옵션으로 상세 출력 확인
-- 프로젝트 경로가 올바른지 확인
-- `@DocumentedType` / `@APIRequest` 어노테이션이 정확히 작성되었는지 확인
+## 📖 추가 리소스
 
-### 빌드 시 에러
-
-- Output Files 설정이 올바른지 확인
-- 생성된 파일이 프로젝트에 추가되었는지 확인
-- `import AsyncNetworkCore` / `import AsyncNetworkDocKit`가 가능한지 확인
+- [AsyncNetwork README](../README.md) - 메인 문서
+- [AsyncNetworkDocKitExample](../Projects/AsyncNetworkDocKitExample) - 완전한 예제
+- [GitHub Issues](https://github.com/Jimmy-Jung/AsyncNetwork/issues) - 버그 리포트
 
 ---
 
-## 📖 추가 자료
-
-- [Swift Scripting Guide](https://www.swift.org/getting-started/#using-the-package-manager)
-- [Xcode Build Phase Documentation](https://developer.apple.com/documentation/xcode/customizing-the-build-phases-of-a-target)
-- [AsyncNetwork Documentation](../README.md)
+**Made with ❤️ by AsyncNetwork Team**

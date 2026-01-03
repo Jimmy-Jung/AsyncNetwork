@@ -2,14 +2,11 @@
 //  LoggingInterceptor.swift
 //  AsyncNetwork
 //
-//  Created by jimmy on 2025/12/29.
+//  Created by jimmy on 2026/01/03.
 //
 
 import Foundation
 
-// MARK: - LogLevel
-
-/// 로그 레벨
 public enum NetworkLogLevel: Int, Sendable {
     case verbose = 0
     case debug = 1
@@ -30,27 +27,9 @@ public enum NetworkLogLevel: Int, Sendable {
     }
 }
 
-// MARK: - ConsoleLoggingInterceptor
-
 /// 콘솔 기반 로깅 Interceptor
 ///
 /// RequestInterceptor를 구현하여 네트워크 요청/응답을 콘솔에 로깅합니다.
-///
-/// ## 사용 예시
-///
-/// ```swift
-/// let loggingInterceptor = ConsoleLoggingInterceptor(
-///     minimumLevel: .verbose,
-///     sensitiveKeys: ["password", "token"]
-/// )
-///
-/// let service = NetworkService(
-///     httpClient: HTTPClient(configuration: .development),
-///     retryPolicy: .default,
-///     responseProcessor: ResponseProcessor(),
-///     interceptors: [loggingInterceptor]
-/// )
-/// ```
 public struct ConsoleLoggingInterceptor: RequestInterceptor {
     private let minimumLevel: NetworkLogLevel
     private let dateFormatter: DateFormatter
@@ -67,8 +46,6 @@ public struct ConsoleLoggingInterceptor: RequestInterceptor {
         formatter.dateFormat = "HH:mm:ss.SSS"
         dateFormatter = formatter
     }
-
-    // MARK: - RequestInterceptor
 
     public func willSend(_ request: URLRequest, target _: (any APIRequest)?) async {
         guard minimumLevel.rawValue <= NetworkLogLevel.debug.rawValue else { return }
@@ -128,8 +105,6 @@ public struct ConsoleLoggingInterceptor: RequestInterceptor {
         log.append("\n=========================================================\n")
         print(log)
     }
-
-    // MARK: - Private Helpers
 
     private func filterSensitive(_ value: String, key: String) -> String {
         let lowercasedKey = key.lowercased()

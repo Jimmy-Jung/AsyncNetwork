@@ -2,13 +2,12 @@
 //  EndpointListView.swift
 //  AsyncNetworkDocKit
 //
-//  Created by jimmy on 2026/01/01.
+//  Created by jimmy on 2026/01/03.
 //
 
-import SwiftUI
 import AsyncNetworkCore
+import SwiftUI
 
-/// 엔드포인트 목록 뷰 (1열)
 @available(iOS 17.0, macOS 14.0, *)
 struct EndpointListView: View {
     let categories: [EndpointCategory]
@@ -50,7 +49,7 @@ struct EndpointListView: View {
         }
         return category.endpoints.filter {
             $0.title.localizedCaseInsensitiveContains(searchText) ||
-            $0.path.localizedCaseInsensitiveContains(searchText)
+                $0.path.localizedCaseInsensitiveContains(searchText)
         }
     }
 }

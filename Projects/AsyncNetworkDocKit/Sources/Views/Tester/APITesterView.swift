@@ -2,13 +2,12 @@
 //  APITesterView.swift
 //  AsyncNetworkDocKit
 //
-//  Created by jimmy on 2026/01/01.
+//  Created by jimmy on 2026/01/03.
 //
 
 import AsyncNetworkCore
 import SwiftUI
 
-/// API 테스터 뷰 (3열)
 @available(iOS 17.0, macOS 14.0, *)
 @MainActor
 struct APITesterView: View {
@@ -21,7 +20,6 @@ struct APITesterView: View {
     init(networkService: NetworkService, endpoint: EndpointMetadata) {
         self.networkService = networkService
         self.endpoint = endpoint
-        // StateStore에서 해당 endpoint의 상태 가져오기
         let existingState = APITesterStateStore.shared.getState(for: endpoint.id)
         _state = State(initialValue: existingState)
     }
@@ -33,7 +31,6 @@ struct APITesterView: View {
 
                 Divider()
 
-                // Headers 섹션 (endpoint.headers가 있을 때만 표시)
                 if let headers = endpoint.headers, !headers.isEmpty {
                     headersDisplaySection
                     Divider()
@@ -64,7 +61,6 @@ struct APITesterView: View {
                     errorSection(error)
                 }
 
-                // 요청한 적이 있을 때만 응답 섹션 표시
                 if state.hasBeenRequested && !state.response.isEmpty {
                     Divider()
                     requestMetadataSection
@@ -206,7 +202,6 @@ struct APITesterView: View {
     private func renderTopLevelFieldInput(_ field: AsyncNetworkCore.RequestBodyFieldInfo) -> some View {
         switch field.fieldKind {
         case .primitive:
-            // 기본 타입: 단순 입력 필드
             HStack(spacing: 12) {
                 HStack(spacing: 4) {
                     Text(field.name)
@@ -223,7 +218,6 @@ struct APITesterView: View {
             }
 
         case .object:
-            // 중첩 객체: DisclosureGroup으로 토글
             let nestedFields = endpoint.requestBodyFields.filter { $0.name.hasPrefix(field.name + ".") }
             DisclosureGroup {
                 VStack(alignment: .leading, spacing: 8) {
@@ -250,7 +244,6 @@ struct APITesterView: View {
             .padding(.vertical, 4)
 
         case .array:
-            // 배열: +/- 버튼으로 항목 추가/삭제
             VStack(alignment: .leading, spacing: 8) {
                 HStack(spacing: 8) {
                     Text(field.name)
@@ -276,7 +269,6 @@ struct APITesterView: View {
                     .buttonStyle(.plain)
                 }
 
-                // 배열 항목 표시
                 let itemCount = state.arrayItemCounts[field.name] ?? 0
                 if itemCount > 0 {
                     ForEach(0 ..< itemCount, id: \.self) { index in
@@ -327,10 +319,8 @@ struct APITesterView: View {
 
     private var sendButtonSection: some View {
         Button {
-            // 기존 Task 취소
             requestTask?.cancel()
 
-            // 새 Task 생성 및 저장
             requestTask = Task {
                 await sendRequest()
             }
@@ -386,7 +376,6 @@ struct APITesterView: View {
             }
 
             VStack(alignment: .leading, spacing: 12) {
-                // Method & URL
                 VStack(alignment: .leading, spacing: 4) {
                     Text("🔧 Method & URL:")
                         .font(.caption)
@@ -401,7 +390,6 @@ struct APITesterView: View {
                     }
                 }
 
-                // Headers
                 if !state.requestHeaders.isEmpty {
                     Divider()
                     VStack(alignment: .leading, spacing: 4) {
@@ -429,7 +417,6 @@ struct APITesterView: View {
                     }
                 }
 
-                // Parameters
                 if !endpoint.parameters.isEmpty {
                     Divider()
                     VStack(alignment: .leading, spacing: 4) {
@@ -460,7 +447,6 @@ struct APITesterView: View {
                     }
                 }
 
-                // Request Body
                 if !state.requestBody.isEmpty {
                     Divider()
                     VStack(alignment: .leading, spacing: 4) {
@@ -512,7 +498,6 @@ struct APITesterView: View {
             }
 
             VStack(alignment: .leading, spacing: 12) {
-                // Status Code
                 if let status = state.statusCode {
                     HStack(spacing: 8) {
                         Text("📊 Status:")
@@ -531,7 +516,6 @@ struct APITesterView: View {
                     }
                 }
 
-                // Response Headers
                 if !state.responseHeaders.isEmpty {
                     Divider()
                     VStack(alignment: .leading, spacing: 4) {
@@ -559,7 +543,6 @@ struct APITesterView: View {
                     }
                 }
 
-                // Response Body
                 Divider()
                 VStack(alignment: .leading, spacing: 4) {
                     Text("📦 Response Body (\(state.responseBodySize) bytes):")
@@ -618,8 +601,6 @@ struct APITesterView: View {
             set: { state.requestBodyFields[key] = $0 ? "true" : "false" }
         )
     }
-
-    // MARK: - Array & Object Helper Functions
 
     @ViewBuilder
     private func renderObjectNestedField(_ field: AsyncNetworkCore.RequestBodyFieldInfo, parentPath: String) -> some View {
@@ -733,18 +714,15 @@ struct APITesterView: View {
     private func removeArrayItem(for arrayPath: String, at index: Int) {
         state.arrayItems[arrayPath]?.removeValue(forKey: index)
 
-        // 카운트 재계산
         let remainingIndices = state.arrayItems[arrayPath]?.keys.sorted() ?? []
         state.arrayItemCounts[arrayPath] = remainingIndices.isEmpty ? 0 : (remainingIndices.last! + 1)
     }
 
     private func setupDefaultValues() {
-        // 이미 요청한 적이 있으면 저장된 상태를 유지
         if state.hasBeenRequested {
             return
         }
 
-        // 헤더 기본값 설정
         if let headers = endpoint.headers {
             for (key, value) in headers {
                 if state.headerFields[key] == nil {
@@ -753,14 +731,12 @@ struct APITesterView: View {
             }
         }
 
-        // 처음 보는 endpoint면 기본 예시값 설정
         for parameter in endpoint.parameters {
             if let example = parameter.exampleValue, state.parameters[parameter.name] == nil {
                 state.parameters[parameter.name] = example
             }
         }
 
-        // requestBodyFields가 있으면 필드별 입력 사용
         if !endpoint.requestBodyFields.isEmpty {
             for field in endpoint.requestBodyFields {
                 if let example = field.exampleValue, state.requestBodyFields[field.name] == nil {
@@ -768,7 +744,6 @@ struct APITesterView: View {
                 }
             }
         } else if let bodyExample = endpoint.requestBodyExample, state.requestBody.isEmpty {
-            // 기존 방식: JSON 문자열로 입력
             state.requestBody = bodyExample
         }
     }
@@ -799,7 +774,6 @@ struct APITesterView: View {
     private func buildJSONFromFields(using targetState: APITesterState) -> String {
         var jsonDict: [String: Any] = [:]
 
-        // 최상위 필드만 처리
         let topLevelFields = endpoint.requestBodyFields.filter { !$0.name.contains(".") }
 
         for field in topLevelFields {
@@ -812,14 +786,12 @@ struct APITesterView: View {
                 jsonDict[field.name] = convertPrimitiveValue(value, type: field.type)
 
             case .object:
-                // 중첩 객체 필드
                 let objectData = buildNestedObject(for: field.name, using: targetState)
                 if !objectData.isEmpty {
                     jsonDict[field.name] = objectData
                 }
 
             case .array:
-                // 배열 필드
                 let arrayData = buildArrayData(for: field.name, using: targetState)
                 if !arrayData.isEmpty {
                     jsonDict[field.name] = arrayData
@@ -904,13 +876,9 @@ struct APITesterView: View {
     }
 
     private func sendRequest() async {
-        // 현재 endpoint ID 저장 (백그라운드 실행 중에도 올바른 state를 업데이트하기 위해)
         let currentEndpointId = endpoint.id
-
-        // 올바른 state 가져오기
         let targetState = APITesterStateStore.shared.getState(for: currentEndpointId)
 
-        // 요청 시작 시 hasBeenRequested 플래그 설정
         targetState.markAsRequested()
 
         targetState.isLoading = true
@@ -918,19 +886,16 @@ struct APITesterView: View {
         targetState.response = ""
         targetState.statusCode = nil
 
-        // Reset logging info
         targetState.requestHeaders = [:]
         targetState.responseHeaders = [:]
         targetState.requestBodySize = 0
         targetState.responseBodySize = 0
 
-        // Timestamp
         let dateFormatter = DateFormatter()
         dateFormatter.dateFormat = "HH:mm:ss.SSS"
         targetState.requestTimestamp = dateFormatter.string(from: Date())
 
         do {
-            // Build URL with path parameters
             var path = endpoint.path
             for parameter in endpoint.parameters where parameter.location == .path {
                 if let value = targetState.parameters[parameter.name], !value.isEmpty {
@@ -938,7 +903,6 @@ struct APITesterView: View {
                 }
             }
 
-            // Collect query parameters
             var queryParams: [String: String] = [:]
             for parameter in endpoint.parameters where parameter.location == .query {
                 if let value = targetState.parameters[parameter.name], !value.isEmpty {
@@ -946,25 +910,20 @@ struct APITesterView: View {
                 }
             }
 
-            // Prepare request body
             var bodyData: Data?
             if ["POST", "PUT", "PATCH"].contains(endpoint.method.uppercased()) {
-                // requestBodyFields가 있으면 개별 필드에서 JSON 생성
                 if !endpoint.requestBodyFields.isEmpty {
                     let jsonString = buildJSONFromFields(using: targetState)
                     bodyData = jsonString.data(using: .utf8)
-                    targetState.requestBody = jsonString // 표시용
+                    targetState.requestBody = jsonString
                 } else if !targetState.requestBody.isEmpty {
-                    // 기존 방식: 직접 입력된 JSON 사용
                     bodyData = targetState.requestBody.data(using: .utf8)
                 }
                 targetState.requestBodySize = bodyData?.count ?? 0
             }
 
-            // Prepare headers for actual request
             var allHeaders: [String: String] = [:]
 
-            // 사용자가 입력한 헤더 값 사용 (기본값이 있으면 그것부터 시작)
             if let endpointHeaders = endpoint.headers {
                 for (key, _) in endpointHeaders {
                     if let userValue = targetState.headerFields[key], !userValue.isEmpty {
@@ -973,15 +932,12 @@ struct APITesterView: View {
                 }
             }
 
-            // Content-Type은 body가 있을 때 자동 추가 (덮어쓰기)
             if bodyData != nil {
                 allHeaders["Content-Type"] = "application/json"
             }
 
-            // Display headers for UI
             targetState.requestHeaders = allHeaders
 
-            // Create dynamic API request
             let apiRequest = DynamicAPIRequest(
                 baseURL: endpoint.baseURLString,
                 path: path,
@@ -991,24 +947,17 @@ struct APITesterView: View {
                 body: bodyData
             )
 
-            // Execute request
             let httpResponse = try await networkService.requestRaw(apiRequest)
 
-            // Update response timestamp
             targetState.responseTimestamp = dateFormatter.string(from: Date())
-
-            // Collect response info
             targetState.statusCode = httpResponse.statusCode
             targetState.responseBodySize = httpResponse.data.count
 
-            // Collect only request-defined headers in response
-            // (endpoint에 정의된 헤더만 response에서도 표시)
             if let response = httpResponse.response {
                 let requestHeaderKeys = Set((endpoint.headers ?? [:]).keys.map { $0.lowercased() })
 
                 for (key, value) in response.allHeaderFields {
                     if let keyString = key as? String, let valueString = value as? String {
-                        // endpoint에 정의된 헤더만 표시
                         if requestHeaderKeys.contains(keyString.lowercased()) {
                             targetState.responseHeaders[keyString] = valueString
                         }
@@ -1016,19 +965,18 @@ struct APITesterView: View {
                 }
             }
 
-            // Format response body
             if let jsonObject = try? JSONSerialization.jsonObject(with: httpResponse.data),
                let prettyData = try? JSONSerialization.data(
                    withJSONObject: jsonObject,
                    options: [.prettyPrinted, .sortedKeys]
                ),
-               let prettyString = String(data: prettyData, encoding: .utf8) {
+               let prettyString = String(data: prettyData, encoding: .utf8)
+            {
                 targetState.response = prettyString
             } else {
                 targetState.response = String(data: httpResponse.data, encoding: .utf8) ?? "Unable to decode response"
             }
 
-            // ✅ 정상 완료 - 로딩 종료
             targetState.isLoading = false
 
         } catch {

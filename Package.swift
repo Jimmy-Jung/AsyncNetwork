@@ -2,8 +2,8 @@
 // Package.swift
 // AsyncNetwork
 
-import PackageDescription
 import CompilerPluginSupport
+import PackageDescription
 
 let package = Package(
     name: "AsyncNetwork",
@@ -11,7 +11,7 @@ let package = Package(
         .iOS(.v13),
         .macOS(.v10_15),
         .tvOS(.v13),
-        .watchOS(.v6)
+        .watchOS(.v6),
     ],
     products: [
         // Core library
@@ -32,14 +32,15 @@ let package = Package(
         .library(
             name: "AsyncNetworkDocKit",
             targets: ["AsyncNetworkDocKit"]
-        )
+        ),
     ],
     dependencies: [
         .package(url: "https://github.com/apple/swift-syntax.git", from: "600.0.0"),
-        .package(url: "https://github.com/apple/swift-docc-plugin", from: "1.0.0")
+        .package(url: "https://github.com/apple/swift-docc-plugin", from: "1.0.0"),
     ],
     targets: [
         // MARK: - Core Network Library
+
         // Projects/AsyncNetwork/Sources 폴더 전체를 사용하되,
         // Umbrella 모듈인 AsyncNetwork 폴더는 제외
         // (Core 기능만 포함: Models, Client, Service, Processing 등)
@@ -51,12 +52,13 @@ let package = Package(
         ),
 
         // MARK: - Umbrella Target (Core + Macros)
+
         // AsyncNetworkCore와 AsyncNetworkMacros를 통합한 단일 import 모듈
         .target(
             name: "AsyncNetwork",
             dependencies: [
                 "AsyncNetworkCore",
-                "AsyncNetworkMacros"
+                "AsyncNetworkMacros",
             ],
             path: "Projects/AsyncNetwork/Sources/AsyncNetwork"
         ),
@@ -68,47 +70,62 @@ let package = Package(
         ),
 
         // MARK: - Macro Public Interface
+
         .target(
             name: "AsyncNetworkMacros",
             dependencies: [
                 "AsyncNetworkMacrosImpl",
-                "AsyncNetworkCore"
+                "AsyncNetworkCore",
             ],
             path: "Projects/AsyncNetworkMacros/Sources/AsyncNetworkMacros"
         ),
 
         // MARK: - Macro Implementation (Compiler Plugin)
+
         .macro(
             name: "AsyncNetworkMacrosImpl",
             dependencies: [
                 .product(name: "SwiftSyntax", package: "swift-syntax"),
                 .product(name: "SwiftSyntaxMacros", package: "swift-syntax"),
-                .product(name: "SwiftCompilerPlugin", package: "swift-syntax")
+                .product(name: "SwiftCompilerPlugin", package: "swift-syntax"),
             ],
             path: "Projects/AsyncNetworkMacros/Sources/AsyncNetworkMacrosImpl"
         ),
 
         // MARK: - Macro Tests
+
         .testTarget(
             name: "AsyncNetworkMacrosTests",
             dependencies: [
                 "AsyncNetworkMacros",
                 "AsyncNetworkMacrosImpl",
-                .product(name: "SwiftSyntaxMacrosTestSupport", package: "swift-syntax")
+                .product(name: "SwiftSyntaxMacrosTestSupport", package: "swift-syntax"),
             ],
             path: "Projects/AsyncNetworkMacros/Tests"
         ),
 
         // MARK: - Documentation Kit (iOS only - SwiftUI App features)
+
         .target(
             name: "AsyncNetworkDocKit",
             dependencies: [
-                "AsyncNetwork"
+                "AsyncNetwork",
             ],
             path: "Projects/AsyncNetworkDocKit/Sources",
             swiftSettings: [
-                .define("DOCKIT_IOS_ONLY")
+                .define("DOCKIT_IOS_ONLY"),
             ]
-        )
+        ),
+
+        // MARK: - Documentation Kit Tests
+
+        .testTarget(
+            name: "AsyncNetworkDocKitTests",
+            dependencies: [
+                "AsyncNetworkDocKit",
+                "AsyncNetworkCore",
+            ],
+            path: "Projects/AsyncNetworkDocKit/Tests"
+        ),
     ]
 )

@@ -1,3 +1,10 @@
+//
+//  RetryPolicy.swift
+//  AsyncNetwork
+//
+//  Created by jimmy on 2026/01/03.
+//
+
 import Foundation
 
 public struct RetryConfiguration: Sendable {
@@ -42,31 +49,26 @@ public struct RetryPolicy: Sendable {
     }
 
     public func shouldRetry(error: Error, attempt: Int) -> RetryDecision {
-        // 0. 유효하지 않은 시도 횟수 확인
         guard attempt > 0 else {
             logRetryDecision(decision: .stop, reason: "Invalid attempt number: \(attempt)")
             return .stop
         }
 
-        // 1. 최대 재시도 횟수 초과 확인
         guard attempt <= configuration.maxRetries else {
             logRetryDecision(decision: .stop, reason: "Max retries exceeded")
             return .stop
         }
 
-        // 2. 룰 기반 재시도 가능성 체크
-        // 룰이 true를 반환하면 재시도, false면 중단, nil이면 다음 룰로 패스
         let isRetryable = rules
             .lazy
             .compactMap { $0.shouldRetry(error: error) }
-            .first ?? false // 어떤 룰도 매칭되지 않으면 재시도 안 함
+            .first ?? false
 
         guard isRetryable else {
             logRetryDecision(decision: .stop, reason: "Error is not retryable: \(error)")
             return .stop
         }
 
-        // 3. 지연 시간 계산
         let delay = calculateDelay(attempt: attempt)
         let decision = RetryDecision.retry(after: delay)
 
@@ -76,10 +78,10 @@ public struct RetryPolicy: Sendable {
 
     public func calculateDelay(attempt: Int) -> TimeInterval {
         let transforms: [(Double) -> Double] = [
-            { pow(2.0, $0) }, // 지수 계산
-            { self.configuration.baseDelay * $0 }, // 기본 지연시간 적용
-            addJitter, // 지터 추가
-            { min($0, self.configuration.maxDelay) } // 최대 지연시간 제한
+            { pow(2.0, $0) },
+            { self.configuration.baseDelay * $0 },
+            addJitter,
+            { min($0, self.configuration.maxDelay) }
         ]
 
         return transforms.reduce(Double(attempt - 1)) { value, transform in

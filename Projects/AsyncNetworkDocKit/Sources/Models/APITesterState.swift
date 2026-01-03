@@ -2,52 +2,39 @@
 //  APITesterState.swift
 //  AsyncNetworkDocKit
 //
-//  Created by jimmy on 2026/01/01.
+//  Created by jimmy on 2026/01/03.
 //
 
 import Foundation
 import Observation
 
-/// API 테스터 상태 모델
 @available(iOS 17.0, macOS 14.0, *)
 @MainActor
 @Observable
 final class APITesterState {
-    // 입력 상태
     var parameters: [String: String] = [:]
-    var headerFields: [String: String] = [:] // 헤더 입력값
+    var headerFields: [String: String] = [:]
     var requestBodyFields: [String: String] = [:]
     var requestBody: String = ""
-
-    // 배열 필드 저장 (예: "items" -> [0: {...}, 1: {...}])
     var arrayItems: [String: [Int: [String: String]]] = [:]
-
-    // 배열 필드의 현재 개수 추적
     var arrayItemCounts: [String: Int] = [:]
-
-    // 요청/응답 상태
     var isLoading: Bool = false
     var hasBeenRequested: Bool = false
     var response: String = ""
     var statusCode: Int?
     var error: String?
-
-    // 로깅 정보
     var requestTimestamp: String = ""
     var responseTimestamp: String = ""
     var requestHeaders: [String: String] = [:]
     var responseHeaders: [String: String] = [:]
     var requestBodySize: Int = 0
     var responseBodySize: Int = 0
-
-    // 메타데이터
     let endpointId: String
 
     init(endpointId: String) {
         self.endpointId = endpointId
     }
 
-    /// 상태 초기화
     func reset() {
         parameters.removeAll()
         headerFields.removeAll()
@@ -68,13 +55,11 @@ final class APITesterState {
         responseBodySize = 0
     }
 
-    /// 요청 시작 마킹
     func markAsRequested() {
         hasBeenRequested = true
     }
 }
 
-/// API 테스터 상태 저장소
 @available(iOS 17.0, macOS 14.0, *)
 @MainActor
 final class APITesterStateStore {
@@ -84,7 +69,6 @@ final class APITesterStateStore {
 
     private init() {}
 
-    /// 특정 endpoint의 상태 가져오기 (없으면 새로 생성)
     func getState(for endpointId: String) -> APITesterState {
         if let existing = states[endpointId] {
             return existing
@@ -94,12 +78,10 @@ final class APITesterStateStore {
         return newState
     }
 
-    /// 특정 endpoint의 상태 초기화
     func clearState(for endpointId: String) {
         states.removeValue(forKey: endpointId)
     }
 
-    /// 모든 상태 초기화
     func clearAllStates() {
         states.removeAll()
     }

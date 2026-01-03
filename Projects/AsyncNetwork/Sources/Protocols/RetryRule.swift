@@ -1,3 +1,10 @@
+//
+//  RetryRule.swift
+//  AsyncNetwork
+//
+//  Created by jimmy on 2026/01/03.
+//
+
 import Foundation
 
 /// 재시도 가능 여부를 판단하는 규칙

@@ -2,12 +2,11 @@
 //  TypeStructureView.swift
 //  AsyncNetworkDocKit
 //
-//  Created by jimmy on 2026/01/02.
+//  Created by jimmy on 2026/01/03.
 //
 
 import SwiftUI
 
-/// 타입 구조를 토글 가능하게 표시하는 뷰
 @available(iOS 17.0, macOS 14.0, *)
 struct TypeStructureView: View {
     let structureText: String
@@ -26,7 +25,6 @@ struct TypeStructureView: View {
 
     private func findTypeInAllTypes(_ typeName: String) -> TypeStructure? {
         let normalized = normalizeTypeName(typeName)
-        // 정규화된 키로 먼저 찾기, 없으면 원본 키로 찾기
         return allTypes[normalized] ?? allTypes[typeName]
     }
 
@@ -41,7 +39,6 @@ struct TypeStructureView: View {
             .background(Color.secondary.opacity(0.05))
             .cornerRadius(8)
         } else {
-            // 파싱 실패 시 기존 CodeBlock 스타일로 표시
             ScrollView {
                 Text(structureText)
                     .font(.system(.caption, design: .monospaced))
@@ -112,7 +109,6 @@ struct TypeStructureView: View {
                     .foregroundStyle(.secondary)
 
                 if let nestedTypeName = property.nestedTypeName {
-                    // 중첩 타입이 있는 경우 토글 버튼 (allTypes에 없어도 표시)
                     Button {
                         toggleExpanded(nestedTypeName)
                     } label: {
@@ -129,19 +125,16 @@ struct TypeStructureView: View {
                     }
                     .buttonStyle(.plain)
                 } else {
-                    // 프리미티브 타입
                     Text(property.displayType)
                         .font(.system(.caption, design: .monospaced))
                         .foregroundStyle(.blue)
                 }
             }
 
-            // 중첩 타입이 확장된 경우 표시
             if let nestedTypeName = property.nestedTypeName,
                expandedTypes.contains(nestedTypeName)
             {
                 if let nestedType = findTypeInAllTypes(nestedTypeName) {
-                    // allTypes에 타입 정보가 있는 경우
                     VStack(alignment: .leading, spacing: 2) {
                         HStack(spacing: 4) {
                             Text(String(repeating: "    ", count: depth + 2))
@@ -161,7 +154,6 @@ struct TypeStructureView: View {
                     .background(Color.blue.opacity(0.05))
                     .cornerRadius(4)
                 } else {
-                    // allTypes에 타입 정보가 없는 경우
                     VStack(alignment: .leading, spacing: 2) {
                         HStack(spacing: 4) {
                             Text(String(repeating: "    ", count: depth + 2))
@@ -277,7 +269,7 @@ struct TypeStructureView: View {
             TypeProperty(name: "productName", type: "String"),
             TypeProperty(name: "quantity", type: "Int"),
             TypeProperty(name: "unitPrice", type: "Double"),
-            TypeProperty(name: "discount", type: "Double", isOptional: true),
+            TypeProperty(name: "discount", type: "Double", isOptional: true)
         ]
     )
 
@@ -290,7 +282,7 @@ struct TypeStructureView: View {
             TypeProperty(name: "city", type: "String"),
             TypeProperty(name: "state", type: "String"),
             TypeProperty(name: "zipCode", type: "String"),
-            TypeProperty(name: "country", type: "String"),
+            TypeProperty(name: "country", type: "String")
         ]
     )
 
@@ -299,14 +291,14 @@ struct TypeStructureView: View {
         properties: [
             TypeProperty(name: "type", type: "String"),
             TypeProperty(name: "cardLastFour", type: "String", isOptional: true),
-            TypeProperty(name: "cardBrand", type: "String", isOptional: true),
+            TypeProperty(name: "cardBrand", type: "String", isOptional: true)
         ]
     )
 
     let allTypes: [String: TypeStructure] = [
         "OrderItem": orderItemStructure,
         "ShippingAddress": shippingAddressStructure,
-        "PaymentMethod": paymentMethodStructure,
+        "PaymentMethod": paymentMethodStructure
     ]
 
     return ScrollView {

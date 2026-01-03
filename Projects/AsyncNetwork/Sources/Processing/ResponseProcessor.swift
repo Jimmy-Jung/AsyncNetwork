@@ -1,3 +1,10 @@
+//
+//  ResponseProcessor.swift
+//  AsyncNetwork
+//
+//  Created by jimmy on 2026/01/03.
+//
+
 import Foundation
 
 public protocol ResponseProcessing: Sendable {
@@ -52,8 +59,6 @@ public struct ResponseProcessor: ResponseProcessing {
         let result = validate(result: .success(response), request: request)
         return try result.map { $0.data }.get()
     }
-
-    // MARK: - Private Helpers
 
     private func validate(
         result: Result<HTTPResponse, Error>,

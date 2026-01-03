@@ -1,3 +1,10 @@
+//
+//  ErrorMapper.swift
+//  AsyncNetwork
+//
+//  Created by jimmy on 2026/01/03.
+//
+
 import Foundation
 
 public enum NetworkError: Error, LocalizedError {

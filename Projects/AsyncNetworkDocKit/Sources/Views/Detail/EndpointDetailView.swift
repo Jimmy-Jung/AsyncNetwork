@@ -2,13 +2,12 @@
 //  EndpointDetailView.swift
 //  AsyncNetworkDocKit
 //
-//  Created by jimmy on 2026/01/01.
+//  Created by jimmy on 2026/01/03.
 //
 
 import AsyncNetworkCore
 import SwiftUI
 
-/// 엔드포인트 상세 뷰 (2열)
 @available(iOS 17.0, macOS 14.0, *)
 struct EndpointDetailView: View {
     let networkService: NetworkService
@@ -22,7 +21,6 @@ struct EndpointDetailView: View {
                 headerSection
                 Divider()
 
-                // API Tester 버튼 (iPhone만, iPad는 3열이 보이므로 불필요)
                 #if os(iOS)
                     if horizontalSizeClass == .compact && UIDevice.current.userInterfaceIdiom == .phone {
                         NavigationLink(value: endpoint) {
@@ -64,7 +62,6 @@ struct EndpointDetailView: View {
                     requestBodySection
                 }
 
-                // Response 섹션은 항상 표시 (responseExample 여부와 관계없이)
                 Divider()
                 responseSection
             }
@@ -171,14 +168,12 @@ struct EndpointDetailView: View {
                 .font(.headline)
 
             VStack(alignment: .leading, spacing: 16) {
-                // Request Body Structure (TypeStructureView 사용)
                 if let requestBodyStructure = endpoint.requestBodyStructure {
                     VStack(alignment: .leading, spacing: 8) {
                         Text("Request Body Structure:")
                             .font(.subheadline)
                             .fontWeight(.semibold)
 
-                        // 중첩 타입 정보가 있으면 토글 가능한 뷰, 없으면 기본 CodeBlock
                         if let relatedTypes = endpoint.requestBodyRelatedTypes, !relatedTypes.isEmpty {
                             let parsedTypes = parseRelatedTypes(relatedTypes)
                             TypeStructureView(structureText: requestBodyStructure, allTypes: parsedTypes)
@@ -188,7 +183,6 @@ struct EndpointDetailView: View {
                     }
                 }
 
-                // Request Body Example (JSON)
                 if let requestBodyExample = endpoint.requestBodyExample {
                     VStack(alignment: .leading, spacing: 8) {
                         Text("Example Request (JSON):")
@@ -208,7 +202,6 @@ struct EndpointDetailView: View {
                 .font(.headline)
 
             VStack(alignment: .leading, spacing: 16) {
-                // Response Type
                 HStack {
                     Text("Type:")
                         .font(.subheadline)
@@ -223,14 +216,12 @@ struct EndpointDetailView: View {
                         .cornerRadius(4)
                 }
 
-                // Response Structure (DocumentedType가 적용된 경우)
                 if let responseStructure = endpoint.responseStructure {
                     VStack(alignment: .leading, spacing: 8) {
                         Text("Response Structure:")
                             .font(.subheadline)
                             .fontWeight(.semibold)
 
-                        // 중첩 타입 정보가 있으면 토글 가능한 뷰, 없으면 기본 TypeStructureView
                         if let relatedTypes = endpoint.relatedTypes, !relatedTypes.isEmpty {
                             let parsedTypes = parseRelatedTypes(relatedTypes)
                             TypeStructureView(structureText: responseStructure, allTypes: parsedTypes)
@@ -240,7 +231,6 @@ struct EndpointDetailView: View {
                     }
                 }
 
-                // Response Example
                 if let responseExample = endpoint.responseExample {
                     VStack(alignment: .leading, spacing: 8) {
                         Text("Example Response:")
@@ -251,7 +241,6 @@ struct EndpointDetailView: View {
                     }
                 }
 
-                // 둘 다 없는 경우
                 if endpoint.responseStructure == nil && endpoint.responseExample == nil {
                     Text("No response structure or example provided")
                         .font(.caption)
@@ -267,10 +256,8 @@ struct EndpointDetailView: View {
 
         for (typeName, structureText) in relatedTypes {
             if let parsed = TypeStructureParser.parse(structureText) {
-                // 타입 이름을 정규화하여 키로 사용 (공백 제거)
                 let normalizedKey = typeName.trimmingCharacters(in: .whitespaces)
                 result[normalizedKey] = parsed
-                // 원본 키도 유지 (하위 호환성)
                 if normalizedKey != typeName {
                     result[typeName] = parsed
                 }

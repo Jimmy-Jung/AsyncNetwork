@@ -2,12 +2,11 @@
 //  TypeStructure.swift
 //  AsyncNetworkDocKit
 //
-//  Created by jimmy on 2026/01/02.
+//  Created by jimmy on 2026/01/03.
 //
 
 import Foundation
 
-/// 타입 구조 정보
 struct TypeStructure: Identifiable, Sendable {
     let id: String
     let name: String
@@ -20,7 +19,6 @@ struct TypeStructure: Identifiable, Sendable {
     }
 }
 
-/// 타입 프로퍼티 정보
 struct TypeProperty: Identifiable, Sendable {
     let id: String
     let name: String
@@ -50,7 +48,6 @@ struct TypeProperty: Identifiable, Sendable {
     }
 }
 
-/// Response Structure 문자열을 파싱하여 TypeStructure로 변환
 enum TypeStructureParser {
     static func parse(_ structureText: String) -> TypeStructure? {
         let lines = structureText.components(separatedBy: .newlines)
@@ -89,7 +86,6 @@ enum TypeStructureParser {
     }
 
     private static func parseProperty(_ line: String) -> TypeProperty? {
-        // 패턴: let propertyName: Type 또는 let propertyName: Type?
         let pattern = #"let\s+(\w+):\s+([\w\[\]<>:,\s\?]+)"#
 
         guard let regex = try? NSRegularExpression(pattern: pattern),
@@ -107,11 +103,9 @@ enum TypeStructureParser {
         let name = String(line[nameRange])
         let fullType = String(line[typeRange]).trimmingCharacters(in: .whitespaces)
 
-        // 옵셔널 체크
         let isOptional = fullType.hasSuffix("?")
         let typeWithoutOptional = isOptional ? String(fullType.dropLast()) : fullType
 
-        // 배열 체크
         let isArray = typeWithoutOptional.hasPrefix("[") && typeWithoutOptional.hasSuffix("]")
         let baseType: String
         let nestedTypeName: String?
