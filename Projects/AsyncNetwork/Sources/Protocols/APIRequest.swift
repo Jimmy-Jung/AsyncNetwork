@@ -33,7 +33,22 @@ public extension APIRequest {
 public extension APIRequest {
     func asURLRequest() throws -> URLRequest {
         let baseURL = try getBaseURL()
-        let url = baseURL.appendingPathComponent(path)
+
+        // path 정규화: "/"로 시작하면 제거하여 상대 경로로 처리
+        let normalizedPath = path.hasPrefix("/") ? String(path.dropFirst()) : path
+
+        // path를 여러 컴포넌트로 분리하여 각각 추가
+        let pathComponents = normalizedPath.split(separator: "/").map(String.init)
+        var url = baseURL
+        for component in pathComponents {
+            url = url.appendingPathComponent(component)
+        }
+
+        // 최종 URL 검증
+        guard url.scheme != nil, url.host != nil else {
+            throw NetworkError.invalidURL("\(baseURL.absoluteString)/\(normalizedPath)")
+        }
+
         var request = URLRequest(url: url, timeoutInterval: timeout)
         request.httpMethod = method.rawValue
 
