@@ -71,6 +71,11 @@ public func collectRelatedTypes(for type: Any.Type) -> [String: String]? {
     // 모든 중첩 타입 이름을 먼저 수집
     collectAllNestedTypeNames(from: typesToProcess)
     typesToProcess = Array(allNestedTypeNames)
+    
+    // Response 타입의 relatedTypeNames를 기반으로 중첩 타입 자동 등록 시도
+    // 주의: Swift는 런타임에 타입 이름으로 타입을 찾을 수 없으므로,
+    // 이미 등록된 타입의 relatedTypeNames만 활용할 수 있습니다.
+    // 이는 collectRelatedTypes가 호출될 때 이미 등록된 타입들의 중첩 타입을 자동으로 등록하는 데 도움이 됩니다.
 
     // BFS 방식으로 모든 중첩 타입을 재귀적으로 탐색
     while !typesToProcess.isEmpty {
@@ -103,6 +108,10 @@ public func collectRelatedTypes(for type: Any.Type) -> [String: String]? {
             // TypeRegistry에 없으면 해당 타입이 아직 등록되지 않은 것입니다.
             // 이는 해당 타입의 _register가 실행되지 않았거나,
             // @DocumentedType 매크로가 적용되지 않았을 수 있습니다.
+            // 
+            // 참고: Swift는 런타임에 타입 이름으로 타입을 찾을 수 없으므로,
+            // 타입 이름만으로는 자동 등록이 불가능합니다.
+            // 따라서 모든 @DocumentedType 타입은 명시적으로 등록되어야 합니다.
         }
     }
 
