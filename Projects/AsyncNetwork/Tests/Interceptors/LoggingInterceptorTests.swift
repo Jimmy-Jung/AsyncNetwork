@@ -283,7 +283,8 @@ struct ConsoleLoggingInterceptorTests {
     @Test("동시 호출 안전성")
     func concurrentAccessSafety() async {
         // Given
-        let interceptor = ConsoleLoggingInterceptor(minimumLevel: .debug)
+        // CI 환경에서 과도한 로그 출력 방지
+        let interceptor = ConsoleLoggingInterceptor(minimumLevel: .error)
         let url = URL(string: "https://api.example.com/test")!
         let request = URLRequest(url: url)
         let response = HTTPResponse(statusCode: 200, data: Data())
