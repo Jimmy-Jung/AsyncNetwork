@@ -162,6 +162,30 @@ AsyncNetwork 1.0.0 정식 출시! 순수 Foundation 기반의 현대적인 Swift
 
 ---
 
+## [1.0.2] - 2026-01-03
+
+### 🐛 Fixed
+
+#### Test Performance
+- **로깅 테스트 최적화**
+  - 모든 LoggingInterceptor 테스트의 로그 레벨을 `.error`로 통일 (19개)
+  - NetworkLogPluginTests 로그 레벨 조정 (10개)
+  - LoggingInterceptorTests 로그 레벨 조정 (9개)
+  - CI 환경에서 stdout 과부하 방지
+
+### 🔧 Changed
+
+- `LoggingInterceptorTests.swift`: 9개 테스트 로그 레벨 통일
+- `NetworkLogPluginTests.swift`: 10개 테스트 로그 레벨 통일
+
+### 📊 Impact
+
+- CI 실행 시간 개선 (로그 출력 최소화)
+- GitHub Actions 안정성 향상
+- 테스트 로직은 동일하게 유지
+
+---
+
 ## [1.0.1] - 2026-01-03
 
 ### 🐛 Fixed
@@ -219,6 +243,7 @@ AsyncNetwork 1.0.0 정식 출시! 순수 Foundation 기반의 현대적인 Swift
 ---
 
 [1.1.0]: https://github.com/Jimmy-Jung/AsyncNetwork/releases/tag/1.1.0
+[1.0.2]: https://github.com/Jimmy-Jung/AsyncNetwork/releases/tag/1.0.2
 [1.0.1]: https://github.com/Jimmy-Jung/AsyncNetwork/releases/tag/1.0.1
 [1.0.0]: https://github.com/Jimmy-Jung/AsyncNetwork/releases/tag/1.0.0
 
