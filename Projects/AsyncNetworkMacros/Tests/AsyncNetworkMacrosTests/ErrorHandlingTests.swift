@@ -20,7 +20,7 @@
     @Suite("APIRequest Macro - Error Handling Tests")
     struct ErrorHandlingTests {
         let testMacros: [String: Macro.Type] = [
-            "APIRequest": APIRequestMacroImpl.self
+            "APIRequest": APIRequestMacroImpl.self,
         ]
 
         @Test("class에 적용 시 에러")
@@ -45,7 +45,7 @@
                         message: "@APIRequest can only be applied to a struct",
                         line: 1,
                         column: 1
-                    )
+                    ),
                 ],
                 macros: testMacros
             )
@@ -75,7 +75,7 @@
                         message: "@APIRequest can only be applied to a struct",
                         line: 1,
                         column: 1
-                    )
+                    ),
                 ],
                 macros: testMacros
             )
@@ -102,7 +102,7 @@
                         message: "@APIRequest missing required argument: response",
                         line: 1,
                         column: 1
-                    )
+                    ),
                 ],
                 macros: testMacros
             )
@@ -129,7 +129,7 @@
                         message: "@APIRequest missing required argument: baseURL",
                         line: 1,
                         column: 1
-                    )
+                    ),
                 ],
                 macros: testMacros
             )
@@ -156,7 +156,7 @@
                         message: "@APIRequest missing required argument: path",
                         line: 1,
                         column: 1
-                    )
+                    ),
                 ],
                 macros: testMacros
             )
@@ -183,7 +183,7 @@
                         message: "@APIRequest missing required argument: method",
                         line: 1,
                         column: 1
-                    )
+                    ),
                 ],
                 macros: testMacros
             )
@@ -191,4 +191,3 @@
     }
 
 #endif // os(macOS)
-

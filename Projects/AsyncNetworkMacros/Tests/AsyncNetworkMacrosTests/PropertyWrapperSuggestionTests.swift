@@ -20,7 +20,7 @@
     @Suite("APIRequest Macro - PropertyWrapper Suggestion Tests")
     struct PropertyWrapperSuggestionTests {
         let testMacros: [String: Macro.Type] = [
-            "APIRequest": APIRequestMacroImpl.self
+            "APIRequest": APIRequestMacroImpl.self,
         ]
 
         @Test("PropertyWrapper 제안 - QueryParameter")
@@ -90,7 +90,7 @@
                         line: 9,
                         column: 5,
                         severity: .warning
-                    )
+                    ),
                 ],
                 macros: testMacros
             )
@@ -155,7 +155,7 @@
                         line: 8,
                         column: 5,
                         severity: .warning
-                    )
+                    ),
                 ],
                 macros: testMacros
             )
@@ -220,7 +220,7 @@
                         line: 8,
                         column: 5,
                         severity: .warning
-                    )
+                    ),
                 ],
                 macros: testMacros
             )
@@ -285,7 +285,7 @@
                         line: 8,
                         column: 5,
                         severity: .warning
-                    )
+                    ),
                 ],
                 macros: testMacros
             )
@@ -350,7 +350,7 @@
                         line: 8,
                         column: 5,
                         severity: .warning
-                    )
+                    ),
                 ],
                 macros: testMacros
             )
@@ -415,7 +415,7 @@
                         line: 8,
                         column: 5,
                         severity: .warning
-                    )
+                    ),
                 ],
                 macros: testMacros
             )
@@ -488,7 +488,7 @@
                         line: 9,
                         column: 5,
                         severity: .warning
-                    )
+                    ),
                 ],
                 macros: testMacros
             )
@@ -496,4 +496,3 @@
     }
 
 #endif // os(macOS)
-

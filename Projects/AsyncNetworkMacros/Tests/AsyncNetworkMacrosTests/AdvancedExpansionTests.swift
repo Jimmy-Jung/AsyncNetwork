@@ -20,7 +20,7 @@
     @Suite("APIRequest Macro - Advanced Expansion Tests")
     struct AdvancedExpansionTests {
         let testMacros: [String: Macro.Type] = [
-            "APIRequest": APIRequestMacroImpl.self
+            "APIRequest": APIRequestMacroImpl.self,
         ]
 
         // MARK: - baseURL Tests
@@ -808,4 +808,3 @@
     }
 
 #endif // os(macOS)
-

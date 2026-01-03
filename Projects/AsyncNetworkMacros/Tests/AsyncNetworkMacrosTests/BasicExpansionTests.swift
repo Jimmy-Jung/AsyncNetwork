@@ -20,7 +20,7 @@
     @Suite("APIRequest Macro - Basic Expansion Tests")
     struct BasicExpansionTests {
         let testMacros: [String: Macro.Type] = [
-            "APIRequest": APIRequestMacroImpl.self
+            "APIRequest": APIRequestMacroImpl.self,
         ]
 
         @Test("기본 매크로 확장 - 모든 프로퍼티 생성")
@@ -495,4 +495,3 @@
     }
 
 #endif // os(macOS)
-

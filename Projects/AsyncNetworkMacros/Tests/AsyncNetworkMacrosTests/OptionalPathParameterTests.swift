@@ -20,7 +20,7 @@
     @Suite("APIRequest Macro - Optional PathParameter Tests")
     struct OptionalPathParameterTests {
         let testMacros: [String: Macro.Type] = [
-            "APIRequest": APIRequestMacroImpl.self
+            "APIRequest": APIRequestMacroImpl.self,
         ]
 
         @Test("선택적 PathParameter - 기본 사용법")
@@ -383,7 +383,7 @@
                         line: 8,
                         column: 5,
                         severity: .warning
-                    )
+                    ),
                 ],
                 macros: testMacros
             )
@@ -391,4 +391,3 @@
     }
 
 #endif // os(macOS)
-

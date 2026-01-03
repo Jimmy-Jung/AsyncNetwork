@@ -20,7 +20,7 @@
     @Suite("APIRequest Macro - PropertyWrapper Validation Tests")
     struct PropertyWrapperValidationTests {
         let testMacros: [String: Macro.Type] = [
-            "APIRequest": APIRequestMacroImpl.self
+            "APIRequest": APIRequestMacroImpl.self,
         ]
 
         @Test("PathParameter 검증 - 옵셔널 타입 경고")
@@ -90,7 +90,7 @@
                         line: 8,
                         column: 5,
                         severity: .warning
-                    )
+                    ),
                 ],
                 macros: testMacros
             )
@@ -163,7 +163,7 @@
                         line: 8,
                         column: 5,
                         severity: .warning
-                    )
+                    ),
                 ],
                 macros: testMacros
             )
@@ -238,7 +238,7 @@
                         line: 10,
                         column: 5,
                         severity: .warning
-                    )
+                    ),
                 ],
                 macros: testMacros
             )
@@ -311,7 +311,7 @@
                         line: 8,
                         column: 5,
                         severity: .warning
-                    )
+                    ),
                 ],
                 macros: testMacros
             )
@@ -380,7 +380,7 @@
                         line: 8,
                         column: 5,
                         severity: .warning
-                    )
+                    ),
                 ],
                 macros: testMacros
             )
@@ -453,7 +453,7 @@
                         line: 8,
                         column: 5,
                         severity: .warning
-                    )
+                    ),
                 ],
                 macros: testMacros
             )
@@ -526,4 +526,3 @@
     }
 
 #endif // os(macOS)
-

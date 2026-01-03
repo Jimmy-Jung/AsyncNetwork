@@ -20,7 +20,7 @@
     @Suite("DocumentedType Macro Tests")
     struct DocumentedTypeMacroTests {
         let testMacros: [String: Macro.Type] = [
-            "DocumentedType": DocumentedTypeMacroImpl.self
+            "DocumentedType": DocumentedTypeMacroImpl.self,
         ]
 
         @Test("struct에 적용 - 기본 프로퍼티")
@@ -399,7 +399,7 @@
                         message: "@DocumentedType can only be applied to a struct or class",
                         line: 1,
                         column: 1
-                    )
+                    ),
                 ],
                 macros: testMacros
             )
@@ -495,4 +495,3 @@
     }
 
 #endif // os(macOS)
-

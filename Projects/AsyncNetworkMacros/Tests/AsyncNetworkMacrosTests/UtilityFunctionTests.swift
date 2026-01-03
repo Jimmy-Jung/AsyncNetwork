@@ -19,9 +19,8 @@
 
     @Suite("Utility Function Tests")
     struct UtilityFunctionTests {
-        
         // MARK: - extractArray Tests
-        
+
         @Test("extractArray - tags 배열 파싱")
         func extractArrayTags() {
             assertMacroExpansion(
@@ -75,7 +74,7 @@
                 }
                 """,
                 macros: [
-                    "APIRequest": APIRequestMacroImpl.self
+                    "APIRequest": APIRequestMacroImpl.self,
                 ]
             )
         }
@@ -133,7 +132,7 @@
                 }
                 """,
                 macros: [
-                    "APIRequest": APIRequestMacroImpl.self
+                    "APIRequest": APIRequestMacroImpl.self,
                 ]
             )
         }
@@ -192,7 +191,7 @@
                 }
                 """,
                 macros: [
-                    "APIRequest": APIRequestMacroImpl.self
+                    "APIRequest": APIRequestMacroImpl.self,
                 ]
             )
         }
@@ -249,7 +248,7 @@
                 }
                 """,
                 macros: [
-                    "APIRequest": APIRequestMacroImpl.self
+                    "APIRequest": APIRequestMacroImpl.self,
                 ]
             )
         }
@@ -317,7 +316,7 @@
                 }
                 """,
                 macros: [
-                    "APIRequest": APIRequestMacroImpl.self
+                    "APIRequest": APIRequestMacroImpl.self,
                 ]
             )
         }
@@ -388,7 +387,7 @@
                 }
                 """,
                 macros: [
-                    "APIRequest": APIRequestMacroImpl.self
+                    "APIRequest": APIRequestMacroImpl.self,
                 ]
             )
         }
@@ -448,7 +447,7 @@
                 }
                 """,
                 macros: [
-                    "APIRequest": APIRequestMacroImpl.self
+                    "APIRequest": APIRequestMacroImpl.self,
                 ]
             )
         }
@@ -542,7 +541,7 @@
                 }
                 """,
                 macros: [
-                    "APIRequest": APIRequestMacroImpl.self
+                    "APIRequest": APIRequestMacroImpl.self,
                 ]
             )
         }
@@ -610,7 +609,7 @@
                 }
                 """,
                 macros: [
-                    "APIRequest": APIRequestMacroImpl.self
+                    "APIRequest": APIRequestMacroImpl.self,
                 ]
             )
         }
@@ -686,7 +685,7 @@
                 }
                 """,
                 macros: [
-                    "APIRequest": APIRequestMacroImpl.self
+                    "APIRequest": APIRequestMacroImpl.self,
                 ]
             )
         }
@@ -789,11 +788,10 @@
                 }
                 """,
                 macros: [
-                    "APIRequest": APIRequestMacroImpl.self
+                    "APIRequest": APIRequestMacroImpl.self,
                 ]
             )
         }
     }
 
 #endif // os(macOS)
-

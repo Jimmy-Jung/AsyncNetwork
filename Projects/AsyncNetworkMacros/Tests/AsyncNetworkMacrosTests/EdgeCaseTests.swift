@@ -20,7 +20,7 @@
     @Suite("APIRequest Macro - Edge Case Tests")
     struct EdgeCaseTests {
         let testMacros: [String: Macro.Type] = [
-            "APIRequest": APIRequestMacroImpl.self
+            "APIRequest": APIRequestMacroImpl.self,
         ]
 
         @Test("빈 경로 - root path")
@@ -691,4 +691,3 @@
     }
 
 #endif // os(macOS)
-

@@ -20,7 +20,7 @@
     @Suite("APIRequest Macro - Validation Error Tests")
     struct ValidationErrorTests {
         let testMacros: [String: Macro.Type] = [
-            "APIRequest": APIRequestMacroImpl.self
+            "APIRequest": APIRequestMacroImpl.self,
         ]
 
         @Test("빈 baseURL 문자열")
@@ -189,7 +189,7 @@
                         line: 8,
                         column: 5,
                         severity: .warning
-                    )
+                    ),
                 ],
                 macros: testMacros
             )
@@ -261,7 +261,7 @@
                         line: 9,
                         column: 5,
                         severity: .warning
-                    )
+                    ),
                 ],
                 macros: testMacros
             )
@@ -333,7 +333,7 @@
                         line: 9,
                         column: 5,
                         severity: .warning
-                    )
+                    ),
                 ],
                 macros: testMacros
             )
@@ -397,7 +397,7 @@
                         line: 8,
                         column: 5,
                         severity: .warning
-                    )
+                    ),
                 ],
                 macros: testMacros
             )
@@ -469,7 +469,7 @@
                         line: 8,
                         column: 5,
                         severity: .warning
-                    )
+                    ),
                 ],
                 macros: testMacros
             )
@@ -550,7 +550,7 @@
                         line: 9,
                         column: 5,
                         severity: .warning
-                    )
+                    ),
                 ],
                 macros: testMacros
             )
@@ -695,7 +695,7 @@
                         line: 8,
                         column: 5,
                         severity: .warning
-                    )
+                    ),
                 ],
                 macros: testMacros
             )
@@ -767,4 +767,3 @@
     }
 
 #endif // os(macOS)
-

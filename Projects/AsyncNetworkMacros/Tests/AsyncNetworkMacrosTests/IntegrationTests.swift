@@ -20,7 +20,7 @@
     @Suite("APIRequest Macro - Integration Tests")
     struct IntegrationTests {
         let testMacros: [String: Macro.Type] = [
-            "APIRequest": APIRequestMacroImpl.self
+            "APIRequest": APIRequestMacroImpl.self,
         ]
 
         @Test("실제 CRUD API 시나리오 - Create")
@@ -574,4 +574,3 @@
     }
 
 #endif // os(macOS)
-
