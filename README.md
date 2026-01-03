@@ -56,7 +56,7 @@ AsyncNetwork은 순수 Foundation만을 사용하여 구축된 현대적인 Swif
 ```
 https://github.com/Jimmy-Jung/AsyncNetwork.git
 ```
-3. Version: `1.1.0` 이상 선택
+3. Version: `1.0.1` 이상 선택
 
 #### Package.swift에 추가
 
