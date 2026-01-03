@@ -679,7 +679,7 @@ AsyncNetworkDocKit은 `@APIRequest` 매크로의 메타데이터를 활용하여
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/Jimmy-Jung/AsyncNetwork.git", from: "1.1.0")
+    .package(url: "https://github.com/Jimmy-Jung/AsyncNetwork.git", from: "1.0.1")
 ],
 targets: [
     .target(
