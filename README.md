@@ -195,7 +195,7 @@ let response: LoginResponse = try await service.request(
     method: "get"
 )
 struct GetProfileRequest {
-    @HeaderField(.authorization) var authorization: String
+    @HeaderField(key: .authorization) var authorization: String
 }
 
 // 사용
@@ -419,7 +419,7 @@ struct SearchRequest {
     @QueryParameter var query: String
     @QueryParameter var page: Int
     @QueryParameter var limit: Int
-    @HeaderField(.authorization) var authorization: String
+    @HeaderField(key: .authorization) var authorization: String
 }
 
 // 사용

@@ -45,8 +45,8 @@ struct GetAllPostsRequest {
 )
 struct GetPostByIdRequest {
     @PathParameter var id: Int
-    @HeaderField(.userAgent) var userAgent: String? = "{{ name }}/1.0.0"
-    @HeaderField(.acceptLanguage) var acceptLanguage: String? = "ko-KR,ko;q=0.9"
+    @HeaderField(key: .userAgent) var userAgent: String? = "{{ name }}/1.0.0"
+    @HeaderField(key: .acceptLanguage) var acceptLanguage: String? = "ko-KR,ko;q=0.9"
 }
 
 @APIRequest(
@@ -67,8 +67,8 @@ struct GetPostByIdRequest {
 )
 struct CreatePostRequest {
     @RequestBody var body: PostBody?
-    @HeaderField(.contentType) var contentType: String? = "application/json"
-    @HeaderField(.requestId) var requestId: String? = UUID().uuidString
+    @HeaderField(key: .contentType) var contentType: String? = "application/json"
+    @HeaderField(key: .requestId) var requestId: String? = UUID().uuidString
 }
 
 @APIRequest(
@@ -83,7 +83,7 @@ struct CreatePostRequest {
 struct UpdatePostRequest {
     @PathParameter var id: Int
     @RequestBody var body: PostBody?
-    @HeaderField(.contentType) var contentType: String? = "application/json"
+    @HeaderField(key: .contentType) var contentType: String? = "application/json"
 }
 
 @APIRequest(
@@ -97,7 +97,7 @@ struct UpdatePostRequest {
 )
 struct DeletePostRequest {
     @PathParameter var id: Int
-    @HeaderField(.authorization) var authorization: String?
+    @HeaderField(key: .authorization) var authorization: String?
 }
 
 // MARK: - Users API
@@ -112,7 +112,7 @@ struct DeletePostRequest {
     tags: ["Users", "Read"]
 )
 struct GetAllUsersRequest {
-    @HeaderField(.userAgent) var userAgent: String? = "{{ name }}/1.0.0"
+    @HeaderField(key: .userAgent) var userAgent: String? = "{{ name }}/1.0.0"
 }
 
 @APIRequest(
