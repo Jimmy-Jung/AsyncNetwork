@@ -49,9 +49,7 @@ struct HTTPClientAdvancedTests {
     // MARK: - Edge Cases
 
     @Test("빈 응답 데이터 처리")
-    func handleEmptyResponseData() async throws {
-        await MockURLProtocol.clear() // 테스트 시작 전 cleanup
-        // Given
+    func handleEmptyResponseData() async throws {        // Given
         let path = "/empty"
         let configuration = URLSessionConfiguration.ephemeral
         configuration.protocolClasses = [MockURLProtocol.self]
@@ -106,9 +104,7 @@ struct HTTPClientAdvancedTests {
     }
 
     @Test("특수 문자가 포함된 경로 처리")
-    func handleSpecialCharactersInPath() async throws {
-        await MockURLProtocol.clear() // 테스트 시작 전 cleanup
-        // Given
+    func handleSpecialCharactersInPath() async throws {        // Given
         let path = "/users/john-doe_123"
         let configuration = URLSessionConfiguration.ephemeral
         configuration.protocolClasses = [MockURLProtocol.self]
@@ -133,9 +129,7 @@ struct HTTPClientAdvancedTests {
     }
 
     @Test("중첩된 경로 처리")
-    func handleNestedPath() async throws {
-        await MockURLProtocol.clear() // 테스트 시작 전 cleanup
-        // Given
+    func handleNestedPath() async throws {        // Given
         let path = "/api/v1/users/123/posts/456/comments"
         let configuration = URLSessionConfiguration.ephemeral
         configuration.protocolClasses = [MockURLProtocol.self]
@@ -191,9 +185,7 @@ struct HTTPClientAdvancedTests {
     // MARK: - Headers
 
     @Test("커스텀 헤더 전송 확인")
-    func verifyCustomHeaders() async throws {
-        await MockURLProtocol.clear() // 테스트 시작 전 cleanup
-        // Given
+    func verifyCustomHeaders() async throws {        // Given
         let path = "/headers"
         let configuration = URLSessionConfiguration.ephemeral
         configuration.protocolClasses = [MockURLProtocol.self]
@@ -229,9 +221,7 @@ struct HTTPClientAdvancedTests {
     }
 
     @Test("응답 헤더 파싱 확인")
-    func verifyResponseHeaders() async throws {
-        await MockURLProtocol.clear() // 테스트 시작 전 cleanup
-        // Given
+    func verifyResponseHeaders() async throws {        // Given
         let path = "/response-headers"
         let configuration = URLSessionConfiguration.ephemeral
         configuration.protocolClasses = [MockURLProtocol.self]
@@ -456,9 +446,7 @@ struct HTTPClientAdvancedTests {
     // MARK: - Request Body
 
     @Test("JSON 요청 바디 전송 확인")
-    func verifyJSONRequestBody() async throws {
-        await MockURLProtocol.clear() // 테스트 시작 전 cleanup
-        // Given
+    func verifyJSONRequestBody() async throws {        // Given
         let path = "/post-json"
         let configuration = URLSessionConfiguration.ephemeral
         configuration.protocolClasses = [MockURLProtocol.self]
@@ -492,9 +480,7 @@ struct HTTPClientAdvancedTests {
     }
 
     @Test("빈 요청 바디 전송")
-    func sendEmptyRequestBody() async throws {
-        await MockURLProtocol.clear() // 테스트 시작 전 cleanup
-        // Given
+    func sendEmptyRequestBody() async throws {        // Given
         let path = "/post-empty"
         let configuration = URLSessionConfiguration.ephemeral
         configuration.protocolClasses = [MockURLProtocol.self]

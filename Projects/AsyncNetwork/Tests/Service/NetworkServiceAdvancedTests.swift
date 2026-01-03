@@ -49,9 +49,7 @@ struct NetworkServiceAdvancedTests {
     // MARK: - Decoding Edge Cases
 
     @Test("JSON 디코딩 실패 시 에러 처리")
-    func handleDecodingFailure() async {
-        await MockURLProtocol.clear() // 테스트 시작 전 cleanup
-        // Given
+    func handleDecodingFailure() async {        // Given
         let path = "/invalid-json"
         let configuration = URLSessionConfiguration.ephemeral
         configuration.protocolClasses = [MockURLProtocol.self]
@@ -86,9 +84,7 @@ struct NetworkServiceAdvancedTests {
     }
 
     @Test("옵셔널 필드 디코딩 확인")
-    func decodeOptionalFields() async throws {
-        await MockURLProtocol.clear() // 테스트 시작 전 cleanup
-        // Given
+    func decodeOptionalFields() async throws {        // Given
         let path = "/optional-fields"
         let configuration = URLSessionConfiguration.ephemeral
         configuration.protocolClasses = [MockURLProtocol.self]
@@ -132,9 +128,7 @@ struct NetworkServiceAdvancedTests {
     }
 
     @Test("빈 JSON 객체 디코딩")
-    func decodeEmptyJSONObject() async {
-        await MockURLProtocol.clear() // 테스트 시작 전 cleanup
-        // Given
+    func decodeEmptyJSONObject() async {        // Given
         let path = "/empty-object"
         let configuration = URLSessionConfiguration.ephemeral
         configuration.protocolClasses = [MockURLProtocol.self]
@@ -171,9 +165,7 @@ struct NetworkServiceAdvancedTests {
     // MARK: - Retry Logic Edge Cases
 
     @Test("재시도 가능한 에러와 불가능한 에러 혼합")
-    func mixedRetryableAndNonRetryableErrors() async throws {
-        await MockURLProtocol.clear() // 테스트 시작 전 cleanup
-        // Given
+    func mixedRetryableAndNonRetryableErrors() async throws {        // Given
         let path = "/mixed-errors"
         let configuration = URLSessionConfiguration.ephemeral
         configuration.protocolClasses = [MockURLProtocol.self]
@@ -254,9 +246,7 @@ struct NetworkServiceAdvancedTests {
     }
 
     @Test("재시도 중 성공 - 마지막 시도에서 성공")
-    func retrySuccessOnLastAttempt() async throws {
-        await MockURLProtocol.clear() // 테스트 시작 전 cleanup
-        // Given
+    func retrySuccessOnLastAttempt() async throws {        // Given
         let path = "/retry-last-success"
         let configuration = URLSessionConfiguration.ephemeral
         configuration.protocolClasses = [MockURLProtocol.self]
@@ -326,9 +316,7 @@ struct NetworkServiceAdvancedTests {
     // MARK: - Interceptor Edge Cases
 
     @Test("여러 인터셉터 체인 동작")
-    func multipleInterceptorsChain() async throws {
-        await MockURLProtocol.clear() // 테스트 시작 전 cleanup
-        // Given
+    func multipleInterceptorsChain() async throws {        // Given
         let path = "/multiple-interceptors"
         let configuration = URLSessionConfiguration.ephemeral
         configuration.protocolClasses = [MockURLProtocol.self]
@@ -389,9 +377,7 @@ struct NetworkServiceAdvancedTests {
     }
 
     @Test("인터셉터에서 에러 발생 시 처리")
-    func interceptorThrowsError() async {
-        await MockURLProtocol.clear() // 테스트 시작 전 cleanup
-        // Given
+    func interceptorThrowsError() async {        // Given
         let path = "/interceptor-error"
         let configuration = URLSessionConfiguration.ephemeral
         configuration.protocolClasses = [MockURLProtocol.self]
@@ -436,9 +422,7 @@ struct NetworkServiceAdvancedTests {
     // MARK: - ResponseProcessor Edge Cases
 
     @Test("ResponseProcessor에서 상태 코드 검증 실패")
-    func responseProcessorStatusCodeValidationFailure() async {
-        await MockURLProtocol.clear() // 테스트 시작 전 cleanup
-        // Given
+    func responseProcessorStatusCodeValidationFailure() async {        // Given
         let path = "/status-validation"
         let configuration = URLSessionConfiguration.ephemeral
         configuration.protocolClasses = [MockURLProtocol.self]
@@ -473,9 +457,7 @@ struct NetworkServiceAdvancedTests {
     // MARK: - Timeout & Performance
 
     @Test("매우 느린 응답 시뮬레이션")
-    func handleSlowResponse() async throws {
-        await MockURLProtocol.clear() // 테스트 시작 전 cleanup
-        // Given
+    func handleSlowResponse() async throws {        // Given
         let path = "/slow"
         let configuration = URLSessionConfiguration.ephemeral
         configuration.protocolClasses = [MockURLProtocol.self]
