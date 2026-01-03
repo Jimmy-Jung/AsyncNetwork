@@ -35,3 +35,7 @@ build/
 
 # cursor
 .cursor/
+
+# Auto-generated files
+**/TypeRegistration+Generated.swift
+**/Endpoints+Generated.swift
