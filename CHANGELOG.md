@@ -162,6 +162,50 @@ AsyncNetwork 1.0.0 정식 출시! 순수 Foundation 기반의 현대적인 Swift
 
 ---
 
+## [1.0.1] - 2026-01-03
+
+### 🐛 Fixed
+
+#### CI Stability
+- **NetworkMonitor 테스트 안정성 개선**
+  - `.serialized` 옵션으로 순차 실행 강제
+  - NWPathMonitor 병렬 실행 시 충돌 방지
+  
+- **CI 타임아웃 최적화**
+  - 대량 로깅 테스트의 로그 레벨 조정 (`.debug` → `.error`)
+  - GitHub Actions 워크플로우 타임아웃 5분으로 설정
+  - 병렬 테스트 실행 활성화 (`swift test --parallel`)
+
+#### Test Improvements
+- **MockURLProtocol 안정성 개선**
+  - 불필요한 `clear()` 호출 제거
+  - 각 테스트는 고유한 path 사용으로 격리 보장
+  - URLError Code=-1000 에러 해결
+
+- **SystemDelayer 테스트 안정성 개선**
+  - CI 환경을 고려한 타이밍 검증 완화
+  - 최소 경과 시간 체크 제거, 최대값만 확인
+
+### 🔧 Changed
+
+- `.github/workflows/ci.yml`: 타임아웃 및 병렬 실행 설정
+- `.github/workflows/release.yml`: 타임아웃 최적화
+- `NetworkMonitorTests.swift`: serial 실행 설정 추가
+- `NetworkLogPluginTests.swift`: 성능 테스트 로그 레벨 조정
+- `AsyncDelayerTests.swift`: CI 친화적 타이밍 검증
+
+### 🧪 Tests
+
+- 전체 364개 테스트 안정성 확보
+- CI에서 일관된 테스트 통과 보장
+
+### 🔗 Related Issues
+
+- https://github.com/Jimmy-Jung/AsyncNetwork/actions/runs/20680686006/job/59374462950
+- https://github.com/Jimmy-Jung/AsyncNetwork/actions/runs/20679661934/job/59372110459
+
+---
+
 ## [Unreleased]
 
 ### Planned Features
@@ -175,5 +219,6 @@ AsyncNetwork 1.0.0 정식 출시! 순수 Foundation 기반의 현대적인 Swift
 ---
 
 [1.1.0]: https://github.com/Jimmy-Jung/AsyncNetwork/releases/tag/1.1.0
+[1.0.1]: https://github.com/Jimmy-Jung/AsyncNetwork/releases/tag/1.0.1
 [1.0.0]: https://github.com/Jimmy-Jung/AsyncNetwork/releases/tag/1.0.0
 
