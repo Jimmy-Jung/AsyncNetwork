@@ -9,7 +9,7 @@
 import Foundation
 import Testing
 
-@Suite("NetworkMonitor Tests")
+@Suite("NetworkMonitor Tests", .serialized)
 struct NetworkMonitorTests {
     @Test("NetworkMonitor 싱글톤 인스턴스 확인")
     func singletonInstance() {
