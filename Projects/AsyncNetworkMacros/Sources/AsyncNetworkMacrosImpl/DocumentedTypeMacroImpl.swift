@@ -101,7 +101,7 @@ public struct DocumentedTypeMacroImpl: MemberMacro, ExtensionMacro {
         let structureMember: DeclSyntax =
             """
             public static var typeStructure: String {
-                _ = _register  // 등록 강제 실행
+                _ = _register  // 자기 자신 등록 강제 실행
                 return "\(raw: escapedStructure)"
             }
             """
@@ -116,6 +116,7 @@ public struct DocumentedTypeMacroImpl: MemberMacro, ExtensionMacro {
             """
 
         // 자동 등록을 위한 static initializer 생성
+        // 중첩 타입들은 collectRelatedTypes()에서 런타임에 안전하게 등록됨
         let registrationMember: DeclSyntax =
             """
             private static let _register: Void = {
