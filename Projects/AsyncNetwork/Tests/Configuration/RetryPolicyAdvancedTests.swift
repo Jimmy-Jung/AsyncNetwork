@@ -37,7 +37,7 @@ struct RetryPolicyAdvancedTests {
             (1, 0.5),
             (3, 1.0),
             (5, 2.0),
-            (10, 0.1),
+            (10, 0.1)
         ]
 
         // Then
@@ -101,32 +101,41 @@ struct RetryPolicyAdvancedTests {
         #expect(policy.configuration.baseDelay == 0.5)
     }
 
-    @Test("RetryDecision - 모든 케이스")
-    func retryDecisionCases() {
-        // Given
-        let retry: RetryDecision = .retry(after: 1.0)
-        let stop: RetryDecision = .stop
-        let immediate: RetryDecision = .retryImmediately
+    @Test("RetryDecision - retry(after:) 케이스")
+    func retryDecisionRetryCase() {
+        // Given & When
+        let decision: RetryDecision = .retry(after: 1.5)
 
         // Then
-        switch retry {
-        case let .retry(delay):
-            #expect(delay == 1.0)
-        default:
+        if case let .retry(delay) = decision {
+            #expect(delay == 1.5)
+        } else {
             Issue.record("Expected retry case")
         }
+    }
 
-        switch stop {
-        case .stop:
+    @Test("RetryDecision - stop 케이스")
+    func retryDecisionStopCase() {
+        // Given & When
+        let decision: RetryDecision = .stop
+
+        // Then
+        if case .stop = decision {
             #expect(true)
-        default:
+        } else {
             Issue.record("Expected stop case")
         }
+    }
 
-        switch immediate {
-        case .retryImmediately:
+    @Test("RetryDecision - retryImmediately 케이스")
+    func retryDecisionImmediateCase() {
+        // Given & When
+        let decision: RetryDecision = .retryImmediately
+
+        // Then
+        if case .retryImmediately = decision {
             #expect(true)
-        default:
+        } else {
             Issue.record("Expected retryImmediately case")
         }
     }
