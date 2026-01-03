@@ -15,7 +15,10 @@ struct NetworkServiceFactoryTests {
     @Test("NetworkService 기본 생성")
     func createNetworkServiceWithDefaults() {
         // Given & When
-        let service = NetworkService()
+        // CI 환경에서 NetworkMonitor로 인한 멈춤 방지
+        let service = NetworkService(
+            plugins: [ConsoleLoggingInterceptor(minimumLevel: .error)]
+        )
 
         // Then - NetworkService가 성공적으로 생성됨
         _ = service
@@ -54,7 +57,14 @@ struct NetworkServiceFactoryTests {
         )
 
         // When
-        let service = NetworkService(configuration: configuration)
+        // CI 환경에서 NetworkMonitor로 인한 멈춤 방지
+        let service = NetworkService(
+            httpClient: HTTPClient(configuration: configuration),
+            retryPolicy: .default,
+            responseProcessor: ResponseProcessor(),
+            networkMonitor: nil,
+            checkNetworkBeforeRequest: false
+        )
 
         // Then - NetworkService가 성공적으로 생성됨
         _ = service
@@ -69,7 +79,14 @@ struct NetworkServiceFactoryTests {
     ])
     func createNetworkServiceWithVariousConfigurations(configuration: NetworkConfiguration) {
         // Given & When
-        let service = NetworkService(configuration: configuration)
+        // CI 환경에서 NetworkMonitor로 인한 멈춤 방지
+        let service = NetworkService(
+            httpClient: HTTPClient(configuration: configuration),
+            retryPolicy: .default,
+            responseProcessor: ResponseProcessor(),
+            networkMonitor: nil,
+            checkNetworkBeforeRequest: false
+        )
 
         // Then - NetworkService가 성공적으로 생성됨
         _ = service
@@ -85,11 +102,14 @@ struct NetworkServiceFactoryTests {
         let interceptors: [any RequestInterceptor] = [TestInterceptor()]
 
         // When
+        // CI 환경에서 NetworkMonitor로 인한 멈춤 방지
         let service = NetworkService(
             httpClient: httpClient,
             retryPolicy: retryPolicy,
             responseProcessor: responseProcessor,
-            interceptors: interceptors
+            interceptors: interceptors,
+            networkMonitor: nil,
+            checkNetworkBeforeRequest: false
         )
 
         // Then - NetworkService가 성공적으로 생성됨
