@@ -264,7 +264,7 @@ struct EndpointDetailView: View {
 
     private func parseRelatedTypes(_ relatedTypes: [String: String]) -> [String: TypeStructure] {
         var result: [String: TypeStructure] = [:]
-        
+
         for (typeName, structureText) in relatedTypes {
             if let parsed = TypeStructureParser.parse(structureText) {
                 // 타입 이름을 정규화하여 키로 사용 (공백 제거)
@@ -276,7 +276,7 @@ struct EndpointDetailView: View {
                 }
             }
         }
-        
+
         return result
     }
 }

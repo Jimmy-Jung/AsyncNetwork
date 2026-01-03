@@ -16,7 +16,7 @@ public func resolveTypeStructure(for type: Any.Type) -> String? {
         }
         return documentedType.typeStructure
     }
-    
+
     // 일반 타입
     guard let documentedType = type as? any TypeStructureProvider.Type else {
         return nil
@@ -34,7 +34,7 @@ public func collectRelatedTypes(for type: Any.Type) -> [String: String]? {
     } else {
         targetType = type
     }
-    
+
     guard let documentedType = targetType as? any TypeStructureProvider.Type else {
         return nil
     }
@@ -59,15 +59,15 @@ public func collectRelatedTypes(for type: Any.Type) -> [String: String]? {
                 continue
             }
             allNestedTypeNames.insert(typeName)
-            
+
             // TypeRegistry에서 찾아서 재귀적으로 수집
             if let nestedType = TypeRegistry.shared.type(forName: typeName) {
-                _ = nestedType.typeStructure  // 등록 트리거
+                _ = nestedType.typeStructure // 등록 트리거
                 collectAllNestedTypeNames(from: nestedType.relatedTypeNames)
             }
         }
     }
-    
+
     // 모든 중첩 타입 이름을 먼저 수집
     collectAllNestedTypeNames(from: typesToProcess)
     typesToProcess = Array(allNestedTypeNames)
@@ -99,9 +99,9 @@ public func collectRelatedTypes(for type: Any.Type) -> [String: String]? {
         } else {
             print("❌ Type not found in registry: \(typeName)")
             print("📍 All registered types: \(TypeRegistry.shared.allTypeNames())")
-            
+
             // TypeRegistry에 없으면 해당 타입이 아직 등록되지 않은 것입니다.
-            // 이는 해당 타입의 _register가 실행되지 않았거나, 
+            // 이는 해당 타입의 _register가 실행되지 않았거나,
             // @DocumentedType 매크로가 적용되지 않았을 수 있습니다.
         }
     }
@@ -115,7 +115,7 @@ public func collectRelatedTypes(for type: Any.Type) -> [String: String]? {
 /// 예: Array<Post>.Type -> Post.Type, [Photo].Type -> Photo.Type
 private func extractArrayElementType(from type: Any.Type) -> Any.Type? {
     let typeName = String(describing: type)
-    
+
     // "Array<ElementType>" 형태 체크
     if typeName.hasPrefix("Array<"), typeName.hasSuffix(">") {
         // 배열의 경우 Element 타입을 가져올 수 있는 방법이 제한적
@@ -125,7 +125,7 @@ private func extractArrayElementType(from type: Any.Type) -> Any.Type? {
             return elementType
         }
     }
-    
+
     return nil
 }
 

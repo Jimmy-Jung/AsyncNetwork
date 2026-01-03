@@ -59,7 +59,7 @@ struct AsyncNetworkDocKitExampleApp: App {
     }
 
     /// 모든 @DocumentedType 타입을 등록합니다
-    /// 
+    ///
     /// Swift의 제약으로 타입 이름만으로는 타입을 찾을 수 없어,
     /// 모든 타입의 typeStructure를 명시적으로 참조하여 등록을 트리거합니다.
     private func registerAllTypes() {
@@ -102,4 +102,3 @@ struct AsyncNetworkDocKitExampleApp: App {
         _ = PaginationOptions.typeStructure
     }
 }
-

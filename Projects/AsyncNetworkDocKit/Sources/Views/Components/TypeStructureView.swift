@@ -14,16 +14,16 @@ struct TypeStructureView: View {
     let allTypes: [String: TypeStructure]
 
     @State private var expandedTypes: Set<String> = []
-    
+
     init(structureText: String, allTypes: [String: TypeStructure] = [:]) {
         self.structureText = structureText
         self.allTypes = allTypes
     }
-    
+
     private func normalizeTypeName(_ name: String) -> String {
         name.trimmingCharacters(in: .whitespaces)
     }
-    
+
     private func findTypeInAllTypes(_ typeName: String) -> TypeStructure? {
         let normalized = normalizeTypeName(typeName)
         // 정규화된 키로 먼저 찾기, 없으면 원본 키로 찾기
