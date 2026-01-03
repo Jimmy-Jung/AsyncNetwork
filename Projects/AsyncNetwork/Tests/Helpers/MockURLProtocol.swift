@@ -33,7 +33,7 @@ actor MockURLProtocolRegistry {
     }
 }
 
-class MockURLProtocol: URLProtocol {
+class MockURLProtocol: URLProtocol, @unchecked Sendable {
     // MARK: - Properties
 
     /// Swift Concurrency 안전한 레지스트리
@@ -41,16 +41,12 @@ class MockURLProtocol: URLProtocol {
 
     // MARK: - Helper Methods
 
-    static func register(path: String, handler: @escaping MockURLProtocolRegistry.RequestHandler) {
-        Task {
-            await registry.register(path: path, handler: handler)
-        }
+    static func register(path: String, handler: @escaping MockURLProtocolRegistry.RequestHandler) async {
+        await registry.register(path: path, handler: handler)
     }
 
-    static func clear() {
-        Task {
-            await registry.clear()
-        }
+    static func clear() async {
+        await registry.clear()
     }
 
     // MARK: - URLProtocol Overrides
@@ -72,6 +68,7 @@ class MockURLProtocol: URLProtocol {
         // ✅ @preconcurrency import로 URLProtocol을 concurrency-safe하게 처리
         let localClient = client
         let localRequest = request
+        // URL.path는 항상 "/"로 시작하므로 그대로 사용
         let localPath = url.path
         let localSelf = self
 

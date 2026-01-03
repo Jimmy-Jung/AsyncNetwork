@@ -18,7 +18,7 @@ struct NetworkLogLevelTests {
         (NetworkLogLevel.info, 2),
         (NetworkLogLevel.warning, 3),
         (NetworkLogLevel.error, 4),
-        (NetworkLogLevel.fatal, 5)
+        (NetworkLogLevel.fatal, 5),
     ])
     func logLevelRawValues(level: NetworkLogLevel, expectedRawValue: Int) {
         #expect(level.rawValue == expectedRawValue)

@@ -2,12 +2,11 @@
 //  CodeBlock.swift
 //  AsyncNetworkDocKit
 //
-//  Created by jimmy on 2026/01/01.
+//  Created by jimmy on 2026/01/03.
 //
 
 import SwiftUI
 
-/// 코드 블록
 @available(iOS 17.0, macOS 14.0, *)
 struct CodeBlock: View {
     let content: String

@@ -2,12 +2,11 @@
 //  RequestBodyField.swift
 //  AsyncNetworkDocKit
 //
-//  Created by jimmy on 2026/01/02.
+//  Created by jimmy on 2026/01/03.
 //
 
 import Foundation
 
-/// Request Body의 개별 필드 정보
 public struct RequestBodyField: Identifiable, Sendable, Hashable {
     public let id: String
     public let name: String
@@ -29,7 +28,6 @@ public struct RequestBodyField: Identifiable, Sendable, Hashable {
         self.exampleValue = exampleValue
     }
 
-    /// 필드 타입
     public enum FieldType: Sendable, Hashable {
         case string
         case int
@@ -53,11 +51,7 @@ public struct RequestBodyField: Identifiable, Sendable, Hashable {
     }
 }
 
-/// Request Body JSON 파싱 유틸리티
 public enum RequestBodyParser {
-    /// JSON 예시에서 필드 정보 추출
-    /// - Parameter jsonString: JSON 문자열 (예: `{"title": "My Post", "userId": 1}`)
-    /// - Returns: 추출된 필드 배열
     public static func parseFields(from jsonString: String) -> [RequestBodyField] {
         guard let data = jsonString.data(using: .utf8),
               let jsonObject = try? JSONSerialization.jsonObject(with: data) as? [String: Any]
@@ -78,7 +72,6 @@ public enum RequestBodyParser {
         }.sorted { $0.name < $1.name }
     }
 
-    /// 값의 타입 감지
     private static func detectType(from value: Any) -> RequestBodyField.FieldType {
         switch value {
         case is String:
@@ -98,7 +91,6 @@ public enum RequestBodyParser {
         }
     }
 
-    /// 값을 문자열로 변환
     private static func stringValue(from value: Any) -> String {
         switch value {
         case let str as String:
@@ -114,9 +106,6 @@ public enum RequestBodyParser {
         }
     }
 
-    /// 개별 필드 값들을 JSON 문자열로 변환
-    /// - Parameter fields: [필드명: 입력값] 딕셔너리
-    /// - Returns: JSON 문자열
     public static func buildJSON(from fields: [String: String], fieldTypes: [String: RequestBodyField.FieldType]) -> String? {
         var jsonDict: [String: Any] = [:]
 
@@ -135,7 +124,6 @@ public enum RequestBodyParser {
             case .bool:
                 jsonDict[key] = Bool(value) ?? false
             case .array, .object, .unknown:
-                // 복잡한 타입은 문자열로 처리
                 jsonDict[key] = value
             }
         }

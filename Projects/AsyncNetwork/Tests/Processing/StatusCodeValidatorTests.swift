@@ -237,7 +237,7 @@ struct StatusCodeValidatorTests {
             .invalidStatusCode(100, testData),
             .clientError(400, testData),
             .serverError(500, testData),
-            .unknownError(600, testData)
+            .unknownError(600, testData),
         ]
 
         // When & Then

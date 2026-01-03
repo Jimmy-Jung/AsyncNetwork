@@ -2,13 +2,12 @@
 //  EndpointCategory.swift
 //  AsyncNetworkDocKit
 //
-//  Created by jimmy on 2026/01/01.
+//  Created by jimmy on 2026/01/03.
 //
 
-import Foundation
 import AsyncNetworkCore
+import Foundation
 
-/// 카테고리별 엔드포인트 그룹
 public struct EndpointCategory: Identifiable, Sendable, Hashable {
     public let id: String
     public let name: String
@@ -20,7 +19,7 @@ public struct EndpointCategory: Identifiable, Sendable, Hashable {
         description: String? = nil,
         endpoints: [EndpointMetadata]
     ) {
-        self.id = name
+        id = name
         self.name = name
         self.description = description
         self.endpoints = endpoints

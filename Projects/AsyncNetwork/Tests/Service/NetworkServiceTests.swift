@@ -54,8 +54,7 @@ struct NetworkServiceTests {
     // MARK: - Tests
 
     @Test("성공적인 네트워크 요청 및 디코딩")
-    func successfulRequestAndDecoding() async throws {
-        // Given
+    func successfulRequestAndDecoding() async throws {        // Given
         let path = "/users/success"
         let configuration = URLSessionConfiguration.ephemeral
         configuration.protocolClasses = [MockURLProtocol.self]
@@ -66,7 +65,7 @@ struct NetworkServiceTests {
         let expectedUser = TestUser(id: 1, name: "John Doe")
         let responseData = try JSONEncoder().encode(expectedUser)
 
-        MockURLProtocol.register(path: path) { request in
+        await MockURLProtocol.register(path: path) { request in
             let response = HTTPURLResponse(
                 url: request.url!,
                 statusCode: 200,
@@ -119,7 +118,7 @@ struct NetworkServiceTests {
         }
         let state = RetryState()
 
-        MockURLProtocol.register(path: path) { [state] request in
+        await MockURLProtocol.register(path: path) { [state] request in
             // ✅ 동기 클로저 내부에서 actor 호출은 불가능하므로
             // 간단한 카운터를 사용 (테스트 목적이므로 허용)
             let semaphore = DispatchSemaphore(value: 0)
@@ -169,15 +168,14 @@ struct NetworkServiceTests {
     }
 
     @Test("최대 재시도 횟수 초과 시 에러 반환")
-    func failAfterMaxRetries() async throws {
-        // Given
+    func failAfterMaxRetries() async throws {        // Given
         let path = "/users/fail_max_retries"
         let configuration = URLSessionConfiguration.ephemeral
         configuration.protocolClasses = [MockURLProtocol.self]
         let session = URLSession(configuration: configuration)
         let httpClient = HTTPClient(session: session)
 
-        MockURLProtocol.register(path: path) { _ in
+        await MockURLProtocol.register(path: path) { _ in
             throw URLError(.timedOut)
         }
 
@@ -203,8 +201,7 @@ struct NetworkServiceTests {
     }
 
     @Test("인터셉터 동작 확인")
-    func verifyRequestInterceptor() async throws {
-        // Given
+    func verifyRequestInterceptor() async throws {        // Given
         let path = "/users/interceptor"
         let configuration = URLSessionConfiguration.ephemeral
         configuration.protocolClasses = [MockURLProtocol.self]
@@ -217,7 +214,7 @@ struct NetworkServiceTests {
             }
         }
 
-        MockURLProtocol.register(path: path) { request in
+        await MockURLProtocol.register(path: path) { request in
             if request.value(forHTTPHeaderField: "Authorization") == "Bearer test-token" {
                 let response = HTTPURLResponse(url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!
                 // swiftlint:disable:next force_try
@@ -247,8 +244,7 @@ struct NetworkServiceTests {
     }
 
     @Test("associatedtype Response를 사용한 타입 추론 요청")
-    func requestWithAssociatedTypeResponse() async throws {
-        // Given
+    func requestWithAssociatedTypeResponse() async throws {        // Given
         let path = "/users/typed"
         let configuration = URLSessionConfiguration.ephemeral
         configuration.protocolClasses = [MockURLProtocol.self]
@@ -258,7 +254,7 @@ struct NetworkServiceTests {
         let expectedUser = TestUser(id: 42, name: "Typed User")
         let responseData = try JSONEncoder().encode(expectedUser)
 
-        MockURLProtocol.register(path: path) { request in
+        await MockURLProtocol.register(path: path) { request in
             let response = HTTPURLResponse(
                 url: request.url!,
                 statusCode: 200,
@@ -284,8 +280,7 @@ struct NetworkServiceTests {
     }
 
     @Test("associatedtype Response와 명시적 타입 지정 비교")
-    func compareAssociatedTypeVsExplicitType() async throws {
-        // Given
+    func compareAssociatedTypeVsExplicitType() async throws {        // Given
         let path = "/users/compare"
         let configuration = URLSessionConfiguration.ephemeral
         configuration.protocolClasses = [MockURLProtocol.self]
@@ -295,7 +290,7 @@ struct NetworkServiceTests {
         let expectedUser = TestUser(id: 100, name: "Compare User")
         let responseData = try JSONEncoder().encode(expectedUser)
 
-        MockURLProtocol.register(path: path) { request in
+        await MockURLProtocol.register(path: path) { request in
             let response = HTTPURLResponse(
                 url: request.url!,
                 statusCode: 200,
@@ -324,14 +319,13 @@ struct NetworkServiceTests {
     }
 
     @Test("빈 응답 EmptyResponse 처리")
-    func requestWithEmptyResponse() async throws {
-        // Given
+    func requestWithEmptyResponse() async throws {        // Given
         let configuration = URLSessionConfiguration.ephemeral
         configuration.protocolClasses = [MockURLProtocol.self]
         let session = URLSession(configuration: configuration)
         let httpClient = HTTPClient(session: session)
 
-        MockURLProtocol.register(path: "/auth/logout") { request in
+        await MockURLProtocol.register(path: "/auth/logout") { request in
             let response = HTTPURLResponse(
                 url: request.url!,
                 statusCode: 204,

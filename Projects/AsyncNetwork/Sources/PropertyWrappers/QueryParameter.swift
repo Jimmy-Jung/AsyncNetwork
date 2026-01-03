@@ -2,25 +2,12 @@
 //  QueryParameter.swift
 //  AsyncNetwork
 //
-//  Created by jimmy on 2026/01/01.
+//  Created by jimmy on 2026/01/03.
 //
 
 import Foundation
 
 /// Query string parameter를 자동으로 URLRequest에 추가
-///
-/// **사용 예시:**
-/// ```swift
-/// @APIRequest(...)
-/// struct GetPostsRequest {
-///     @QueryParameter var userId: Int?
-///     @QueryParameter var page: Int?
-///     @QueryParameter(key: "_limit") var limit: Int?  // 커스텀 키 사용
-/// }
-///
-/// let request = GetPostsRequest(userId: 1, page: 2, limit: 10)
-/// // URL: /posts?userId=1&page=2&_limit=10
-/// ```
 @propertyWrapper
 public struct QueryParameter<Value: Sendable>: RequestParameter {
     public var wrappedValue: Value?

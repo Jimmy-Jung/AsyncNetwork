@@ -19,7 +19,7 @@ struct HTTPMethodTests {
         (HTTPMethod.delete, "DELETE"),
         (HTTPMethod.patch, "PATCH"),
         (HTTPMethod.head, "HEAD"),
-        (HTTPMethod.options, "OPTIONS")
+        (HTTPMethod.options, "OPTIONS"),
     ])
     func httpMethodRawValues(method: HTTPMethod, expectedRawValue: String) {
         #expect(method.rawValue == expectedRawValue)

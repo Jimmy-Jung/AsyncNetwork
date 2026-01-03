@@ -1,3 +1,10 @@
+//
+//  ResponseDecoder.swift
+//  AsyncNetwork
+//
+//  Created by jimmy on 2026/01/03.
+//
+
 import Foundation
 
 public enum DecodingResult<T: Decodable> {
@@ -16,7 +23,6 @@ public struct ResponseDecoder: Sendable {
         logDecodingStart(for: type)
 
         do {
-            // EmptyResponseDto 또는 EmptyResponse는 빈 데이터 허용
             if response.data.isEmpty {
                 if type is EmptyResponseDto.Type, let emptyResponse = EmptyResponseDto() as? T {
                     logDecodingSuccess(for: type)
@@ -44,7 +50,6 @@ public struct ResponseDecoder: Sendable {
         } catch let decodingError as DecodingError {
             return .failure(decodingError)
         } catch {
-            // 다른 에러는 DecodingError로 래핑
             let wrappedError = DecodingError.dataCorrupted(
                 DecodingError.Context(
                     codingPath: [],

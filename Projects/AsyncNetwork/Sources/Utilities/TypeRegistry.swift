@@ -2,7 +2,7 @@
 //  TypeRegistry.swift
 //  AsyncNetwork
 //
-//  Created by jimmy on 2026/01/02.
+//  Created by jimmy on 2026/01/03.
 //
 
 import Foundation

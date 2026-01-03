@@ -10,8 +10,6 @@
 [![Release](https://img.shields.io/github/v/release/Jimmy-Jung/AsyncNetwork)](https://github.com/Jimmy-Jung/AsyncNetwork/releases)
 [![SPM Compatible](https://img.shields.io/badge/SPM-compatible-brightgreen.svg)](https://swift.org/package-manager)
 
-[English](#english) | [한국어](#-korean)
-
 </div>
 
 ---
@@ -58,13 +56,13 @@ AsyncNetwork은 순수 Foundation만을 사용하여 구축된 현대적인 Swif
 ```
 https://github.com/Jimmy-Jung/AsyncNetwork.git
 ```
-3. Version: `1.0.0` 이상 선택
+3. Version: `1.1.0` 이상 선택
 
 #### Package.swift에 추가
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/Jimmy-Jung/AsyncNetwork.git", from: "1.0.0")
+    .package(url: "https://github.com/Jimmy-Jung/AsyncNetwork.git", from: "1.1.0")
 ]
 ```
 
@@ -103,7 +101,7 @@ struct Post: Codable {
     title: "Get all posts",
     baseURL: "https://jsonplaceholder.typicode.com",
     path: "/posts",
-    method: "get"
+    method: .get
 )
 struct GetAllPostsRequest {}
 
@@ -122,7 +120,7 @@ print("총 \(posts.count)개의 게시글")
     title: "Search posts by user",
     baseURL: "https://jsonplaceholder.typicode.com",
     path: "/posts",
-    method: "get"
+    method: .get
 )
 struct GetPostsByUserRequest {
     @QueryParameter var userId: Int
@@ -143,7 +141,7 @@ let posts: [Post] = try await service.request(
     title: "Get post by ID",
     baseURL: "https://jsonplaceholder.typicode.com",
     path: "/posts/{id}",  // {id}는 PathParameter로 대체됨
-    method: "get"
+    method: .get
 )
 struct GetPostRequest {
     @PathParameter var id: Int
@@ -172,7 +170,7 @@ struct LoginResponse: Codable {
     title: "User login",
     baseURL: "https://api.example.com",
     path: "/auth/login",
-    method: "post"
+    method: .post
 )
 struct LoginRequest {
     @RequestBody var body: LoginBody
@@ -192,7 +190,7 @@ let response: LoginResponse = try await service.request(
     title: "Get user profile",
     baseURL: "https://api.example.com",
     path: "/me",
-    method: "get"
+    method: .get
 )
 struct GetProfileRequest {
     @HeaderField(key: .authorization) var authorization: String
@@ -412,7 +410,7 @@ let service = NetworkService(
     title: "Search with filters",
     baseURL: "https://api.example.com",
     path: "/search/{category}",
-    method: "get"
+    method: .get
 )
 struct SearchRequest {
     @PathParameter var category: String
@@ -603,9 +601,62 @@ default:
 
 ---
 
-## 📱 API 문서 앱 생성 (AsyncNetworkDocKit)
+## 📱 API 문서 자동 생성 (AsyncNetworkDocKit)
 
-`@APIRequest` 매크로로 정의한 API를 **Redoc 스타일의 인터랙티브 문서 앱**으로 자동 생성할 수 있습니다.
+`@APIRequest` 매크로로 정의한 API를 **Redoc 스타일의 인터랙티브 문서 앱**으로 자동 생성할 수 있습니다!
+
+### 🎯 자동 샘플 앱 생성
+
+프로젝트에 AsyncNetwork를 추가하면, 단 한 줄의 명령어로 API 문서 샘플 앱을 생성할 수 있습니다:
+
+```bash
+# 1. 사용자 프로젝트 루트로 이동
+cd /path/to/YourProject
+
+# 2. AsyncNetwork 다운로드 (Package.swift에 의존성 추가 후)
+swift package resolve
+
+# 3. 샘플 앱 자동 생성 (대화형 모드)
+swift .build/checkouts/AsyncNetwork/Scripts/CreateDocKitExample.swift
+```
+
+> 💡 **실행 위치**: `swift package resolve`는 **사용자 프로젝트 루트**에서 실행합니다!
+> AsyncNetwork 저장소를 직접 클론한 경우: `swift Scripts/CreateDocKitExample.swift`
+
+**입력 예시** (사용자 프로젝트 기준):
+```
+📱 앱 이름: MyAPIDocumentation
+
+📁 @DocumentedType 경로: Sources/Domain
+   💡 사용자 프로젝트의 Domain 폴더 경로
+
+📡 @APIRequest 경로: Sources/Network
+   💡 사용자 프로젝트의 Network 폴더 경로
+
+📂 출력 경로: DocKitExample
+   💡 샘플 앱이 생성될 위치 (사용자 프로젝트 기준)
+
+🎯 생성하시겠습니까? y
+```
+
+**결과**:
+```
+DocKitExample/
+├── Project.swift (Tuist)
+└── MyAPIDocumentation/
+    └── Sources/
+        ├── MyAPIDocumentationApp.swift
+        ├── TypeRegistration+Generated.swift  # 빌드 시 자동 생성
+        └── Endpoints+Generated.swift         # 빌드 시 자동 생성
+```
+
+**실행**:
+```bash
+cd DocKitExample
+tuist generate
+open *.xcworkspace
+# Cmd + R로 실행!
+```
 
 ### AsyncNetworkDocKit이란?
 
@@ -620,13 +671,15 @@ AsyncNetworkDocKit은 `@APIRequest` 매크로의 메타데이터를 활용하여
 - ✅ **검색 기능**: API 경로 및 타이틀 검색
 - ✅ **다크모드 지원**: 자동 라이트/다크 테마 전환
 
-### 빠른 시작
+### 수동 설정 (선택사항)
+
+자동 생성 스크립트 대신 직접 설정하고 싶다면:
 
 #### 1. Package.swift에 추가
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/Jimmy-Jung/AsyncNetwork.git", from: "1.0.0")
+    .package(url: "https://github.com/Jimmy-Jung/AsyncNetwork.git", from: "1.1.0")
 ],
 targets: [
     .target(
@@ -649,7 +702,7 @@ import AsyncNetworkDocKit
     description: "모든 포스트를 조회합니다",
     baseURL: "https://api.example.com",
     path: "/posts",
-    method: "get",
+    method: .get,
     tags: ["Posts", "Read"],
     responseExample: """
     [
@@ -668,7 +721,7 @@ struct GetPostsRequest {
     description: "새 포스트를 생성합니다",
     baseURL: "https://api.example.com",
     path: "/posts",
-    method: "post",
+    method: .post,
     tags: ["Posts", "Write"]
 )
 struct CreatePostRequest {
@@ -735,22 +788,22 @@ struct MyAPIDocApp: App {
 └──────────────┴──────────────────────┴─────────────────────────┘
 ```
 
-### 실제 예제
+### 📚 더 알아보기
 
-AsyncNetworkDocKitExample 프로젝트에서 완전한 구현을 확인할 수 있습니다:
+- **자동 생성 스크립트**: 위의 "자동 샘플 앱 생성" 섹션 참고
+- **스크립트 상세 문서**: [Scripts/README.md](Scripts/README.md)
+- **실제 예제**: [AsyncNetworkDocKitExample](Projects/AsyncNetworkDocKitExample) 프로젝트 참고
 
 ```bash
-# 저장소 클론
+# 저장소 클론 후 예제 앱 실행
 git clone https://github.com/Jimmy-Jung/AsyncNetwork.git
 cd AsyncNetwork
-
-# Example 앱 실행
 tuist generate
 open AsyncNetwork.xcworkspace
 # AsyncNetworkDocKitExample 스킴 선택 후 실행
 ```
 
-예제 앱은 JSONPlaceholder API의 12개 엔드포인트를 문서화하고 실시간으로 테스트할 수 있습니다.
+예제 앱은 JSONPlaceholder API의 16개 엔드포인트를 문서화하고 실시간으로 테스트할 수 있습니다.
 
 ### 고급 사용법
 
@@ -787,7 +840,7 @@ DocKitFactory.createDocApp(
 
 - iOS 17.0+
 - SwiftUI
-- AsyncNetwork 1.0.0+
+- AsyncNetwork 1.1.0+
 
 ---
 
@@ -801,9 +854,26 @@ AsyncNetwork은 테스트하기 쉽게 설계되었습니다.
 import Testing
 @testable import AsyncNetwork
 
+// 테스트용 모델 정의
+struct User: Codable, Equatable {
+    let id: Int
+    let name: String
+}
+
+// 테스트용 API 요청 정의
+@APIRequest(
+    response: [User].self,
+    title: "Get users",
+    baseURL: "https://api.example.com",
+    path: "/users",
+    method: .get
+)
+struct GetUsersRequest {}
+
 @Test("사용자 목록 조회 성공")
 func testGetUsersSuccess() async throws {
     // Given
+    let path = "/users"
     let mockJSON = """
     [
         {"id": 1, "name": "John"},
@@ -811,7 +881,11 @@ func testGetUsersSuccess() async throws {
     ]
     """
     
-    MockURLProtocol.requestHandler = { request in
+    let config = URLSessionConfiguration.ephemeral
+    config.protocolClasses = [MockURLProtocol.self]
+    let session = URLSession(configuration: config)
+    
+    MockURLProtocol.register(path: path) { request in
         let response = HTTPURLResponse(
             url: request.url!,
             statusCode: 200,
@@ -821,29 +895,42 @@ func testGetUsersSuccess() async throws {
         return (response, mockJSON.data(using: .utf8)!)
     }
     
-    let config = URLSessionConfiguration.ephemeral
-    config.protocolClasses = [MockURLProtocol.self]
-    let session = URLSession(configuration: config)
-    
     let client = HTTPClient(session: session)
-    let service = NetworkService(httpClient: client)
+    let service = NetworkService(
+        httpClient: client,
+        retryPolicy: .none,
+        responseProcessor: ResponseProcessor()
+    )
     
     // When
-    let users = try await service.request(
-        request: MyAPI.getUsers,
-        decodeType: [User].self
-    )
+    let users = try await service.request(GetUsersRequest())
     
     // Then
     #expect(users.count == 2)
     #expect(users[0].name == "John")
 }
 
+// 테스트용 API 요청 정의
+@APIRequest(
+    response: EmptyResponse.self,
+    title: "Test retry request",
+    baseURL: "https://api.example.com",
+    path: "/users/retry",
+    method: .get
+)
+struct TestRetryRequest {}
+
 @Test("재시도 정책 테스트")
 func testRetryPolicy() async throws {
+    // Given
+    let path = "/users/retry"
+    let config = URLSessionConfiguration.ephemeral
+    config.protocolClasses = [MockURLProtocol.self]
+    let session = URLSession(configuration: config)
+    
     var attemptCount = 0
     
-    MockURLProtocol.requestHandler = { request in
+    MockURLProtocol.register(path: path) { request in
         attemptCount += 1
         
         if attemptCount < 3 {
@@ -859,21 +946,18 @@ func testRetryPolicy() async throws {
         return (response, Data())
     }
     
-    let config = URLSessionConfiguration.ephemeral
-    config.protocolClasses = [MockURLProtocol.self]
-    let session = URLSession(configuration: config)
-    
     let client = HTTPClient(session: session)
     let retryPolicy = RetryPolicy(
         configuration: RetryConfiguration(maxRetries: 3, baseDelay: 0.1)
     )
     let service = NetworkService(
         httpClient: client,
-        retryPolicy: retryPolicy
+        retryPolicy: retryPolicy,
+        responseProcessor: ResponseProcessor()
     )
     
     // When
-    _ = try await service.requestRaw(MyAPI.getUsers)
+    _ = try await service.requestRaw(TestRetryRequest())
     
     // Then
     #expect(attemptCount == 3)

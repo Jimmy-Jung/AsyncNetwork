@@ -1,3 +1,10 @@
+//
+//  NetworkConfiguration.swift
+//  AsyncNetwork
+//
+//  Created by jimmy on 2026/01/03.
+//
+
 import Foundation
 
 public struct NetworkConfiguration: Sendable {

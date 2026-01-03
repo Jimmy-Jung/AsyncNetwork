@@ -2,12 +2,11 @@
 //  HTTPMethodBadge.swift
 //  AsyncNetworkDocKit
 //
-//  Created by jimmy on 2026/01/01.
+//  Created by jimmy on 2026/01/03.
 //
 
 import SwiftUI
 
-/// HTTP 메서드 뱃지
 @available(iOS 17.0, macOS 14.0, *)
 public struct HTTPMethodBadge: View {
     let method: String

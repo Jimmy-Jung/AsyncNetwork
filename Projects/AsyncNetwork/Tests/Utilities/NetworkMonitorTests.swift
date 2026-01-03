@@ -29,7 +29,7 @@ struct NetworkMonitorTests {
 
         // connectionType이 유효한 값인지 확인
         let validTypes: [NetworkMonitor.ConnectionType] = [
-            .wifi, .cellular, .ethernet, .loopback, .unknown
+            .wifi, .cellular, .ethernet, .loopback, .unknown,
         ]
         #expect(validTypes.contains(where: { $0 == monitor.connectionType }))
     }

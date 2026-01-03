@@ -38,7 +38,7 @@ struct HTTPClientTests {
 
         let expectedData = Data("success".utf8)
 
-        MockURLProtocol.register(path: path) { request in
+        await MockURLProtocol.register(path: path) { request in
             let response = HTTPURLResponse(
                 url: request.url!,
                 statusCode: 200,
@@ -65,7 +65,7 @@ struct HTTPClientTests {
         let session = URLSession(configuration: configuration)
         let client = HTTPClient(session: session)
 
-        MockURLProtocol.register(path: path) { request in
+        await MockURLProtocol.register(path: path) { request in
             let response = HTTPURLResponse(
                 url: request.url!,
                 statusCode: 404,
@@ -93,7 +93,7 @@ struct HTTPClientTests {
 
         let networkError = URLError(.notConnectedToInternet)
 
-        MockURLProtocol.register(path: path) { _ in
+        await MockURLProtocol.register(path: path) { _ in
             throw networkError
         }
 

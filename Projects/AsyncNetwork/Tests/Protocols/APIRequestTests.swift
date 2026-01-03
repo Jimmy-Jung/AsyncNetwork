@@ -31,7 +31,7 @@ struct APIRequestTests {
         var method: HTTPMethod = .post
         var headers: [String: String]? = [
             "Authorization": "Bearer token",
-            "X-Custom": "value"
+            "X-Custom": "value",
         ]
     }
 
@@ -143,7 +143,7 @@ struct APIRequestTests {
         HTTPMethod.post,
         HTTPMethod.put,
         HTTPMethod.delete,
-        HTTPMethod.patch
+        HTTPMethod.patch,
     ])
     func asURLRequestWithVariousMethods(method: HTTPMethod) throws {
         // Given

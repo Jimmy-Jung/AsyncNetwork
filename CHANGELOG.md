@@ -93,6 +93,75 @@ AsyncNetwork 1.0.0 정식 출시! 순수 Foundation 기반의 현대적인 Swift
 
 ---
 
+## [1.1.0] - 2026-01-03
+
+### ✨ Added
+
+#### Documentation Kit
+- **AsyncNetworkDocKit**: API 문서 자동 생성 프레임워크 추가
+  - `@APIRequest` 매크로 메타데이터를 활용한 인터랙티브 문서 앱 생성
+  - 3열 레이아웃 (API 리스트 / 상세 설명 / 실시간 테스터)
+  - 실시간 API 테스트 기능 (`APITesterView`)
+  - 카테고리별 API 분류 (`EndpointCategory`)
+  - 동적 API 요청 실행 (`DynamicAPIRequest`)
+  - 타입 구조 시각화 (`TypeStructure`, `TypeStructureView`)
+  - 검색 기능
+  - 다크모드 지원
+
+#### Property Wrappers
+- `@CustomHeader`: 커스텀 HTTP 헤더 선언적 정의
+  - 동적 헤더 키 지원
+  - 타입 안전한 커스텀 헤더 추가
+
+#### Utilities
+- **NetworkMonitor**: 실시간 네트워크 연결 상태 감지
+  - Wi-Fi, 셀룰러, 이더넷 연결 타입 감지
+  - SwiftUI 및 Combine 지원
+  - NetworkService와 통합된 오프라인 체크
+
+#### Scripts
+- **CreateDocKitExample.swift**: 샘플 앱 자동 생성 스크립트
+  - 대화형 입력 모드
+  - 경로 자동 정규화 (절대/상대/홈 경로)
+  - Tuist 모듈 자동 감지
+  - Placeholder 파일 자동 생성
+  - 빌드 스크립트 자동 설정
+- **GenerateTypeRegistration.swift**: `@DocumentedType` 등록 코드 생성
+  - 타입 자동 스캔 및 등록
+  - 타임스탬프 및 통계 정보 자동 기록
+- **GenerateEndpoints.swift**: `@APIRequest` 엔드포인트 생성
+  - tags 기반 카테고리 자동 분류
+  - 엔드포인트 딕셔너리 자동 생성
+
+### 🔧 Changed
+
+- NetworkService에 네트워크 연결 상태 확인 기능 추가
+- 오프라인 상태에서 즉시 에러 반환 기능 추가
+
+### 📦 Packages
+
+- **AsyncNetworkDocKit**: iOS 전용 문서 생성 프레임워크 추가
+
+### 🎯 Platform Support
+
+- AsyncNetworkDocKit: iOS 17.0+ (SwiftUI 필수)
+
+### 🧪 Tests
+
+- AsyncNetworkDocKit 테스트 추가
+  - `DynamicAPIRequestTests`: 동적 API 요청 테스트
+  - `DocKitFactoryTests`: 팩토리 생성 테스트
+  - `EndpointCategoryTests`: 카테고리 분류 테스트
+  - `RequestBodyParserTests`: 요청 바디 파싱 테스트
+  - `APITesterStateTests`: API 테스터 상태 관리 테스트
+
+### 📝 Documentation
+
+- Scripts/README.md 추가 (자동 코드 생성 스크립트 가이드)
+- AsyncNetworkDocKitExample 예제 프로젝트 추가
+
+---
+
 ## [Unreleased]
 
 ### Planned Features
@@ -105,5 +174,6 @@ AsyncNetwork 1.0.0 정식 출시! 순수 Foundation 기반의 현대적인 Swift
 
 ---
 
+[1.1.0]: https://github.com/Jimmy-Jung/AsyncNetwork/releases/tag/1.1.0
 [1.0.0]: https://github.com/Jimmy-Jung/AsyncNetwork/releases/tag/1.0.0
 

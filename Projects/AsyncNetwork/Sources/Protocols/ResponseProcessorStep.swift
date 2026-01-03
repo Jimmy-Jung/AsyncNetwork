@@ -1,17 +1,13 @@
+//
+//  ResponseProcessorStep.swift
+//  AsyncNetwork
+//
+//  Created by jimmy on 2026/01/03.
+//
+
 import Foundation
 
 /// 응답 처리 단계를 나타내는 프로토콜
-///
-/// **사용 예시:**
-/// ```swift
-/// let processor = ResponseProcessor(
-///     steps: [
-///         StatusCodeValidationStep(),
-///         CustomValidationStep(),
-///         LoggingStep()
-///     ]
-/// )
-/// ```
 public protocol ResponseProcessorStep: Sendable {
     func process(
         _ response: HTTPResponse,
