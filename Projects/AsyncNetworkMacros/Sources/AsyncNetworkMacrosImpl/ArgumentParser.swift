@@ -14,14 +14,14 @@ struct MacroArguments {
     let responseType: String
     let title: String
     let description: String
-    let baseURL: String?
+    let baseURL: String
     let isBaseURLLiteral: Bool // baseURL이 문자열 리터럴인지 여부
     let path: String
     let method: String
-    let headers: [String: String]
     let tags: [String]
     let requestBodyExample: String?
     let responseExample: String?
+    let optionalPathParameters: Set<String> // {id?} 형태의 선택적 경로 파라미터
 }
 
 struct PropertyWrapperInfo {
@@ -51,7 +51,6 @@ func parseArguments(_ arguments: LabeledExprListSyntax) throws -> MacroArguments
     var isBaseURLLiteral = false
     var path: String?
     var method: String?
-    var headers: [String: String] = [:]
     var tags: [String] = []
     var requestBodyExample: String?
     var responseExample: String?
@@ -80,8 +79,6 @@ func parseArguments(_ arguments: LabeledExprListSyntax) throws -> MacroArguments
             path = extractStringLiteral(from: expr)
         case "method":
             method = extractStringOrEnumCase(from: expr)
-        case "headers":
-            headers = extractDictionary(from: expr)
         case "tags":
             tags = extractArray(from: expr)
         case "requestBodyExample":
@@ -96,8 +93,10 @@ func parseArguments(_ arguments: LabeledExprListSyntax) throws -> MacroArguments
     guard let responseType = responseType else {
         throw APIRequestMacroError.missingRequiredArgument("response")
     }
-    guard let title = title else {
-        throw APIRequestMacroError.missingRequiredArgument("title")
+    // title이 생략되면 빈 문자열 사용
+    let finalTitle = title ?? ""
+    guard let baseURL = baseURL else {
+        throw APIRequestMacroError.missingRequiredArgument("baseURL")
     }
     guard let path = path else {
         throw APIRequestMacroError.missingRequiredArgument("path")
@@ -106,18 +105,21 @@ func parseArguments(_ arguments: LabeledExprListSyntax) throws -> MacroArguments
         throw APIRequestMacroError.missingRequiredArgument("method")
     }
 
+    // 선택적 경로 파라미터 추출 (예: {id?})
+    let optionalPathParameters = extractOptionalPathParameters(from: path)
+
     return MacroArguments(
         responseType: responseType,
-        title: title,
+        title: finalTitle,
         description: description,
         baseURL: baseURL,
         isBaseURLLiteral: isBaseURLLiteral,
         path: path,
         method: method,
-        headers: headers,
         tags: tags,
         requestBodyExample: requestBodyExample,
-        responseExample: responseExample
+        responseExample: responseExample,
+        optionalPathParameters: optionalPathParameters
     )
 }
 
@@ -165,25 +167,6 @@ func extractStringOrEnumCase(from expr: ExprSyntax) -> String? {
         return enumValue
     }
     return nil
-}
-
-func extractDictionary(from expr: ExprSyntax) -> [String: String] {
-    guard let dictionaryExpr = expr.as(DictionaryExprSyntax.self) else {
-        return [:]
-    }
-
-    var result: [String: String] = [:]
-
-    for element in dictionaryExpr.content.as(DictionaryElementListSyntax.self) ?? [] {
-        guard let keyString = extractStringLiteral(from: element.key),
-              let valueString = extractStringLiteral(from: element.value)
-        else {
-            continue
-        }
-        result[keyString] = valueString
-    }
-
-    return result
 }
 
 func extractArray(from expr: ExprSyntax) -> [String] {
@@ -309,4 +292,42 @@ private func stringValue(from value: Any) -> String {
     default:
         return "\(value)"
     }
+}
+
+// MARK: - Optional Path Parameter Parsing
+
+/// 경로에서 선택적 파라미터를 추출합니다.
+/// 예: "/posts/{id?}" -> ["id"]
+/// 예: "/posts/{id}/comments" -> []
+func extractOptionalPathParameters(from path: String) -> Set<String> {
+    var optionalParams = Set<String>()
+    var current = ""
+    var inPlaceholder = false
+
+    for char in path {
+        if char == "{" {
+            inPlaceholder = true
+            current = ""
+        } else if char == "}" {
+            if inPlaceholder && !current.isEmpty {
+                // {id?} 형태에서 ? 제거하고 id만 추출
+                if current.hasSuffix("?") {
+                    let paramName = String(current.dropLast())
+                    optionalParams.insert(paramName)
+                }
+            }
+            inPlaceholder = false
+            current = ""
+        } else if inPlaceholder {
+            current.append(char)
+        }
+    }
+
+    return optionalParams
+}
+
+/// 경로를 정규화합니다 (선택적 파라미터 표시 제거).
+/// 예: "/posts/{id?}" -> "/posts/{id}"
+func normalizePath(_ path: String) -> String {
+    return path.replacingOccurrences(of: "?}", with: "}")
 }

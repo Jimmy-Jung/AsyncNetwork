@@ -14,7 +14,6 @@
 /// - `baseURLString`: 베이스 URL 문자열 (선택적)
 /// - `path`: API 엔드포인트 경로
 /// - `method`: HTTP 메서드 (GET, POST, PUT, DELETE 등)
-/// - `headers`: HTTP 헤더 (선택적)
 /// - `metadata`: 엔드포인트 메타데이터 (DocKit용)
 ///
 /// ## 사용 예시
@@ -27,11 +26,11 @@
 ///     baseURL: "https://jsonplaceholder.typicode.com",
 ///     path: "/posts",
 ///     method: .get,
-///     headers: ["Content-Type": "application/json"],
 ///     tags: ["Posts", "Read"],
 ///     responseExample: "[{\"id\": 1, \"title\": \"Hello\"}]"
 /// )
 /// struct GetPostsRequest {
+///     @HeaderField(key: .contentType) var contentType: String? = "application/json"
 ///     @QueryParameter var userId: Int?
 ///     @QueryParameter var page: Int = 1
 /// }
@@ -43,6 +42,7 @@
 ///
 /// ```swift
 /// struct GetPostsRequest {
+///     @HeaderField(key: .contentType) var contentType: String? = "application/json"
 ///     @QueryParameter var userId: Int?
 ///     @QueryParameter var page: Int = 1
 ///
@@ -58,10 +58,6 @@
 ///
 ///     var method: HTTPMethod {
 ///         .get
-///     }
-///
-///     var headers: [String: String]? {
-///         ["Content-Type": "application/json"]
 ///     }
 ///
 ///     static var metadata: EndpointMetadata {
@@ -88,18 +84,36 @@
 ///
 /// ## 동적 베이스 URL
 ///
-/// `baseURL` 파라미터를 생략하면 구조체에서 직접 `baseURLString` 프로퍼티를 구현할 수 있습니다:
+/// `baseURL` 파라미터는 필수이지만, 문자열 리터럴 대신 표현식을 사용할 수 있습니다:
+///
+/// ```swift
+/// let apiBaseURL = "https://api.example.com"
+///
+/// @APIRequest(
+///     response: Post.self,
+///     title: "Get a post",
+///     baseURL: apiBaseURL,  // 상수 참조
+///     path: "/posts/1",
+///     method: .get
+/// )
+/// struct GetPostRequest {
+/// }
+/// ```
+///
+/// 또는 이미 선언된 `baseURLString` 프로퍼티가 있다면 매크로가 생성하지 않습니다:
 ///
 /// ```swift
 /// @APIRequest(
 ///     response: Post.self,
 ///     title: "Get a post",
+///     baseURL: "https://api.example.com",  // metadata용으로만 사용
 ///     path: "/posts/1",
 ///     method: .get
 /// )
 /// struct GetPostRequest {
 ///     let environment: Environment
 ///
+///     // 이미 선언되어 있으면 매크로가 생성하지 않음
 ///     var baseURLString: String {
 ///         environment.baseURL
 ///     }
@@ -129,38 +143,58 @@
 /// }
 /// ```
 ///
+/// ## HTTP 헤더 설정
+///
+/// 헤더는 `@HeaderField` 또는 `@CustomHeader` 프로퍼티 래퍼를 사용합니다:
+///
+/// ```swift
+/// @APIRequest(
+///     response: User.self,
+///     title: "Get current user",
+///     baseURL: "https://api.example.com",
+///     path: "/user/me",
+///     method: .get
+/// )
+/// struct GetCurrentUserRequest {
+///     @HeaderField(key: .authorization) var authorization: String?
+///     @HeaderField(key: .contentType) var contentType: String? = "application/json"
+///     @CustomHeader("X-Request-ID") var requestId: String?
+/// }
+/// ```
+///
 /// ## Property Wrappers 통합
 ///
 /// 다음 Property Wrapper들과 함께 사용할 수 있습니다:
 /// - `@QueryParameter`: URL 쿼리 파라미터
 /// - `@PathParameter`: URL 경로 파라미터
-/// - `@HeaderParameter`: HTTP 헤더
+/// - `@HeaderField`: 타입 안전한 HTTP 헤더 (HTTPHeaders.HeaderKey 사용)
+/// - `@CustomHeader`: 커스텀 HTTP 헤더
 /// - `@RequestBody`: 요청 바디
 /// - `@FormData`: Multipart Form Data
 ///
 /// ## 주의사항
 ///
 /// - 이 매크로는 `struct`에만 적용할 수 있습니다.
-/// - 필수 파라미터: `response`, `title`, `path`, `method`
+/// - 필수 파라미터: `response`, `baseURL`, `path`, `method`
+/// - 선택적 파라미터: `title` (기본값: ""), `description` (기본값: ""), `tags`, `requestBodyExample`, `responseExample`
 /// - 이미 선언된 프로퍼티는 매크로가 생성하지 않습니다.
-/// - `method` 파라미터는 문자열로 지정합니다 ("get", "post", "put", "delete", "patch", "head", "options")
+/// - `method` 파라미터는 HTTPMethod enum case로 지정합니다 (.get, .post, .put, .delete, .patch, .head, .options)
+/// - HTTP 헤더는 매크로 파라미터 대신 `@HeaderField` 프로퍼티 래퍼를 사용하세요
 @attached(member, names:
     named(Response),
     named(baseURLString),
     named(path),
     named(method),
-    named(headers),
     named(task),
     named(metadata))
 @attached(extension, conformances: APIRequest)
 public macro APIRequest(
     response: Any.Type,
-    title: String,
+    title: String = "",
     description: String = "",
-    baseURL: String? = nil,
+    baseURL: String,
     path: String,
-    method: String,
-    headers: [String: String] = [:],
+    method: HTTPMethod,
     tags: [String] = [],
     requestBodyExample: String? = nil,
     responseExample: String? = nil
