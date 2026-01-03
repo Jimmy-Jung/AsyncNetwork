@@ -17,6 +17,7 @@ import Foundation
 /// )
 /// struct GetPostByIdRequest {
 ///     @PathParameter var id: Int
+///     @PathParameter(key: "postId") var myId: Int  // 커스텀 키 사용
 /// }
 ///
 /// let request = GetPostByIdRequest(id: 123)
@@ -25,15 +26,23 @@ import Foundation
 @propertyWrapper
 public struct PathParameter<Value: Sendable>: RequestParameter {
     public var wrappedValue: Value
+    private let customKey: String?
 
     public init(wrappedValue: Value) {
         self.wrappedValue = wrappedValue
+        customKey = nil
+    }
+
+    public init(wrappedValue: Value, key: String) {
+        self.wrappedValue = wrappedValue
+        customKey = key
     }
 
     public func apply(to request: inout URLRequest, key: String) throws {
         guard let url = request.url else { return }
 
-        let placeholder = "{\(key)}"
+        let parameterKey = customKey ?? key
+        let placeholder = "{\(parameterKey)}"
         let replaced = url.absoluteString.replacingOccurrences(
             of: placeholder,
             with: "\(wrappedValue)"

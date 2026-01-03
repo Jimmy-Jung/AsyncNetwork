@@ -15,18 +15,25 @@ import Foundation
 /// struct GetPostsRequest {
 ///     @QueryParameter var userId: Int?
 ///     @QueryParameter var page: Int?
-///     @QueryParameter var limit: Int?
+///     @QueryParameter(key: "_limit") var limit: Int?  // 커스텀 키 사용
 /// }
 ///
 /// let request = GetPostsRequest(userId: 1, page: 2, limit: 10)
-/// // URL: /posts?userId=1&page=2&limit=10
+/// // URL: /posts?userId=1&page=2&_limit=10
 /// ```
 @propertyWrapper
 public struct QueryParameter<Value: Sendable>: RequestParameter {
     public var wrappedValue: Value?
+    private let customKey: String?
 
     public init(wrappedValue: Value? = nil) {
         self.wrappedValue = wrappedValue
+        customKey = nil
+    }
+
+    public init(wrappedValue: Value? = nil, key: String) {
+        self.wrappedValue = wrappedValue
+        customKey = key
     }
 
     public func apply(to request: inout URLRequest, key: String) throws {
@@ -37,7 +44,8 @@ public struct QueryParameter<Value: Sendable>: RequestParameter {
         }
 
         var queryItems = components.queryItems ?? []
-        queryItems.append(URLQueryItem(name: key, value: "\(value)"))
+        let parameterKey = customKey ?? key
+        queryItems.append(URLQueryItem(name: parameterKey, value: "\(value)"))
         components.queryItems = queryItems
 
         if let url = components.url {
