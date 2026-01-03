@@ -1,8 +1,8 @@
 //
-//  APIRequestMacroTests.swift
+//  BasicExpansionTests.swift
 //  AsyncNetworkMacros
 //
-//  Created by jimmy on 2026/01/01.
+//  Created by jimmy on 2026/01/03.
 //
 
 // Swift Macro는 macOS에서만 빌드 가능하므로 테스트도 macOS 전용
@@ -15,15 +15,13 @@
 
     @testable import AsyncNetworkMacrosImpl
 
-    // MARK: - APIRequestMacroTests
+    // MARK: - BasicExpansionTests
 
-    @Suite("APIRequest Macro Tests")
-    struct APIRequestMacroTests {
+    @Suite("APIRequest Macro - Basic Expansion Tests")
+    struct BasicExpansionTests {
         let testMacros: [String: Macro.Type] = [
             "APIRequest": APIRequestMacroImpl.self
         ]
-
-        // MARK: - Basic Expansion Tests
 
         @Test("기본 매크로 확장 - 모든 프로퍼티 생성")
         func basicExpansion() {
@@ -91,15 +89,16 @@
                     baseURL: "https://jsonplaceholder.typicode.com",
                     path: "/posts",
                     method: .get,
-                    headers: ["Content-Type": "application/json"],
                     tags: ["Posts", "Read"],
                     responseExample: "[{\\"id\\": 1}]"
                 )
                 struct GetPostsRequest {
+                    @HeaderField(key: .contentType) var contentType: String? = "application/json"
                 }
                 """,
                 expandedSource: """
                 struct GetPostsRequest {
+                    @HeaderField(key: .contentType) var contentType: String? = "application/json"
 
                     typealias Response = [Post]
 
@@ -113,10 +112,6 @@
 
                     var method: HTTPMethod {
                         .get
-                    }
-
-                    var headers: [String: String]? {
-                        ["Content-Type": "application/json"]
                     }
                     static var metadata: EndpointMetadata {
                         EndpointMetadata(
@@ -388,176 +383,6 @@
             )
         }
 
-        // MARK: - Error Tests
-
-        @Test("class에 적용 시 에러")
-        func classError() {
-            assertMacroExpansion(
-                """
-                @APIRequest(
-                    response: Post.self,
-                    title: "Get a post",
-                    path: "/posts/1",
-                    method: .get
-                )
-                class GetPostRequest {
-                }
-                """,
-                expandedSource: """
-                class GetPostRequest {
-                }
-                """,
-                diagnostics: [
-                    DiagnosticSpec(
-                        message: "@APIRequest can only be applied to a struct",
-                        line: 1,
-                        column: 1
-                    )
-                ],
-                macros: testMacros
-            )
-        }
-
-        @Test("enum에 적용 시 에러")
-        func enumError() {
-            assertMacroExpansion(
-                """
-                @APIRequest(
-                    response: Post.self,
-                    title: "Get a post",
-                    path: "/posts/1",
-                    method: .get
-                )
-                enum GetPostRequest {
-                    case test
-                }
-                """,
-                expandedSource: """
-                enum GetPostRequest {
-                    case test
-                }
-                """,
-                diagnostics: [
-                    DiagnosticSpec(
-                        message: "@APIRequest can only be applied to a struct",
-                        line: 1,
-                        column: 1
-                    )
-                ],
-                macros: testMacros
-            )
-        }
-
-        @Test("필수 파라미터 누락 시 에러 - response")
-        func missingResponseError() {
-            assertMacroExpansion(
-                """
-                @APIRequest(
-                    title: "Get a post",
-                    path: "/posts/1",
-                    method: .get
-                )
-                struct GetPostRequest {
-                }
-                """,
-                expandedSource: """
-                struct GetPostRequest {
-                }
-                """,
-                diagnostics: [
-                    DiagnosticSpec(
-                        message: "@APIRequest missing required argument: response",
-                        line: 1,
-                        column: 1
-                    )
-                ],
-                macros: testMacros
-            )
-        }
-
-        @Test("필수 파라미터 누락 시 에러 - title")
-        func missingTitleError() {
-            assertMacroExpansion(
-                """
-                @APIRequest(
-                    response: Post.self,
-                    path: "/posts/1",
-                    method: .get
-                )
-                struct GetPostRequest {
-                }
-                """,
-                expandedSource: """
-                struct GetPostRequest {
-                }
-                """,
-                diagnostics: [
-                    DiagnosticSpec(
-                        message: "@APIRequest missing required argument: title",
-                        line: 1,
-                        column: 1
-                    )
-                ],
-                macros: testMacros
-            )
-        }
-
-        @Test("필수 파라미터 누락 시 에러 - path")
-        func missingPathError() {
-            assertMacroExpansion(
-                """
-                @APIRequest(
-                    response: Post.self,
-                    title: "Get a post",
-                    method: .get
-                )
-                struct GetPostRequest {
-                }
-                """,
-                expandedSource: """
-                struct GetPostRequest {
-                }
-                """,
-                diagnostics: [
-                    DiagnosticSpec(
-                        message: "@APIRequest missing required argument: path",
-                        line: 1,
-                        column: 1
-                    )
-                ],
-                macros: testMacros
-            )
-        }
-
-        @Test("필수 파라미터 누락 시 에러 - method")
-        func missingMethodError() {
-            assertMacroExpansion(
-                """
-                @APIRequest(
-                    response: Post.self,
-                    title: "Get a post",
-                    path: "/posts/1"
-                )
-                struct GetPostRequest {
-                }
-                """,
-                expandedSource: """
-                struct GetPostRequest {
-                }
-                """,
-                diagnostics: [
-                    DiagnosticSpec(
-                        message: "@APIRequest missing required argument: method",
-                        line: 1,
-                        column: 1
-                    )
-                ],
-                macros: testMacros
-            )
-        }
-
-        // MARK: - HTTP Method Tests
-
         @Test("다양한 HTTP 메서드 테스트 - POST")
         func postMethod() {
             assertMacroExpansion(
@@ -670,3 +495,4 @@
     }
 
 #endif // os(macOS)
+
