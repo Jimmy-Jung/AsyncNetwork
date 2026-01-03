@@ -26,5 +26,4 @@ struct AsyncNetworkDocKitExampleApp: App {
             appTitle: "AsyncNetwork API Documentation"
         )
     }
-
 }

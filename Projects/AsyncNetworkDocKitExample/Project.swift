@@ -24,13 +24,13 @@ let project = Project(
                 .pre(
                     script: """
                     set -e
-                    
+
                     SCRIPTS_DIR="${SRCROOT}/../../Scripts"
                     PROJECT_SOURCE="${SRCROOT}/AsyncNetworkDocKitExample/Sources"
                     OUTPUT_DIR="${SRCROOT}/AsyncNetworkDocKitExample/Sources"
-                    
+
                     echo "🔄 Generating code..."
-                    
+
                     # 1. TypeRegistration 생성
                     if [ -f "$SCRIPTS_DIR/GenerateTypeRegistration.swift" ]; then
                         echo "  📝 Generating type registration..."
@@ -50,7 +50,7 @@ let project = Project(
                     else
                         echo "  ⚠️  TypeRegistration script not found"
                     fi
-                    
+
                     # 2. Endpoints 생성
                     if [ -f "$SCRIPTS_DIR/GenerateEndpoints.swift" ]; then
                         echo "  📝 Generating endpoints..."
@@ -70,7 +70,7 @@ let project = Project(
                     else
                         echo "  ⚠️  Endpoints script not found"
                     fi
-                    
+
                     echo "✨ Code generation completed"
                     """,
                     name: "Generate Code",
