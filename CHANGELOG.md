@@ -162,6 +162,34 @@ AsyncNetwork 1.0.0 정식 출시! 순수 Foundation 기반의 현대적인 Swift
 
 ---
 
+## [1.0.5] - 2026-01-04
+
+### 🐛 Fixed
+
+#### CI Stability
+- **병렬 실행 제거 및 타임아웃 조정**
+  - `--parallel` 옵션 제거 (순차 실행으로 변경)
+  - 타임아웃 5분 → 15분으로 조정
+  - 병렬 실행의 오버헤드 및 리소스 경합 제거
+
+### 🔧 Changed
+
+- `.github/workflows/ci.yml`: 순차 실행 및 타임아웃 15분 설정
+
+### 📊 Impact
+
+- CI 안정성 극대화 (타임아웃 문제 완전 해결)
+- 총 364개 테스트의 순차 실행 보장
+- 매크로 테스트 컴파일 시간 충분히 확보
+
+### 📝 Background
+
+- 364개 테스트 × 2.6초 = 약 15.7분 소요 예상
+- 병렬 실행이 오히려 macOS CI 환경에서 오버헤드 발생
+- 순차 실행이 더 안정적이고 예측 가능
+
+---
+
 ## [1.0.4] - 2026-01-03
 
 ### 🔧 Changed
@@ -288,6 +316,7 @@ AsyncNetwork 1.0.0 정식 출시! 순수 Foundation 기반의 현대적인 Swift
 ---
 
 [1.1.0]: https://github.com/Jimmy-Jung/AsyncNetwork/releases/tag/1.1.0
+[1.0.5]: https://github.com/Jimmy-Jung/AsyncNetwork/releases/tag/1.0.5
 [1.0.4]: https://github.com/Jimmy-Jung/AsyncNetwork/releases/tag/1.0.4
 [1.0.3]: https://github.com/Jimmy-Jung/AsyncNetwork/releases/tag/1.0.3
 [1.0.2]: https://github.com/Jimmy-Jung/AsyncNetwork/releases/tag/1.0.2
