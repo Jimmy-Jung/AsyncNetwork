@@ -56,7 +56,7 @@ AsyncNetwork은 순수 Foundation만을 사용하여 구축된 현대적인 Swif
 ```
 https://github.com/Jimmy-Jung/AsyncNetwork.git
 ```
-3. Version: `1.0.3` 이상 선택
+3. Version: `1.0.4` 이상 선택
 
 #### Package.swift에 추가
 
@@ -679,7 +679,7 @@ AsyncNetworkDocKit은 `@APIRequest` 매크로의 메타데이터를 활용하여
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/Jimmy-Jung/AsyncNetwork.git", from: "1.0.3")
+    .package(url: "https://github.com/Jimmy-Jung/AsyncNetwork.git", from: "1.0.4")
 ],
 targets: [
     .target(
