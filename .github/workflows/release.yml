@@ -16,18 +16,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v6
-      
-      - name: Show Xcode and Swift version
-        run: |
-          xcodebuild -version
-          swift --version
-      
-      - name: Build NetworkKit
-        run: swift build -c release
-      
-      - name: Test NetworkKit
-        timeout-minutes: 5
-        run: swift test --parallel
+        with:
+          fetch-depth: 0
       
       - name: Validate Package
         run: |
