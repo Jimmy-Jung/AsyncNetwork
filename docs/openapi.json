@@ -1,0 +1,1793 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "AsyncNetwork API Documentation",
+    "version": "1.0.0",
+        "description": "Swift Concurrency 기반 네트워크 라이브러리 API 문서"
+  },
+  "servers": [    
+        {
+          "url": "https://api.example.com",
+          "description": "API Server"
+        },    
+        {
+          "url": "https://jsonplaceholder.typicode.com",
+          "description": "API Server"
+        }
+  ],
+  "paths": {    
+        "/albums/{albumId}/photos": {    
+          "get": {
+            "summary": "Get album photos",
+            "description": "특정 앨범의 모든 사진을 가져옵니다.",
+            "tags": ["Albums"],
+            "parameters": [
+          {
+            "name": "albumId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }    
+            ],
+            "responses": {
+              "200": {
+                "description": "Success",
+                "content": {
+                  "application/json": {
+                    "schema": {    
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Photo"
+                      }    
+                    },
+                    "example": [
+      {
+        "albumId": 1,
+        "id": 1,
+        "title": "accusamus beatae ad facilis cum similique qui sunt",
+        "url": "https://via.placeholder.com/600/92c952",
+        "thumbnailUrl": "https://via.placeholder.com/150/92c952"
+      }
+    ]    
+                  }
+                }
+              }
+            }
+          }    
+        },    
+        "/comments": {    
+          "post": {
+            "summary": "Create a comment",
+            "description": "새로운 댓글을 작성합니다.",
+            "tags": ["Comments"],
+            "requestBody": {
+              "required": false,
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/CommentBody"
+                  }    
+                }
+              }
+            },
+            "responses": {
+              "200": {
+                "description": "Success",
+                "content": {
+                  "application/json": {
+                    "schema": {    
+                      "$ref": "#/components/schemas/Comment"    
+                    }    
+                  }
+                }
+              }
+            }
+          }    
+        },    
+        "/orders": {    
+          "post": {
+            "summary": "Create an order",
+            "description": "복잡한 주문을 생성합니다. 여러 상품, 배송지, 결제 정보를 포함합니다.",
+            "tags": ["Orders"],
+            "parameters": [
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "X-Request-ID",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+          "default": "UUID().uuidString"
+            }
+          },
+          {
+            "name": "X-Session-ID",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "X-Idempotency-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+          "default": "UUID().uuidString"
+            }
+          }    
+            ],
+            "requestBody": {
+              "required": false,
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/CreateOrderBody"
+                  },
+                  "example": {
+      "items": [
+        {
+          "productId": 101,
+          "quantity": 2,
+          "options": {
+            "color": "blue",
+            "size": "L"
+          }
+        },
+        {
+          "productId": 205,
+          "quantity": 1,
+          "options": {
+            "material": "cotton"
+          }
+        }
+      ],
+      "shippingAddress": {
+        "recipientName": "홍길동",
+        "phoneNumber": "010-1234-5678",
+        "street": "테헤란로 123",
+        "city": "서울",
+        "state": "서울특별시",
+        "zipCode": "06234",
+        "country": "KR",
+        "instructions": "문 앞에 놔주세요"
+      },
+      "paymentMethod": {
+        "type": "card",
+        "cardToken": "tok_1234567890abcdef",
+        "bankAccountId": null
+      },
+      "couponCode": "SUMMER2026",
+      "giftMessage": "생일 축하해요!",
+      "subscribeNewsletter": true
+    }    
+                }
+              }
+            },
+            "responses": {
+              "200": {
+                "description": "Success",
+                "content": {
+                  "application/json": {
+                    "schema": {    
+                      "$ref": "#/components/schemas/Order"    
+                    },
+                    "example": {
+      "id": 9001,
+      "userId": 42,
+      "orderNumber": "ORD-2026-001234",
+      "status": "pending",
+      "totalAmount": 89500.50,
+      "items": [
+        {
+          "productId": 101,
+          "productName": "Premium T-Shirt",
+          "quantity": 2,
+          "unitPrice": 29900.00,
+          "discount": 2000.00,
+          "options": {
+            "color": "blue",
+            "size": "L"
+          }
+        },
+        {
+          "productId": 205,
+          "productName": "Cotton Pants",
+          "quantity": 1,
+          "unitPrice": 45900.00,
+          "discount": null,
+          "options": {
+            "material": "cotton"
+          }
+        }
+      ],
+      "shippingAddress": {
+        "recipientName": "홍길동",
+        "phoneNumber": "010-1234-5678",
+        "street": "테헤란로 123",
+        "city": "서울",
+        "state": "서울특별시",
+        "zipCode": "06234",
+        "country": "KR",
+        "instructions": "문 앞에 놔주세요"
+      },
+      "paymentMethod": {
+        "type": "card",
+        "cardLastFour": "1234",
+        "cardBrand": "Visa"
+      },
+      "createdAt": "2026-01-02T10:30:00Z",
+      "estimatedDelivery": "2026-01-05T18:00:00Z"
+    }    
+                  }
+                }
+              }
+            }
+          }    
+        },    
+        "/orders/{orderId}": {    
+          "get": {
+            "summary": "Get order by ID",
+            "description": "특정 주문의 상세 정보를 조회합니다.",
+            "tags": ["Orders"],
+            "parameters": [
+          {
+            "name": "orderId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "User-Agent",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+          "default": "AsyncNetworkDocKit/1.0.0"
+            }
+          }    
+            ],
+            "responses": {
+              "200": {
+                "description": "Success",
+                "content": {
+                  "application/json": {
+                    "schema": {    
+                      "$ref": "#/components/schemas/Order"    
+                    },
+                    "example": {
+      "id": 9001,
+      "userId": 42,
+      "orderNumber": "ORD-2026-001234",
+      "status": "shipped",
+      "totalAmount": 89500.50,
+      "items": [
+        {
+          "productId": 101,
+          "productName": "Premium T-Shirt",
+          "quantity": 2,
+          "unitPrice": 29900.00,
+          "discount": 2000.00,
+          "options": {
+            "color": "blue",
+            "size": "L"
+          }
+        }
+      ],
+      "shippingAddress": {
+        "recipientName": "홍길동",
+        "phoneNumber": "010-1234-5678",
+        "street": "테헤란로 123",
+        "city": "서울",
+        "state": "서울특별시",
+        "zipCode": "06234",
+        "country": "KR",
+        "instructions": "문 앞에 놔주세요"
+      },
+      "paymentMethod": {
+        "type": "card",
+        "cardLastFour": "1234",
+        "cardBrand": "Visa"
+      },
+      "createdAt": "2026-01-02T10:30:00Z",
+      "estimatedDelivery": "2026-01-05T18:00:00Z"
+    }    
+                  }
+                }
+              }
+            }
+          }    
+        },    
+        "/posts": {    
+          "get": {
+            "summary": "Get all posts",
+            "description": "JSONPlaceholder에서 모든 포스트를 가져옵니다. 페이지네이션과 필터링을 지원합니다.",
+            "tags": ["Posts"],
+            "parameters": [
+          {
+            "name": "userId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "_limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            }
+          }    
+            ],
+            "responses": {
+              "200": {
+                "description": "Success",
+                "content": {
+                  "application/json": {
+                    "schema": {    
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Post"
+                      }    
+                    },
+                    "example": [
+      {
+        "userId": 1,
+        "id": 1,
+        "title": "sunt aut facere",
+        "body": "quia et suscipit..."
+      }
+    ]    
+                  }
+                }
+              }
+            }
+          },    
+          "post": {
+            "summary": "Create a new post",
+            "description": "새로운 포스트를 생성합니다.",
+            "tags": ["Posts"],
+            "parameters": [
+          {
+            "name": "Content-Type",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+          "default": "application/json"
+            }
+          },
+          {
+            "name": "X-Request-ID",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+          "default": "UUID().uuidString"
+            }
+          }    
+            ],
+            "requestBody": {
+              "required": false,
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/PostBody"
+                  },
+                  "example": {
+      "title": "My Post Title",
+      "body": "This is the post content",
+      "userId": 1
+    }    
+                }
+              }
+            },
+            "responses": {
+              "200": {
+                "description": "Success",
+                "content": {
+                  "application/json": {
+                    "schema": {    
+                      "$ref": "#/components/schemas/Post"    
+                    }    
+                  }
+                }
+              }
+            }
+          }    
+        },    
+        "/posts/{id}": {    
+          "get": {
+            "summary": "Get post by ID",
+            "description": "특정 포스트의 상세 정보를 가져옵니다.",
+            "tags": ["Posts", "Read"],
+            "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "User-Agent",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+          "default": "AsyncNetworkDocKit/1.0.0"
+            }
+          },
+          {
+            "name": "Accept-Language",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+          "default": "ko-KR,ko;q=0.9,en;q=0.8"
+            }
+          }    
+            ],
+            "responses": {
+              "200": {
+                "description": "Success",
+                "content": {
+                  "application/json": {
+                    "schema": {    
+                      "$ref": "#/components/schemas/Post"    
+                    }    
+                  }
+                }
+              }
+            }
+          },    
+          "put": {
+            "summary": "Update a post",
+            "description": "기존 포스트를 업데이트합니다.",
+            "tags": ["Posts", "Write"],
+            "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }    
+            ],
+            "requestBody": {
+              "required": false,
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/PostBody"
+                  }    
+                }
+              }
+            },
+            "responses": {
+              "200": {
+                "description": "Success",
+                "content": {
+                  "application/json": {
+                    "schema": {    
+                      "$ref": "#/components/schemas/Post"    
+                    }    
+                  }
+                }
+              }
+            }
+          },    
+          "delete": {
+            "summary": "Delete a post",
+            "description": "포스트를 삭제합니다.",
+            "tags": ["Posts", "Write"],
+            "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }    
+            ],
+            "responses": {
+              "200": {
+                "description": "Success",
+                "content": {
+                  "application/json": {
+                    "schema": {    
+                      "$ref": "#/components/schemas/EmptyResponse"    
+                    }    
+                  }
+                }
+              }
+            }
+          }    
+        },    
+        "/posts/{postId}/comments": {    
+          "get": {
+            "summary": "Get post comments",
+            "description": "특정 포스트의 모든 댓글을 가져옵니다.",
+            "tags": ["Comments"],
+            "parameters": [
+          {
+            "name": "postId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }    
+            ],
+            "responses": {
+              "200": {
+                "description": "Success",
+                "content": {
+                  "application/json": {
+                    "schema": {    
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Comment"
+                      }    
+                    }    
+                  }
+                }
+              }
+            }
+          }    
+        },    
+        "/profile": {    
+          "put": {
+            "summary": "Update user profile",
+            "description": "사용자 프로필을 업데이트합니다. 선호 설정, 소셜 링크 등을 포함합니다.",
+            "tags": ["Profile"],
+            "parameters": [
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Content-Type",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+          "default": "application/json"
+            }
+          },
+          {
+            "name": "Accept-Language",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+          "default": "ko-KR,ko;q=0.9"
+            }
+          },
+          {
+            "name": "X-Device-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }    
+            ],
+            "requestBody": {
+              "required": false,
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/UpdateProfileBody"
+                  },
+                  "example": {
+      "fullName": "김철수",
+      "bio": "Full-stack developer passionate about Swift and iOS",
+      "avatar": "https://example.com/avatars/chulsoo.jpg",
+      "preferences": {
+        "language": "ko",
+        "timezone": "Asia/Seoul",
+        "theme": "dark",
+        "notifications": {
+          "email": true,
+          "push": true,
+          "sms": false,
+          "frequency": "daily"
+        },
+        "privacy": {
+          "profileVisibility": "public",
+          "showEmail": false,
+          "showActivity": true
+        }
+      },
+      "socialLinks": {
+        "twitter": "https://twitter.com/chulsoo_kim",
+        "github": "https://github.com/chulsoo",
+        "linkedin": "https://linkedin.com/in/chulsoo-kim",
+        "website": "https://chulsoo.dev"
+      }
+    }    
+                }
+              }
+            },
+            "responses": {
+              "200": {
+                "description": "Success",
+                "content": {
+                  "application/json": {
+                    "schema": {    
+                      "$ref": "#/components/schemas/UserProfile"    
+                    },
+                    "example": {
+      "id": 42,
+      "username": "chulsoo_kim",
+      "email": "chulsoo@example.com",
+      "fullName": "김철수",
+      "avatar": "https://example.com/avatars/chulsoo.jpg",
+      "bio": "Full-stack developer passionate about Swift and iOS",
+      "preferences": {
+        "language": "ko",
+        "timezone": "Asia/Seoul",
+        "theme": "dark",
+        "notifications": {
+          "email": true,
+          "push": true,
+          "sms": false,
+          "frequency": "daily"
+        },
+        "privacy": {
+          "profileVisibility": "public",
+          "showEmail": false,
+          "showActivity": true
+        }
+      },
+      "socialLinks": {
+        "twitter": "https://twitter.com/chulsoo_kim",
+        "github": "https://github.com/chulsoo",
+        "linkedin": "https://linkedin.com/in/chulsoo-kim",
+        "website": "https://chulsoo.dev"
+      },
+      "stats": {
+        "posts": 127,
+        "followers": 1542,
+        "following": 289,
+        "likes": 3891
+      },
+      "badges": [
+        {
+          "id": 1,
+          "name": "Early Adopter",
+          "icon": "🌟",
+          "description": "Joined in the first month",
+          "earnedAt": "2025-01-15T00:00:00Z"
+        },
+        {
+          "id": 5,
+          "name": "Top Contributor",
+          "icon": "🏆",
+          "description": "Made 100+ contributions",
+          "earnedAt": "2025-12-01T00:00:00Z"
+        }
+      ],
+      "isPremium": true,
+      "memberSince": "2025-01-15T00:00:00Z"
+    }    
+                  }
+                }
+              }
+            }
+          }    
+        },    
+        "/search": {    
+          "post": {
+            "summary": "Advanced search",
+            "description": "고급 검색 필터를 사용하여 컨텐츠를 검색합니다. 다중 필터, 정렬, 페이지네이션을 지원합니다.",
+            "tags": ["Search"],
+            "parameters": [
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "X-Request-ID",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+          "default": "UUID().uuidString"
+            }
+          },
+          {
+            "name": "User-Agent",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+          "default": "AsyncNetworkDocKit/1.0.0"
+            }
+          },
+          {
+            "name": "X-Search-Session",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+          "default": "UUID().uuidString"
+            }
+          }    
+            ],
+            "requestBody": {
+              "required": false,
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/SearchFilterBody"
+                  },
+                  "example": {
+      "query": "iOS development",
+      "filters": {
+        "categories": ["programming", "mobile"],
+        "tags": ["swift", "swiftui", "ios"],
+        "authors": [1, 5, 12],
+        "dateRange": {
+          "from": "2025-01-01",
+          "to": "2026-01-31"
+        },
+        "priceRange": {
+          "min": 0.0,
+          "max": 50000.0
+        },
+        "rating": 4,
+        "inStock": true
+      },
+      "sort": {
+        "field": "relevance",
+        "order": "desc"
+      },
+      "pagination": {
+        "page": 1,
+        "pageSize": 20
+      }
+    }    
+                }
+              }
+            },
+            "responses": {
+              "200": {
+                "description": "Success",
+                "content": {
+                  "application/json": {
+                    "schema": {    
+                      "$ref": "#/components/schemas/SearchResult"    
+                    },
+                    "example": {
+      "items": [
+        {
+          "id": 301,
+          "type": "course",
+          "title": "Advanced iOS Development with SwiftUI",
+          "description": "Master SwiftUI and build production-ready iOS apps",
+          "thumbnail": "https://example.com/courses/301/thumb.jpg",
+          "author": {
+            "id": 5,
+            "name": "Jane Developer",
+            "avatar": "https://example.com/avatars/jane.jpg"
+          },
+          "tags": ["swift", "swiftui", "ios", "advanced"],
+          "createdAt": "2025-11-15T10:00:00Z",
+          "score": 98.5
+        },
+        {
+          "id": 412,
+          "type": "article",
+          "title": "SwiftUI Best Practices in 2026",
+          "description": "Learn the latest patterns and techniques",
+          "thumbnail": "https://example.com/articles/412/thumb.jpg",
+          "author": {
+            "id": 12,
+            "name": "John Swift",
+            "avatar": "https://example.com/avatars/john.jpg"
+          },
+          "tags": ["swift", "swiftui", "best-practices"],
+          "createdAt": "2025-12-20T14:30:00Z",
+          "score": 95.2
+        }
+      ],
+      "totalCount": 156,
+      "page": 1,
+      "pageSize": 20,
+      "facets": [
+        {
+          "name": "category",
+          "values": [
+            {
+              "value": "programming",
+              "count": 98
+            },
+            {
+              "value": "mobile",
+              "count": 78
+            }
+          ]
+        },
+        {
+          "name": "rating",
+          "values": [
+            {
+              "value": "5",
+              "count": 45
+            },
+            {
+              "value": "4",
+              "count": 67
+            }
+          ]
+        }
+      ]
+    }    
+                  }
+                }
+              }
+            }
+          }    
+        },    
+        "/users": {    
+          "get": {
+            "summary": "Get all users",
+            "description": "모든 사용자 목록을 가져옵니다.",
+            "tags": ["Users"],
+            "responses": {
+              "200": {
+                "description": "Success",
+                "content": {
+                  "application/json": {
+                    "schema": {    
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/User"
+                      }    
+                    }    
+                  }
+                }
+              }
+            }
+          },    
+          "post": {
+            "summary": "Create a new user",
+            "description": "새로운 사용자를 생성합니다.",
+            "tags": ["Users"],
+            "parameters": [
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "X-Timestamp",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+          "default": "String(Int(Date().timeIntervalSince1970))"
+            }
+          }    
+            ],
+            "requestBody": {
+              "required": false,
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/UserBody"
+                  }    
+                }
+              }
+            },
+            "responses": {
+              "200": {
+                "description": "Success",
+                "content": {
+                  "application/json": {
+                    "schema": {    
+                      "$ref": "#/components/schemas/User"    
+                    }    
+                  }
+                }
+              }
+            }
+          }    
+        },    
+        "/users/{id}": {    
+          "get": {
+            "summary": "Get user by ID",
+            "description": "특정 사용자의 상세 정보를 가져옵니다.",
+            "tags": ["Users"],
+            "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "X-Client-Version",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+          "default": "1.0.0"
+            }
+          },
+          {
+            "name": "X-Platform",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+          "default": "iOS"
+            }
+          }    
+            ],
+            "responses": {
+              "200": {
+                "description": "Success",
+                "content": {
+                  "application/json": {
+                    "schema": {    
+                      "$ref": "#/components/schemas/User"    
+                    }    
+                  }
+                }
+              }
+            }
+          }    
+        },    
+        "/users/{userId}/albums": {    
+          "get": {
+            "summary": "Get user albums",
+            "description": "특정 사용자의 모든 앨범을 가져옵니다.",
+            "tags": ["Albums"],
+            "parameters": [
+          {
+            "name": "userId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }    
+            ],
+            "responses": {
+              "200": {
+                "description": "Success",
+                "content": {
+                  "application/json": {
+                    "schema": {    
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Album"
+                      }    
+                    },
+                    "example": [
+      {
+        "userId": 1,
+        "id": 1,
+        "title": "quidem molestiae enim"
+      },
+      {
+        "userId": 1,
+        "id": 2,
+        "title": "sunt qui excepturi placeat culpa"
+      }
+    ]    
+                  }
+                }
+              }
+            }
+          }    
+        }    
+      },
+      "components": {
+        "schemas": {    
+          "Post": {
+            "type": "object",
+            "properties": {    
+              "userId": {
+                "type": "integer",
+                "format": "int64"    
+              },    
+              "id": {
+                "type": "integer",
+                "format": "int64"    
+              },    
+              "title": {
+                "type": "string"    
+              },    
+              "body": {
+                "type": "string"    
+              }    
+            },
+            "required": ["userId", "id", "title", "body"]    
+          },    
+          "PostBody": {
+            "type": "object",
+            "properties": {    
+              "title": {
+                "type": "string"    
+              },    
+              "body": {
+                "type": "string"    
+              },    
+              "userId": {
+                "type": "integer",
+                "format": "int64"    
+              }    
+            },
+            "required": ["title", "body", "userId"]    
+          },    
+          "User": {
+            "type": "object",
+            "properties": {    
+              "id": {
+                "type": "integer",
+                "format": "int64"    
+              },    
+              "name": {
+                "type": "string"    
+              },    
+              "username": {
+                "type": "string"    
+              },    
+              "email": {
+                "type": "string"    
+              },    
+              "address": {
+                "$ref": "#/components/schemas/Address"
+              },    
+              "phone": {
+                "type": "string"    
+              },    
+              "website": {
+                "type": "string"    
+              },    
+              "company": {
+                "$ref": "#/components/schemas/Company"
+              }    
+            },
+            "required": ["id", "name", "username", "email"]    
+          },    
+          "Address": {
+            "type": "object",
+            "properties": {    
+              "street": {
+                "type": "string"    
+              },    
+              "suite": {
+                "type": "string"    
+              },    
+              "city": {
+                "type": "string"    
+              },    
+              "zipcode": {
+                "type": "string"    
+              },    
+              "geo": {
+                "$ref": "#/components/schemas/Geo"
+              }    
+            },
+            "required": ["street", "suite", "city", "zipcode", "geo"]    
+          },    
+          "Geo": {
+            "type": "object",
+            "properties": {    
+              "lat": {
+                "type": "string"    
+              },    
+              "lng": {
+                "type": "string"    
+              }    
+            },
+            "required": ["lat", "lng"]    
+          },    
+          "Company": {
+            "type": "object",
+            "properties": {    
+              "name": {
+                "type": "string"    
+              },    
+              "catchPhrase": {
+                "type": "string"    
+              },    
+              "bs": {
+                "type": "string"    
+              }    
+            },
+            "required": ["name", "catchPhrase", "bs"]    
+          },    
+          "UserBody": {
+            "type": "object",
+            "properties": {    
+              "name": {
+                "type": "string"    
+              },    
+              "username": {
+                "type": "string"    
+              },    
+              "email": {
+                "type": "string"    
+              }    
+            },
+            "required": ["name", "username", "email"]    
+          },    
+          "Comment": {
+            "type": "object",
+            "properties": {    
+              "postId": {
+                "type": "integer",
+                "format": "int64"    
+              },    
+              "id": {
+                "type": "integer",
+                "format": "int64"    
+              },    
+              "name": {
+                "type": "string"    
+              },    
+              "email": {
+                "type": "string"    
+              },    
+              "body": {
+                "type": "string"    
+              }    
+            },
+            "required": ["postId", "id", "name", "email", "body"]    
+          },    
+          "CommentBody": {
+            "type": "object",
+            "properties": {    
+              "postId": {
+                "type": "integer",
+                "format": "int64"    
+              },    
+              "name": {
+                "type": "string"    
+              },    
+              "email": {
+                "type": "string"    
+              },    
+              "body": {
+                "type": "string"    
+              }    
+            },
+            "required": ["postId", "name", "email", "body"]    
+          },    
+          "Album": {
+            "type": "object",
+            "properties": {    
+              "userId": {
+                "type": "integer",
+                "format": "int64"    
+              },    
+              "id": {
+                "type": "integer",
+                "format": "int64"    
+              },    
+              "title": {
+                "type": "string"    
+              }    
+            },
+            "required": ["userId", "id", "title"]    
+          },    
+          "Photo": {
+            "type": "object",
+            "properties": {    
+              "albumId": {
+                "type": "integer",
+                "format": "int64"    
+              },    
+              "id": {
+                "type": "integer",
+                "format": "int64"    
+              },    
+              "title": {
+                "type": "string"    
+              },    
+              "url": {
+                "type": "string"    
+              },    
+              "thumbnailUrl": {
+                "type": "string"    
+              }    
+            },
+            "required": ["albumId", "id", "title", "url", "thumbnailUrl"]    
+          },    
+          "Order": {
+            "type": "object",
+            "properties": {    
+              "id": {
+                "type": "integer",
+                "format": "int64"    
+              },    
+              "userId": {
+                "type": "integer",
+                "format": "int64"    
+              },    
+              "orderNumber": {
+                "type": "string"    
+              },    
+              "status": {
+                "type": "string"    
+              },    
+              "totalAmount": {
+                "type": "number",
+                "format": "double"    
+              },    
+              "items": {
+                "$ref": "#/components/schemas/OrderItem"
+              },    
+              "shippingAddress": {
+                "$ref": "#/components/schemas/ShippingAddress"
+              },    
+              "paymentMethod": {
+                "$ref": "#/components/schemas/PaymentMethod"
+              },    
+              "createdAt": {
+                "type": "string"    
+              },    
+              "estimatedDelivery": {
+                "type": "string"    
+              }    
+            },
+            "required": ["id", "userId", "orderNumber", "status", "totalAmount", "items", "shippingAddress", "paymentMethod", "createdAt"]    
+          },    
+          "OrderItem": {
+            "type": "object",
+            "properties": {    
+              "productId": {
+                "type": "integer",
+                "format": "int64"    
+              },    
+              "productName": {
+                "type": "string"    
+              },    
+              "quantity": {
+                "type": "integer",
+                "format": "int64"    
+              },    
+              "unitPrice": {
+                "type": "number",
+                "format": "double"    
+              },    
+              "discount": {
+                "type": "number",
+                "format": "double"    
+              }    
+            },
+            "required": ["productId", "productName", "quantity", "unitPrice"]    
+          },    
+          "ShippingAddress": {
+            "type": "object",
+            "properties": {    
+              "recipientName": {
+                "type": "string"    
+              },    
+              "phoneNumber": {
+                "type": "string"    
+              },    
+              "street": {
+                "type": "string"    
+              },    
+              "city": {
+                "type": "string"    
+              },    
+              "state": {
+                "type": "string"    
+              },    
+              "zipCode": {
+                "type": "string"    
+              },    
+              "country": {
+                "type": "string"    
+              },    
+              "instructions": {
+                "type": "string"    
+              }    
+            },
+            "required": ["recipientName", "phoneNumber", "street", "city", "state", "zipCode", "country"]    
+          },    
+          "PaymentMethod": {
+            "type": "object",
+            "properties": {    
+              "type": {
+                "type": "string"    
+              },    
+              "cardLastFour": {
+                "type": "string"    
+              },    
+              "cardBrand": {
+                "type": "string"    
+              }    
+            },
+            "required": ["type"]    
+          },    
+          "CreateOrderBody": {
+            "type": "object",
+            "properties": {    
+              "items": {
+                "$ref": "#/components/schemas/OrderItemInput"
+              },    
+              "shippingAddress": {
+                "$ref": "#/components/schemas/ShippingAddress"
+              },    
+              "paymentMethod": {
+                "$ref": "#/components/schemas/PaymentMethodInput"
+              },    
+              "couponCode": {
+                "type": "string"    
+              },    
+              "giftMessage": {
+                "type": "string"    
+              },    
+              "subscribeNewsletter": {
+                "type": "boolean"    
+              }    
+            },
+            "required": ["items", "shippingAddress", "paymentMethod", "subscribeNewsletter"]    
+          },    
+          "OrderItemInput": {
+            "type": "object",
+            "properties": {    
+              "productId": {
+                "type": "integer",
+                "format": "int64"    
+              },    
+              "quantity": {
+                "type": "integer",
+                "format": "int64"    
+              }    
+            },
+            "required": ["productId", "quantity"]    
+          },    
+          "PaymentMethodInput": {
+            "type": "object",
+            "properties": {    
+              "type": {
+                "type": "string"    
+              },    
+              "cardToken": {
+                "type": "string"    
+              },    
+              "bankAccountId": {
+                "type": "string"    
+              }    
+            },
+            "required": ["type"]    
+          },    
+          "UserProfile": {
+            "type": "object",
+            "properties": {    
+              "id": {
+                "type": "integer",
+                "format": "int64"    
+              },    
+              "username": {
+                "type": "string"    
+              },    
+              "email": {
+                "type": "string"    
+              },    
+              "fullName": {
+                "type": "string"    
+              },    
+              "avatar": {
+                "type": "string"    
+              },    
+              "bio": {
+                "type": "string"    
+              },    
+              "preferences": {
+                "$ref": "#/components/schemas/UserPreferences"
+              },    
+              "socialLinks": {
+                "$ref": "#/components/schemas/SocialLinks"
+              },    
+              "stats": {
+                "$ref": "#/components/schemas/UserStats"
+              },    
+              "badges": {
+                "$ref": "#/components/schemas/Badge"
+              },    
+              "isPremium": {
+                "type": "boolean"    
+              },    
+              "memberSince": {
+                "type": "string"    
+              }    
+            },
+            "required": ["id", "username", "email", "fullName", "preferences", "stats", "badges", "isPremium", "memberSince"]    
+          },    
+          "UserPreferences": {
+            "type": "object",
+            "properties": {    
+              "language": {
+                "type": "string"    
+              },    
+              "timezone": {
+                "type": "string"    
+              },    
+              "theme": {
+                "type": "string"    
+              },    
+              "notifications": {
+                "$ref": "#/components/schemas/NotificationSettings"
+              },    
+              "privacy": {
+                "$ref": "#/components/schemas/PrivacySettings"
+              }    
+            },
+            "required": ["language", "timezone", "theme", "notifications", "privacy"]    
+          },    
+          "NotificationSettings": {
+            "type": "object",
+            "properties": {    
+              "email": {
+                "type": "boolean"    
+              },    
+              "push": {
+                "type": "boolean"    
+              },    
+              "sms": {
+                "type": "boolean"    
+              },    
+              "frequency": {
+                "type": "string"    
+              }    
+            },
+            "required": ["email", "push", "sms", "frequency"]    
+          },    
+          "PrivacySettings": {
+            "type": "object",
+            "properties": {    
+              "profileVisibility": {
+                "type": "string"    
+              },    
+              "showEmail": {
+                "type": "boolean"    
+              },    
+              "showActivity": {
+                "type": "boolean"    
+              }    
+            },
+            "required": ["profileVisibility", "showEmail", "showActivity"]    
+          },    
+          "SocialLinks": {
+            "type": "object",
+            "properties": {    
+              "twitter": {
+                "type": "string"    
+              },    
+              "github": {
+                "type": "string"    
+              },    
+              "linkedin": {
+                "type": "string"    
+              },    
+              "website": {
+                "type": "string"    
+              }    
+            }    
+          },    
+          "UserStats": {
+            "type": "object",
+            "properties": {    
+              "posts": {
+                "type": "integer",
+                "format": "int64"    
+              },    
+              "followers": {
+                "type": "integer",
+                "format": "int64"    
+              },    
+              "following": {
+                "type": "integer",
+                "format": "int64"    
+              },    
+              "likes": {
+                "type": "integer",
+                "format": "int64"    
+              }    
+            },
+            "required": ["posts", "followers", "following", "likes"]    
+          },    
+          "Badge": {
+            "type": "object",
+            "properties": {    
+              "id": {
+                "type": "integer",
+                "format": "int64"    
+              },    
+              "name": {
+                "type": "string"    
+              },    
+              "icon": {
+                "type": "string"    
+              },    
+              "description": {
+                "type": "string"    
+              },    
+              "earnedAt": {
+                "type": "string"    
+              }    
+            },
+            "required": ["id", "name", "icon", "description", "earnedAt"]    
+          },    
+          "UpdateProfileBody": {
+            "type": "object",
+            "properties": {    
+              "fullName": {
+                "type": "string"    
+              },    
+              "bio": {
+                "type": "string"    
+              },    
+              "avatar": {
+                "type": "string"    
+              },    
+              "preferences": {
+                "$ref": "#/components/schemas/UserPreferences"
+              },    
+              "socialLinks": {
+                "$ref": "#/components/schemas/SocialLinks"
+              }    
+            },
+            "required": ["fullName", "preferences"]    
+          },    
+          "SearchResult": {
+            "type": "object",
+            "properties": {    
+              "items": {
+                "$ref": "#/components/schemas/SearchItem"
+              },    
+              "totalCount": {
+                "type": "integer",
+                "format": "int64"    
+              },    
+              "page": {
+                "type": "integer",
+                "format": "int64"    
+              },    
+              "pageSize": {
+                "type": "integer",
+                "format": "int64"    
+              },    
+              "facets": {
+                "$ref": "#/components/schemas/Facet"
+              }    
+            },
+            "required": ["items", "totalCount", "page", "pageSize", "facets"]    
+          },    
+          "SearchItem": {
+            "type": "object",
+            "properties": {    
+              "id": {
+                "type": "integer",
+                "format": "int64"    
+              },    
+              "type": {
+                "type": "string"    
+              },    
+              "title": {
+                "type": "string"    
+              },    
+              "description": {
+                "type": "string"    
+              },    
+              "thumbnail": {
+                "type": "string"    
+              },    
+              "author": {
+                "$ref": "#/components/schemas/Author"
+              },    
+              "tags": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }    
+              },    
+              "createdAt": {
+                "type": "string"    
+              },    
+              "score": {
+                "type": "number",
+                "format": "double"    
+              }    
+            },
+            "required": ["id", "type", "title", "description", "author", "tags", "createdAt", "score"]    
+          },    
+          "Author": {
+            "type": "object",
+            "properties": {    
+              "id": {
+                "type": "integer",
+                "format": "int64"    
+              },    
+              "name": {
+                "type": "string"    
+              },    
+              "avatar": {
+                "type": "string"    
+              }    
+            },
+            "required": ["id", "name"]    
+          },    
+          "Facet": {
+            "type": "object",
+            "properties": {    
+              "name": {
+                "type": "string"    
+              },    
+              "values": {
+                "$ref": "#/components/schemas/FacetValue"
+              }    
+            },
+            "required": ["name", "values"]    
+          },    
+          "FacetValue": {
+            "type": "object",
+            "properties": {    
+              "value": {
+                "type": "string"    
+              },    
+              "count": {
+                "type": "integer",
+                "format": "int64"    
+              }    
+            },
+            "required": ["value", "count"]    
+          },    
+          "SearchFilterBody": {
+            "type": "object",
+            "properties": {    
+              "query": {
+                "type": "string"    
+              },    
+              "filters": {
+                "$ref": "#/components/schemas/SearchFilters"
+              },    
+              "sort": {
+                "$ref": "#/components/schemas/SortOptions"
+              },    
+              "pagination": {
+                "$ref": "#/components/schemas/PaginationOptions"
+              }    
+            },
+            "required": ["query", "filters", "sort", "pagination"]    
+          },    
+          "SearchFilters": {
+            "type": "object",
+            "properties": {    
+              "categories": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }    
+              },    
+              "tags": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }    
+              },    
+              "authors": {
+                "type": "array",
+                "items": {
+                  "type": "integer"
+                }    
+              },    
+              "dateRange": {
+                "$ref": "#/components/schemas/DateRange"
+              },    
+              "priceRange": {
+                "$ref": "#/components/schemas/PriceRange"
+              },    
+              "rating": {
+                "type": "integer",
+                "format": "int64"    
+              },    
+              "inStock": {
+                "type": "boolean"    
+              }    
+            }    
+          },    
+          "DateRange": {
+            "type": "object",
+            "properties": {    
+              "from": {
+                "type": "string"    
+              },    
+              "to": {
+                "type": "string"    
+              }    
+            },
+            "required": ["from", "to"]    
+          },    
+          "PriceRange": {
+            "type": "object",
+            "properties": {    
+              "min": {
+                "type": "number",
+                "format": "double"    
+              },    
+              "max": {
+                "type": "number",
+                "format": "double"    
+              }    
+            },
+            "required": ["min", "max"]    
+          },    
+          "SortOptions": {
+            "type": "object",
+            "properties": {    
+              "field": {
+                "type": "string"    
+              },    
+              "order": {
+                "type": "string"    
+              }    
+            },
+            "required": ["field", "order"]    
+          },    
+          "PaginationOptions": {
+            "type": "object",
+            "properties": {    
+              "page": {
+                "type": "integer",
+                "format": "int64"    
+              },    
+              "pageSize": {
+                "type": "integer",
+                "format": "int64"    
+              }    
+            },
+            "required": ["page", "pageSize"]    
+          }
+    }
+  }
+}
