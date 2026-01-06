@@ -22,7 +22,7 @@ let apiExampleURL = "https://api.example.com"
     baseURL: jsonPlaceholderURL,
     path: "/posts",
     method: .get,
-    tags: ["Posts", "Read"],
+    tags: ["Posts"],
     responseExample: """
     [
       {
@@ -61,7 +61,7 @@ struct GetPostByIdRequest {
     baseURL: jsonPlaceholderURL,
     path: "/posts",
     method: .post,
-    tags: ["Posts", "Write"],
+    tags: ["Posts"],
     requestBodyExample: """
     {
       "title": "My Post Title",
@@ -112,7 +112,7 @@ struct DeletePostRequest {
     baseURL: jsonPlaceholderURL,
     path: "/users",
     method: .get,
-    tags: ["Users", "Read"]
+    tags: ["Users"]
 )
 struct GetAllUsersRequest {}
 
@@ -123,7 +123,7 @@ struct GetAllUsersRequest {}
     baseURL: jsonPlaceholderURL,
     path: "/users/{id}",
     method: .get,
-    tags: ["Users", "Read"]
+    tags: ["Users"]
 )
 struct GetUserByIdRequest {
     @PathParameter var id: Int
@@ -138,7 +138,7 @@ struct GetUserByIdRequest {
     baseURL: jsonPlaceholderURL,
     path: "/users",
     method: .post,
-    tags: ["Users", "Write"]
+    tags: ["Users"]
 )
 struct CreateUserRequest {
     @RequestBody var body: UserBody?
@@ -155,7 +155,7 @@ struct CreateUserRequest {
     baseURL: jsonPlaceholderURL,
     path: "/posts/{postId}/comments",
     method: .get,
-    tags: ["Comments", "Read"]
+    tags: ["Comments"]
 )
 struct GetPostCommentsRequest {
     @PathParameter var postId: Int
@@ -168,7 +168,7 @@ struct GetPostCommentsRequest {
     baseURL: jsonPlaceholderURL,
     path: "/comments",
     method: .post,
-    tags: ["Comments", "Write"]
+    tags: ["Comments"]
 )
 struct CreateCommentRequest {
     @RequestBody var body: CommentBody?
@@ -183,7 +183,7 @@ struct CreateCommentRequest {
     baseURL: jsonPlaceholderURL,
     path: "/users/{userId}/albums",
     method: .get,
-    tags: ["Albums", "Read"],
+    tags: ["Albums"],
     responseExample: """
     [
       {
@@ -210,7 +210,7 @@ struct GetUserAlbumsRequest {
     baseURL: jsonPlaceholderURL,
     path: "/albums/{albumId}/photos",
     method: .get,
-    tags: ["Albums", "Read"],
+    tags: ["Albums"],
     responseExample: """
     [
       {
@@ -236,7 +236,7 @@ struct GetAlbumPhotosRequest {
     baseURL: apiExampleURL,
     path: "/orders",
     method: .post,
-    tags: ["Orders", "Write", "Complex"],
+    tags: ["Orders"],
     requestBodyExample: """
     {
       "items": [
@@ -341,7 +341,7 @@ struct CreateOrderRequest {
     baseURL: apiExampleURL,
     path: "/orders/{orderId}",
     method: .get,
-    tags: ["Orders", "Read", "Complex"],
+    tags: ["Orders"],
     responseExample: """
     {
       "id": 9001,
@@ -397,7 +397,7 @@ struct GetOrderRequest {
     baseURL: apiExampleURL,
     path: "/profile",
     method: .put,
-    tags: ["Profile", "Write", "Complex"],
+    tags: ["Profile"],
     requestBodyExample: """
     {
       "fullName": "김철수",
@@ -501,7 +501,7 @@ struct UpdateProfileRequest {
     baseURL: apiExampleURL,
     path: "/search",
     method: .post,
-    tags: ["Search", "Complex"],
+    tags: ["Search"],
     requestBodyExample: """
     {
       "query": "iOS development",
