@@ -41,6 +41,7 @@ AsyncNetwork은 순수 Foundation만을 사용하여 구축된 현대적인 Swif
 | 재시도 정책 | ✅ 프로토콜 기반 | ✅ | ⚠️ 제한적 |
 | Network Reachability | ✅ 내장 | ✅ | ❌ |
 | Chain of Responsibility | ✅ | ❌ | ❌ |
+| Property Wrappers | ✅ 5종 (Query, Path, Body, Header, Custom) | ❌ | ❌ |
 | 학습 곡선 | 낮음 (Foundation 기반) | 중간 | 중간 |
 
 ---
@@ -56,7 +57,7 @@ AsyncNetwork은 순수 Foundation만을 사용하여 구축된 현대적인 Swif
 ```
 https://github.com/Jimmy-Jung/AsyncNetwork.git
 ```
-3. Version: `1.0.5` 이상 선택
+3. Version: `1.1.0` 이상 선택
 
 #### Package.swift에 추가
 
@@ -82,6 +83,44 @@ dependencies: [
 ---
 
 ## 🚀 빠른 시작
+
+### NetworkService 초기화
+
+```swift
+import AsyncNetwork
+
+// 기본 초기화 (ConsoleLoggingInterceptor 포함)
+let service = NetworkService()
+
+// 커스텀 설정으로 초기화
+let service = NetworkService(
+    configuration: NetworkConfiguration(
+        timeout: 60.0,
+        enableLogging: true,
+        checkNetworkBeforeRequest: true
+    ),
+    plugins: [
+        ConsoleLoggingInterceptor(minimumLevel: .info)
+    ]
+)
+
+// 사전 정의된 설정 사용
+let devService = NetworkService(
+    configuration: .development  // 빠른 타임아웃, 최소 재시도
+)
+
+let testService = NetworkService(
+    configuration: .test  // 재시도 없음, 로깅 비활성화
+)
+
+let stableService = NetworkService(
+    configuration: .stable  // 긴 타임아웃, 많은 재시도
+)
+
+let fastService = NetworkService(
+    configuration: .fast  // 빠른 응답, 로깅 없음
+)
+```
 
 ### 1️⃣ 기본 사용법
 
@@ -203,11 +242,43 @@ let profile: UserProfile = try await service.request(
 // 결과: GET /me (Authorization 헤더 포함)
 ```
 
+#### 커스텀 헤더 (HTTPHeaders.HeaderKey에 없는 경우)
+
+```swift
+@APIRequest(
+    response: UserProfile.self,
+    title: "Get user profile",
+    baseURL: "https://api.example.com",
+    path: "/me",
+    method: .get
+)
+struct GetProfileRequest {
+    @CustomHeader("X-Custom-Header") var customValue: String
+}
+
+// 사용
+let profile: UserProfile = try await service.request(
+    GetProfileRequest(customValue: "custom-value")
+)
+```
+
 ---
 
 ## 🏗️ 아키텍처
 
 AsyncNetwork은 책임별로 명확하게 분리된 모듈 구조를 가지고 있습니다.
+
+### 모듈 구조
+
+AsyncNetwork은 세 가지 주요 모듈로 구성됩니다:
+
+1. **AsyncNetworkCore**: 핵심 네트워크 기능 (HTTPClient, NetworkService, Property Wrappers 등)
+2. **AsyncNetworkMacros**: `@APIRequest` 매크로 구현
+3. **AsyncNetwork**: Core + Macros를 통합한 Umbrella 모듈 (권장)
+
+대부분의 경우 `import AsyncNetwork`만으로 모든 기능을 사용할 수 있습니다.
+
+### 소스 코드 구조
 
 ```
 AsyncNetwork/
@@ -320,6 +391,42 @@ let service = NetworkService(
 )
 ```
 
+#### ConsoleLoggingInterceptor
+
+기본 제공되는 로깅 인터셉터로, 네트워크 요청/응답을 자동으로 콘솔에 출력합니다.
+
+```swift
+import AsyncNetwork
+
+// 기본 설정 (verbose 레벨)
+let service = NetworkService() // 기본적으로 ConsoleLoggingInterceptor 포함
+
+// 로그 레벨 조정
+let service = NetworkService(
+    plugins: [
+        ConsoleLoggingInterceptor(minimumLevel: .info) // info 이상만 로깅
+    ]
+)
+
+// 민감한 정보 필터링
+let service = NetworkService(
+    plugins: [
+        ConsoleLoggingInterceptor(
+            minimumLevel: .debug,
+            sensitiveKeys: ["password", "token", "apiKey", "secret"]
+        )
+    ]
+)
+```
+
+사용 가능한 로그 레벨:
+- `.verbose`: 모든 로그 출력
+- `.debug`: 디버그 정보 포함
+- `.info`: 정보성 메시지
+- `.warning`: 경고 메시지
+- `.error`: 에러 메시지
+- `.fatal`: 치명적 에러만
+
 ### RetryPolicy
 
 네트워크 실패 시 재시도 정책을 커스터마이징할 수 있습니다.
@@ -357,7 +464,9 @@ struct CustomRetryRule: RetryRule {
 let retryPolicy = RetryPolicy(
     configuration: RetryConfiguration(
         maxRetries: 3,
-        baseDelay: 1.0
+        baseDelay: 1.0,
+        maxDelay: 30.0,
+        jitterRange: 0.1...0.3  // 지터 추가로 동시 재시도 방지
     ),
     rules: [CustomRetryRule(), URLErrorRetryRule(), ServerErrorRetryRule()]
 )
@@ -367,6 +476,53 @@ let service = NetworkService(
     retryPolicy: retryPolicy,
     responseProcessor: ResponseProcessor()
 )
+```
+
+#### 사전 정의된 RetryPolicy
+
+```swift
+// 기본 정책 (maxRetries: 3, baseDelay: 1.0)
+let service = NetworkService(
+    httpClient: HTTPClient(),
+    retryPolicy: .default,
+    responseProcessor: ResponseProcessor()
+)
+
+// 공격적 정책 (maxRetries: 5, baseDelay: 0.5)
+let service = NetworkService(
+    httpClient: HTTPClient(),
+    retryPolicy: .aggressive,
+    responseProcessor: ResponseProcessor()
+)
+
+// 보수적 정책 (maxRetries: 1, baseDelay: 2.0)
+let service = NetworkService(
+    httpClient: HTTPClient(),
+    retryPolicy: .conservative,
+    responseProcessor: ResponseProcessor()
+)
+
+// 재시도 없음
+let service = NetworkService(
+    httpClient: HTTPClient(),
+    retryPolicy: .none,
+    responseProcessor: ResponseProcessor()
+)
+```
+
+#### RetryConfiguration 옵션
+
+```swift
+let configuration = RetryConfiguration(
+    maxRetries: 3,              // 최대 재시도 횟수
+    baseDelay: 1.0,            // 기본 지연 시간 (초)
+    maxDelay: 30.0,            // 최대 지연 시간 (초)
+    jitterRange: 0.1...0.3      // 지터 범위 (동시 재시도 방지)
+)
+
+// 사전 정의된 설정
+let aggressive = RetryConfiguration.aggressive  // maxRetries: 5, baseDelay: 0.5
+let conservative = RetryConfiguration.conservative  // maxRetries: 1, baseDelay: 2.0
 ```
 
 ### Response Processing Pipeline
@@ -400,7 +556,7 @@ let service = NetworkService(
 )
 ```
 
-### 복합 Property Wrappers
+### 6️⃣ 복합 Property Wrappers
 
 여러 Property Wrapper를 조합하여 복잡한 요청을 간결하게 표현할 수 있습니다.
 
@@ -431,6 +587,45 @@ let result: SearchResult = try await service.request(
     )
 )
 // 결과: GET /search/books?query=Swift&page=1&limit=20 (Authorization 헤더 포함)
+```
+
+### 7️⃣ 다양한 응답 타입 처리
+
+#### Data 직접 반환
+
+```swift
+// 이미지나 바이너리 데이터를 직접 받을 때
+let imageData: Data = try await service.requestData(GetImageRequest(id: 123))
+```
+
+#### Raw HTTPResponse 반환
+
+```swift
+// 상태 코드, 헤더 등 전체 응답 정보가 필요할 때
+let response: HTTPResponse = try await service.requestRaw(GetPostsRequest())
+print("Status: \(response.statusCode)")
+print("Headers: \(response.response?.allHeaderFields)")
+```
+
+#### 빈 응답 처리
+
+```swift
+import AsyncNetwork
+
+@APIRequest(
+    response: EmptyResponse.self,
+    title: "Delete post",
+    baseURL: "https://api.example.com",
+    path: "/posts/{id}",
+    method: .delete
+)
+struct DeletePostRequest {
+    @PathParameter var id: Int
+}
+
+// 사용
+try await service.request(DeletePostRequest(id: 123))
+// 응답 본문이 없는 경우 EmptyResponse 사용
 ```
 
 ### Network Reachability (네트워크 연결 감지)
@@ -594,8 +789,59 @@ case .cellular:
     print("셀룰러 연결")
 case .ethernet:
     print("이더넷 연결")
+case .loopback:
+    print("로컬 루프백")
 default:
     print("알 수 없는 연결")
+}
+
+// 오프라인 체크 비활성화 (테스트 환경 등)
+let service = NetworkService(
+    configuration: NetworkConfiguration(
+        checkNetworkBeforeRequest: false
+    )
+)
+```
+
+#### NetworkMonitor 고급 기능
+
+```swift
+import AsyncNetwork
+
+let monitor = NetworkMonitor.shared
+
+// 연결 상태 확인
+if monitor.isConnected {
+    print("네트워크 연결됨")
+}
+
+// 연결 타입 확인
+print("연결 타입: \(monitor.connectionType.description)")
+
+// 비용이 많이 드는 연결인지 확인 (셀룰러 등)
+if monitor.isExpensive {
+    print("⚠️ 비용이 많이 드는 연결입니다")
+    // 대용량 다운로드 지연 등
+}
+
+// 제한된 연결인지 확인 (Low Data Mode 등)
+if monitor.isConstrained {
+    print("⚠️ 제한된 연결입니다")
+    // 이미지 품질 낮추기 등
+}
+
+// NotificationCenter로 네트워크 상태 변경 감지
+NotificationCenter.default.addObserver(
+    forName: .networkStatusChanged,
+    object: nil,
+    queue: .main
+) { notification in
+    if let isConnected = notification.userInfo?["isConnected"] as? Bool {
+        print("네트워크 상태 변경: \(isConnected ? "연결됨" : "끊어짐")")
+    }
+    if let type = notification.userInfo?["connectionType"] as? NetworkMonitor.ConnectionType {
+        print("연결 타입: \(type.description)")
+    }
 }
 ```
 
@@ -679,7 +925,7 @@ AsyncNetworkDocKit은 `@APIRequest` 매크로의 메타데이터를 활용하여
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/Jimmy-Jung/AsyncNetwork.git", from: "1.0.5")
+    .package(url: "https://github.com/Jimmy-Jung/AsyncNetwork.git", from: "1.1.0")
 ],
 targets: [
     .target(
@@ -885,7 +1131,7 @@ func testGetUsersSuccess() async throws {
     config.protocolClasses = [MockURLProtocol.self]
     let session = URLSession(configuration: config)
     
-    MockURLProtocol.register(path: path) { request in
+    await MockURLProtocol.register(path: path) { request in
         let response = HTTPURLResponse(
             url: request.url!,
             statusCode: 200,
@@ -930,7 +1176,7 @@ func testRetryPolicy() async throws {
     
     var attemptCount = 0
     
-    MockURLProtocol.register(path: path) { request in
+    await MockURLProtocol.register(path: path) { request in
         attemptCount += 1
         
         if attemptCount < 3 {
@@ -961,6 +1207,27 @@ func testRetryPolicy() async throws {
     
     // Then
     #expect(attemptCount == 3)
+    
+    // 테스트 후 정리
+    await MockURLProtocol.clear()
+}
+```
+
+#### 테스트 후 정리
+
+```swift
+@Test("테스트 예제")
+func testExample() async throws {
+    // Given
+    await MockURLProtocol.register(path: "/test") { request in
+        // ...
+    }
+    
+    // When & Then
+    // ...
+    
+    // 테스트 후 Mock 라우트 정리 (선택사항)
+    await MockURLProtocol.clear()
 }
 ```
 
