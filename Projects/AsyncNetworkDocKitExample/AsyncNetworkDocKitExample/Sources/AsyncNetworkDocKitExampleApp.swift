@@ -6,6 +6,7 @@
 //
 
 import AsyncNetworkDocKit
+import Foundation
 import SwiftUI
 
 @main

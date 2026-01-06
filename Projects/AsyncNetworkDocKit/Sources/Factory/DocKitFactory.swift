@@ -6,6 +6,7 @@
 //
 
 import AsyncNetworkCore
+import Foundation
 import SwiftUI
 
 /// DocKit 진입점 생성 헬퍼
