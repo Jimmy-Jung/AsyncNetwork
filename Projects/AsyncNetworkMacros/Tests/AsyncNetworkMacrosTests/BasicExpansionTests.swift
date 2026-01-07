@@ -53,22 +53,6 @@
                     var method: HTTPMethod {
                         .get
                     }
-                    static var metadata: EndpointMetadata {
-                        EndpointMetadata(
-                            id: "GetPostRequest",
-                            title: "Get a post",
-                            description: "",
-                            method: "get",
-                            path: "/posts/1",
-                            baseURLString: "https://api.example.com",
-                            headers: nil,
-                            tags: [],
-                            parameters: [],
-                            requestBodyExample: nil,
-                            responseExample: nil,
-                            responseTypeName: "Post"
-                        )
-                    }
                 }
 
                 extension GetPostRequest: APIRequest {
@@ -112,24 +96,6 @@
 
                     var method: HTTPMethod {
                         .get
-                    }
-                    static var metadata: EndpointMetadata {
-                        EndpointMetadata(
-                            id: "GetPostsRequest",
-                            title: "Get all posts",
-                            description: "Retrieve a list of all posts",
-                            method: "get",
-                            path: "/posts",
-                            baseURLString: "https://jsonplaceholder.typicode.com",
-                            headers: ["Content-Type": "application/json"],
-                            tags: ["Posts", "Read"],
-                            parameters: [],
-                            requestBodyExample: nil,
-                            responseExample: \"""
-                [{"id": 1}]
-                \""",
-                            responseTypeName: "[Post]"
-                        )
                     }
                 }
 
@@ -238,23 +204,6 @@
                     var method: HTTPMethod {
                         .put
                     }
-
-                    static var metadata: EndpointMetadata {
-                        EndpointMetadata(
-                            id: "UpdatePostRequest",
-                            title: "Update a post",
-                            description: "",
-                            method: "put",
-                            path: "/posts/{id}",
-                            baseURLString: "https://api.example.com",
-                            headers: nil,
-                            tags: [],
-                            parameters: [],
-                            requestBodyExample: nil,
-                            responseExample: nil,
-                            responseTypeName: "Post"
-                        )
-                    }
                 }
 
                 extension UpdatePostRequest: APIRequest {
@@ -356,24 +305,6 @@
                     var method: HTTPMethod {
                         .post
                     }
-                    static var metadata: EndpointMetadata {
-                        EndpointMetadata(
-                            id: "CreatePostRequest",
-                            title: "Create a post",
-                            description: "",
-                            method: "post",
-                            path: "/posts",
-                            baseURLString: "https://api.example.com",
-                            headers: nil,
-                            tags: [],
-                            parameters: [],
-                            requestBodyExample: \"""
-                {"title": "My Post"}
-                \""",
-                            responseExample: nil,
-                            responseTypeName: "Post"
-                        )
-                    }
                 }
 
                 extension CreatePostRequest: APIRequest {
@@ -467,22 +398,6 @@
 
                     var method: HTTPMethod {
                         .delete
-                    }
-                    static var metadata: EndpointMetadata {
-                        EndpointMetadata(
-                            id: "DeletePostRequest",
-                            title: "Delete post",
-                            description: "",
-                            method: "delete",
-                            path: "/posts/{id}",
-                            baseURLString: "https://api.example.com",
-                            headers: nil,
-                            tags: [],
-                            parameters: [],
-                            requestBodyExample: nil,
-                            responseExample: nil,
-                            responseTypeName: "EmptyResponse"
-                        )
                     }
                 }
 

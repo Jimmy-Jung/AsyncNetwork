@@ -19,9 +19,12 @@ struct MacroArguments {
     let path: String
     let method: String
     let tags: [String]
-    let requestBodyExample: String?
-    let responseExample: String?
     let optionalPathParameters: Set<String> // {id?} 형태의 선택적 경로 파라미터
+    // 테스트 관련 필드
+    let testScenarios: [String]
+    let errorExamples: [String: String]
+    let includeRetryTests: Bool
+    let includePerformanceTests: Bool
 }
 
 struct PropertyWrapperInfo {
@@ -52,8 +55,11 @@ func parseArguments(_ arguments: LabeledExprListSyntax) throws -> MacroArguments
     var path: String?
     var method: String?
     var tags: [String] = []
-    var requestBodyExample: String?
-    var responseExample: String?
+    // 테스트 관련 필드
+    var testScenarios: [String] = []
+    var errorExamples: [String: String] = [:]
+    var includeRetryTests = true
+    var includePerformanceTests = false
 
     for argument in arguments {
         let label = argument.label?.text ?? ""
@@ -81,10 +87,18 @@ func parseArguments(_ arguments: LabeledExprListSyntax) throws -> MacroArguments
             method = extractStringOrEnumCase(from: expr)
         case "tags":
             tags = extractArray(from: expr)
-        case "requestBodyExample":
-            requestBodyExample = extractStringLiteral(from: expr)
-        case "responseExample":
-            responseExample = extractStringLiteral(from: expr)
+        case "testScenarios":
+            testScenarios = extractTestScenarios(from: expr)
+        case "errorExamples":
+            errorExamples = extractErrorExamples(from: expr)
+        case "includeRetryTests":
+            if let boolLiteral = expr.as(BooleanLiteralExprSyntax.self) {
+                includeRetryTests = boolLiteral.literal.text == "true"
+            }
+        case "includePerformanceTests":
+            if let boolLiteral = expr.as(BooleanLiteralExprSyntax.self) {
+                includePerformanceTests = boolLiteral.literal.text == "true"
+            }
         default:
             break
         }
@@ -117,9 +131,11 @@ func parseArguments(_ arguments: LabeledExprListSyntax) throws -> MacroArguments
         path: path,
         method: method,
         tags: tags,
-        requestBodyExample: requestBodyExample,
-        responseExample: responseExample,
-        optionalPathParameters: optionalPathParameters
+        optionalPathParameters: optionalPathParameters,
+        testScenarios: testScenarios,
+        errorExamples: errorExamples,
+        includeRetryTests: includeRetryTests,
+        includePerformanceTests: includePerformanceTests
     )
 }
 
@@ -330,4 +346,56 @@ func extractOptionalPathParameters(from path: String) -> Set<String> {
 /// 예: "/posts/{id?}" -> "/posts/{id}"
 func normalizePath(_ path: String) -> String {
     return path.replacingOccurrences(of: "?}", with: "}")
+}
+
+// MARK: - Test Scenario Parsing
+
+/// TestScenario 배열을 파싱합니다.
+/// 예: [.success, .notFound, .serverError] -> ["success", "notFound", "serverError"]
+func extractTestScenarios(from expr: ExprSyntax) -> [String] {
+    guard let arrayExpr = expr.as(ArrayExprSyntax.self) else {
+        return []
+    }
+
+    var scenarios: [String] = []
+    for element in arrayExpr.elements {
+        if let memberAccess = element.expression.as(MemberAccessExprSyntax.self) {
+            scenarios.append(memberAccess.declName.baseName.text)
+        }
+    }
+
+    return scenarios
+}
+
+/// errorExamples 딕셔너리를 파싱합니다.
+/// 예: ["404": """{"error": "Not found"}"""] -> ["404": "{\"error\": \"Not found\"}"]
+func extractErrorExamples(from expr: ExprSyntax) -> [String: String] {
+    guard let dictExpr = expr.as(DictionaryExprSyntax.self) else {
+        return [:]
+    }
+
+    var examples: [String: String] = [:]
+
+    for element in dictExpr.content.as(DictionaryElementListSyntax.self) ?? [] {
+        // Key (status code)
+        guard let keyString = element.key.as(StringLiteralExprSyntax.self),
+              let keySegment = keyString.segments.first?.as(StringSegmentSyntax.self)
+        else {
+            continue
+        }
+        let key = keySegment.content.text
+
+        // Value (JSON)
+        if let valueString = element.value.as(StringLiteralExprSyntax.self) {
+            var json = ""
+            for segment in valueString.segments {
+                if let stringSegment = segment.as(StringSegmentSyntax.self) {
+                    json += stringSegment.content.text
+                }
+            }
+            examples[key] = json
+        }
+    }
+
+    return examples
 }

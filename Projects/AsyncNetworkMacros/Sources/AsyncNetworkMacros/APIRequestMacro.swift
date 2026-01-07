@@ -26,8 +26,7 @@
 ///     baseURL: "https://jsonplaceholder.typicode.com",
 ///     path: "/posts",
 ///     method: .get,
-///     tags: ["Posts", "Read"],
-///     responseExample: "[{\"id\": 1, \"title\": \"Hello\"}]"
+///     tags: ["Posts", "Read"]
 /// )
 /// struct GetPostsRequest {
 ///     @HeaderField(key: .contentType) var contentType: String? = "application/json"
@@ -71,8 +70,6 @@
 ///             headers: ["Content-Type": "application/json"],
 ///             tags: ["Posts", "Read"],
 ///             parameters: [],
-///             requestBodyExample: nil,
-///             responseExample: "[{\"id\": 1, \"title\": \"Hello\"}]",
 ///             responseTypeName: "[Post]"
 ///         )
 ///     }
@@ -176,17 +173,45 @@
 ///
 /// - 이 매크로는 `struct`에만 적용할 수 있습니다.
 /// - 필수 파라미터: `response`, `baseURL`, `path`, `method`
-/// - 선택적 파라미터: `title` (기본값: ""), `description` (기본값: ""), `tags`, `requestBodyExample`, `responseExample`
+/// - 선택적 파라미터: `title` (기본값: ""), `description` (기본값: ""), `tags`
 /// - 이미 선언된 프로퍼티는 매크로가 생성하지 않습니다.
 /// - `method` 파라미터는 HTTPMethod enum case로 지정합니다 (.get, .post, .put, .delete, .patch, .head, .options)
 /// - HTTP 헤더는 매크로 파라미터 대신 `@HeaderField` 프로퍼티 래퍼를 사용하세요
+///
+/// ## 테스트 기능 통합
+///
+/// `@APIRequest`는 이제 테스트 시나리오와 에러 예제를 직접 지원합니다:
+///
+/// ```swift
+/// @APIRequest(
+///     response: Post.self,
+///     title: "Get post by ID",
+///     baseURL: "https://api.example.com",
+///     path: "/posts/{id}",
+///     method: .get,
+///     testScenarios: [.success, .notFound, .serverError],
+///     errorExamples: [
+///         "404": """{"error": "Post not found", "code": "POST_NOT_FOUND"}""",
+///         "500": """{"error": "Internal server error"}"""
+///     ],
+///     includeRetryTests: true
+/// )
+/// struct GetPostRequest {
+///     @PathParameter var id: Int
+/// }
+/// ```
+///
+/// 이렇게 하면 `MockScenario` enum, `mockResponse(for:)` 메서드가 자동으로 생성됩니다.
 @attached(member, names:
     named(Response),
     named(baseURLString),
     named(path),
     named(method),
     named(task),
-    named(metadata))
+    named(MockScenario),
+    named(mockResponse),
+    named(Tests),
+    arbitrary)
 @attached(extension, conformances: APIRequest)
 public macro APIRequest(
     response: Any.Type,
@@ -196,9 +221,37 @@ public macro APIRequest(
     path: String,
     method: HTTPMethod,
     tags: [String] = [],
-    requestBodyExample: String? = nil,
-    responseExample: String? = nil
+    errorResponses: [Int: Any.Type] = [:],
+    /// 테스트 시나리오 (선택적)
+    testScenarios: [TestScenario] = [],
+    /// OpenAPI 에러 응답 예제 (HTTP 상태 코드: JSON)
+    /// 예: ["404": """{"error": "Not found"}"""]
+    errorExamples: [String: String] = [:],
+    /// 재시도 테스트 포함 여부
+    includeRetryTests: Bool = true,
+    /// 성능 테스트 포함 여부
+    includePerformanceTests: Bool = false
 ) = #externalMacro(
     module: "AsyncNetworkMacrosImpl",
     type: "APIRequestMacroImpl"
 )
+
+/// 테스트 시나리오 타입
+public enum TestScenario {
+    /// 성공 응답 (200 OK)
+    case success
+    /// 클라이언트 에러 (4xx)
+    case clientError
+    /// 서버 에러 (5xx)
+    case serverError
+    /// 네트워크 에러
+    case networkError
+    /// 타임아웃
+    case timeout
+    /// 잘못된 응답 (Invalid JSON)
+    case invalidResponse
+    /// 인증 실패 (401)
+    case unauthorized
+    /// 리소스 없음 (404)
+    case notFound
+}

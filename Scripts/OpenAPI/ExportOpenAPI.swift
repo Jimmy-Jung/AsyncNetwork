@@ -42,6 +42,7 @@ struct APIRequestInfo: Codable {
     let responseExample: String?
     let requestBodyExample: String?
     let properties: [PropertyInfo]
+    let errorResponses: [String: String] // [statusCode: TypeName]
 }
 
 struct PropertyInfo: Codable {
@@ -69,20 +70,21 @@ struct TypeProperty: Codable {
 
 func generateSimpleOpenAPI(
     requests: [APIRequestInfo],
-    types: [TypeInfo],
+    dtos: [DTOInfo],
+    scemers: [SemerInfo],
     title: String,
     version: String,
     description: String?,
     format: String
 ) -> String {
     if format == "json" {
-        return generateJSON(requests: requests, types: types, title: title, version: version, description: description)
+        return generateJSON(requests: requests, dtos: dtos, scemers: scemers, title: title, version: version, description: description)
     } else {
-        return generateYAML(requests: requests, types: types, title: title, version: version, description: description)
+        return generateYAML(requests: requests, dtos: dtos, title: title, version: version, description: description)
     }
 }
 
-func generateJSON(requests: [APIRequestInfo], types: [TypeInfo], title: String, version: String, description: String?) -> String {
+func generateJSON(requests: [APIRequestInfo], dtos: [DTOInfo], scemers: [SemerInfo], title: String, version: String, description: String?) -> String {
     var json = """
     {
       "openapi": "3.0.0",
@@ -136,7 +138,7 @@ func generateJSON(requests: [APIRequestInfo], types: [TypeInfo], title: String, 
             json += ","
         }
         let pathRequests = groupedByPath[path]!
-        json += generateMergedPathItem(path: path, requests: pathRequests, baseURLMap: baseURLMap)
+        json += generateMergedPathItem(path: path, requests: pathRequests, baseURLMap: baseURLMap, scemers: scemers, dtos: dtos)
     }
 
     json += """
@@ -146,12 +148,16 @@ func generateJSON(requests: [APIRequestInfo], types: [TypeInfo], title: String, 
             "schemas": {
     """
 
-    // 타입 스키마 생성
-    for (index, type) in types.enumerated() {
+    // DTO 스키마 생성
+    for (index, dto) in dtos.enumerated() {
         if index > 0 {
             json += ","
         }
-        json += generateTypeSchema(type: type)
+        let schema = jsonToSchema(dto.fixtureJSON)
+        json += """
+
+              "\(dto.name)": \(schema)
+        """
     }
 
     json += """
@@ -297,7 +303,7 @@ func swiftTypeToOpenAPIType(_ type: String) -> OpenAPIType {
 }
 
 // Path별로 병합된 Operation 생성
-func generateMergedPathItem(path: String, requests: [APIRequestInfo], baseURLMap: [String: String]) -> String {
+func generateMergedPathItem(path: String, requests: [APIRequestInfo], baseURLMap: [String: String], scemers: [SemerInfo], dtos: [DTOInfo]) -> String {
     var json = """
         
             "\(path)": {
@@ -307,7 +313,7 @@ func generateMergedPathItem(path: String, requests: [APIRequestInfo], baseURLMap
         if index > 0 {
             json += ","
         }
-        json += generateOperation(request: request, baseURLMap: baseURLMap)
+        json += generateOperation(request: request, baseURLMap: baseURLMap, scemers: scemers, dtos: dtos)
     }
 
     json += """
@@ -319,7 +325,7 @@ func generateMergedPathItem(path: String, requests: [APIRequestInfo], baseURLMap
 }
 
 // 단일 Operation 생성
-func generateOperation(request: APIRequestInfo, baseURLMap _: [String: String]) -> String {
+func generateOperation(request: APIRequestInfo, baseURLMap _: [String: String], scemers: [SemerInfo], dtos: [DTOInfo]) -> String {
     let parameters = request.properties.filter { ["path", "query", "header", "customHeader"].contains($0.wrapper) }
     let bodyProp = request.properties.first { $0.wrapper == "body" }
 
@@ -428,6 +434,125 @@ func generateOperation(request: APIRequestInfo, baseURLMap _: [String: String]) 
                       }
                     }
                   }
+    """
+
+    // Error responses from @APIRequest errorResponses parameter
+    for (statusCode, typeName) in request.errorResponses.sorted(by: { $0.key < $1.key }) {
+        json += """
+        ,
+                          "\(statusCode)": {
+                            "description": "Error",
+                            "content": {
+                              "application/json": {
+                                "schema": {
+                                  "$ref": "#/components/schemas/\(typeName)"
+                                }
+        """
+
+        // DTO에서 example 찾기
+        if let dto = dtos.first(where: { $0.name == typeName }) {
+            json += """
+            ,
+                                    "example": \(dto.fixtureJSON)
+            """
+        }
+
+        json += """
+
+                              }
+                            }
+                          }
+        """
+    }
+
+    // Error responses from @TestableSchemer (errorResponses가 없는 경우에만)
+    if request.errorResponses.isEmpty, let semer = scemers.first(where: { $0.requestName == request.name }) {
+        for errorExample in semer.errorExamples {
+            json += """
+            ,
+                              "\(errorExample.statusCode)": {
+                                "description": "Error",
+                                "content": {
+                                  "application/json": {
+            """
+
+            // JSON을 파싱하여 schema 생성
+            if let data = errorExample.json.data(using: .utf8),
+               let jsonObject = try? JSONSerialization.jsonObject(with: data) as? [String: Any]
+            {
+                json += """
+
+                                        "schema": {
+                                          "type": "object",
+                                          "properties": {
+                """
+
+                let sortedKeys = jsonObject.keys.sorted()
+                for (index, key) in sortedKeys.enumerated() {
+                    if index > 0 {
+                        json += ","
+                    }
+
+                    let value = jsonObject[key]!
+                    let type: String
+                    let format: String?
+
+                    switch value {
+                    case is String:
+                        type = "string"
+                        format = nil
+                    case is Int:
+                        type = "integer"
+                        format = "int64"
+                    case is Double, is Float:
+                        type = "number"
+                        format = "double"
+                    case is Bool:
+                        type = "boolean"
+                        format = nil
+                    default:
+                        type = "string"
+                        format = nil
+                    }
+
+                    json += """
+
+                                                "\(key)": {
+                                                  "type": "\(type)"
+                    """
+
+                    if let fmt = format {
+                        json += """
+                        ,
+                                                      "format": "\(fmt)"
+                        """
+                    }
+
+                    json += """
+
+                                                }
+                    """
+                }
+
+                json += """
+
+                                          }
+                                        },
+                """
+            }
+
+            json += """
+
+                                    "example": \(errorExample.json)
+                                  }
+                                }
+                              }
+            """
+        }
+    }
+
+    json += """
+
                 }
               }
     """
@@ -628,7 +753,7 @@ func swiftTypeToOpenAPI(_ type: String) -> String {
     return "string"
 }
 
-func generateYAML(requests: [APIRequestInfo], types _: [TypeInfo], title: String, version: String, description: String?) -> String {
+func generateYAML(requests: [APIRequestInfo], dtos _: [DTOInfo], title: String, version: String, description: String?) -> String {
     var yaml = """
     openapi: 3.0.0
     info:
@@ -688,18 +813,61 @@ func generateYAML(requests: [APIRequestInfo], types _: [TypeInfo], title: String
 
 func parseAPIRequests(from paths: [String]) throws -> [APIRequestInfo] {
     var allRequests: [APIRequestInfo] = []
+    var constantMap: [String: String] = [:]
 
+    // 1단계: 모든 파일에서 상수 선언 수집
     for path in paths {
         let files = try findSwiftFiles(in: path)
-
         for file in files {
             let content = try String(contentsOfFile: file, encoding: .utf8)
-            let requests = extractAPIRequests(from: content)
+            let constants = extractConstants(from: content)
+            constantMap.merge(constants) { _, new in new }
+        }
+    }
+
+    // 2단계: API 요청 파싱 (상수 맵 전달)
+    for path in paths {
+        let files = try findSwiftFiles(in: path)
+        for file in files {
+            let content = try String(contentsOfFile: file, encoding: .utf8)
+            let requests = extractAPIRequests(from: content, constants: constantMap)
             allRequests.append(contentsOf: requests)
         }
     }
 
     return allRequests
+}
+
+// MARK: - DTO 파싱
+
+func parseTestableDTOs(from paths: [String]) throws -> [DTOInfo] {
+    var allDTOs: [DTOInfo] = []
+
+    for path in paths {
+        let files = try findSwiftFiles(in: path)
+        for file in files {
+            let content = try String(contentsOfFile: file, encoding: .utf8)
+            let dtos = extractTestableDTOs(from: content)
+            allDTOs.append(contentsOf: dtos)
+        }
+    }
+
+    return allDTOs
+}
+
+func parseTestableScemers(from paths: [String]) throws -> [SemerInfo] {
+    var allScemers: [SemerInfo] = []
+
+    for path in paths {
+        let files = try findSwiftFiles(in: path)
+        for file in files {
+            let content = try String(contentsOfFile: file, encoding: .utf8)
+            let scemers = extractTestableScemers(from: content)
+            allScemers.append(contentsOf: scemers)
+        }
+    }
+
+    return allScemers
 }
 
 func parseDocumentedTypes(from paths: [String]) throws -> [TypeInfo] {
@@ -845,7 +1013,297 @@ func findSwiftFiles(in directory: String) throws -> [String] {
     return swiftFiles
 }
 
-func extractAPIRequests(from content: String) -> [APIRequestInfo] {
+// MARK: - DTO 정보 구조체
+
+struct DTOInfo {
+    let name: String
+    let fixtureJSON: String
+}
+
+struct ErrorExample {
+    let statusCode: String
+    let json: String
+}
+
+struct SemerInfo {
+    let requestName: String
+    let errorExamples: [ErrorExample]
+}
+
+// MARK: - 상수 추출
+
+/// Swift 파일에서 let 상수 선언을 추출합니다
+func extractConstants(from content: String) -> [String: String] {
+    var constants: [String: String] = [:]
+    let lines = content.components(separatedBy: .newlines)
+
+    // let constantName = "value" 패턴 찾기
+    let pattern = #"^\s*let\s+(\w+)\s*=\s*"([^"]+)""#
+    guard let regex = try? NSRegularExpression(pattern: pattern, options: []) else {
+        return constants
+    }
+
+    for line in lines {
+        let range = NSRange(line.startIndex..., in: line)
+        if let match = regex.firstMatch(in: line, range: range),
+           let nameRange = Range(match.range(at: 1), in: line),
+           let valueRange = Range(match.range(at: 2), in: line)
+        {
+            let name = String(line[nameRange])
+            let value = String(line[valueRange])
+            constants[name] = value
+        }
+    }
+
+    return constants
+}
+
+// MARK: - @Response/@TestableDTO 파싱
+
+/// Swift 파일에서 @TestableDTO 또는 @Response를 파싱하여 DTO 정보를 추출합니다
+func extractTestableDTOs(from content: String) -> [DTOInfo] {
+    var dtos: [DTOInfo] = []
+    let lines = content.components(separatedBy: .newlines)
+
+    var i = 0
+    while i < lines.count {
+        let line = lines[i].trimmingCharacters(in: .whitespaces)
+
+        // @TestableDTO 또는 @Response 찾기
+        if line.hasPrefix("@TestableDTO") || line.hasPrefix("@Response") {
+            // fixtureJSON 파라미터 추출
+            var fixtureJSON = ""
+            var inFixtureJSON = false
+            var tripleQuoteCount = 0
+            var jsonLines: [String] = []
+
+            // @TestableDTO 블록 내에서 fixtureJSON 찾기
+            var j = i
+            while j < lines.count, j < i + 100 {
+                let currentLine = lines[j]
+
+                // fixtureJSON: """ 시작
+                if currentLine.contains("fixtureJSON:"), currentLine.contains("\"\"\"") {
+                    inFixtureJSON = true
+                    tripleQuoteCount = 1
+                    j += 1
+                    continue
+                }
+
+                // JSON 내용 수집
+                if inFixtureJSON {
+                    // 종료 """ 찾기
+                    if currentLine.contains("\"\"\"") {
+                        tripleQuoteCount += 1
+                        if tripleQuoteCount == 2 {
+                            fixtureJSON = jsonLines.joined(separator: "\n")
+                            break
+                        }
+                    } else {
+                        jsonLines.append(currentLine)
+                    }
+                }
+
+                j += 1
+            }
+
+            // struct 이름 찾기
+            var structName = ""
+            var k = i + 1
+            while k < lines.count, k < i + 100 {
+                let structLine = lines[k].trimmingCharacters(in: .whitespaces)
+                if structLine.hasPrefix("struct ") {
+                    // struct Name { 에서 Name 추출
+                    let pattern = #"struct\s+(\w+)"#
+                    if let regex = try? NSRegularExpression(pattern: pattern),
+                       let match = regex.firstMatch(in: structLine, range: NSRange(structLine.startIndex..., in: structLine)),
+                       let range = Range(match.range(at: 1), in: structLine)
+                    {
+                        structName = String(structLine[range])
+                        break
+                    }
+                }
+                k += 1
+            }
+
+            // DTO 정보 저장
+            if !structName.isEmpty, !fixtureJSON.isEmpty {
+                dtos.append(DTOInfo(name: structName, fixtureJSON: fixtureJSON))
+            }
+        }
+
+        i += 1
+    }
+
+    return dtos
+}
+
+/// JSON 문자열을 OpenAPI Schema로 변환
+func jsonToSchema(_ json: String) -> String {
+    guard let data = json.data(using: .utf8),
+          let jsonObject = try? JSONSerialization.jsonObject(with: data) as? [String: Any]
+    else {
+        return """
+        {
+          "type": "object"
+        }
+        """
+    }
+
+    var properties: [String] = []
+    var required: [String] = []
+
+    for (key, value) in jsonObject.sorted(by: { $0.key < $1.key }) {
+        required.append("\"\(key)\"")
+
+        let type: String
+        let format: String?
+
+        switch value {
+        case is String:
+            type = "string"
+            format = nil
+        case is Int:
+            type = "integer"
+            format = "int64"
+        case is Double, is Float:
+            type = "number"
+            format = "double"
+        case is Bool:
+            type = "boolean"
+            format = nil
+        case is [Any]:
+            type = "array"
+            format = nil
+        case is [String: Any]:
+            type = "object"
+            format = nil
+        default:
+            type = "string"
+            format = nil
+        }
+
+        var propertySchema = """
+          "\(key)": {
+            "type": "\(type)"
+        """
+
+        if let fmt = format {
+            propertySchema += """
+            ,
+                        "format": "\(fmt)"
+            """
+        }
+
+        propertySchema += """
+
+          }
+        """
+
+        properties.append(propertySchema)
+    }
+
+    let schema = """
+    {
+      "type": "object",
+      "properties": {
+        \(properties.joined(separator: ",\n    "))
+      },
+      "required": [\(required.joined(separator: ", "))]
+    }
+    """
+
+    return schema
+}
+
+// MARK: - @TestableSchemer 파싱
+
+/// Swift 파일에서 @TestableSchemer를 파싱하여 에러 예시를 추출합니다
+func extractTestableScemers(from content: String) -> [SemerInfo] {
+    var scemers: [SemerInfo] = []
+    let lines = content.components(separatedBy: .newlines)
+
+    var i = 0
+    while i < lines.count {
+        let line = lines[i].trimmingCharacters(in: .whitespaces)
+
+        // @TestableSchemer 찾기
+        if line.hasPrefix("@TestableSchemer") {
+            var errorExamples: [ErrorExample] = []
+
+            // errorExamples 블록 찾기
+            var j = i
+            var inErrorExamples = false
+            var blockContent = ""
+
+            while j < lines.count, j < i + 100 {
+                let currentLine = lines[j]
+                blockContent += currentLine + "\n"
+
+                if currentLine.contains("errorExamples:") {
+                    inErrorExamples = true
+                }
+
+                // struct 발견 시 종료
+                if currentLine.trimmingCharacters(in: .whitespaces).hasPrefix("struct ") {
+                    break
+                }
+
+                j += 1
+            }
+
+            // blockContent에서 "404": """...""" 패턴 추출
+            if inErrorExamples {
+                let pattern = #""(\d{3})":\s*"""([^"]*(?:(?:"{1,2}(?!")[^"]*)*)*)""""#
+                if let regex = try? NSRegularExpression(pattern: pattern, options: [.dotMatchesLineSeparators]) {
+                    let nsRange = NSRange(blockContent.startIndex..., in: blockContent)
+                    let matches = regex.matches(in: blockContent, range: nsRange)
+
+                    for match in matches {
+                        if let statusRange = Range(match.range(at: 1), in: blockContent),
+                           let jsonRange = Range(match.range(at: 2), in: blockContent)
+                        {
+                            let statusCode = String(blockContent[statusRange])
+                            let json = String(blockContent[jsonRange])
+                            errorExamples.append(ErrorExample(statusCode: statusCode, json: json))
+                        }
+                    }
+                }
+            }
+
+            // struct 이름 찾기
+            var structName = ""
+            var k = i + 1
+            while k < lines.count, k < i + 100 {
+                let structLine = lines[k].trimmingCharacters(in: .whitespaces)
+                if structLine.hasPrefix("struct ") {
+                    let pattern = #"struct\s+(\w+)"#
+                    if let regex = try? NSRegularExpression(pattern: pattern),
+                       let match = regex.firstMatch(in: structLine, range: NSRange(structLine.startIndex..., in: structLine)),
+                       let range = Range(match.range(at: 1), in: structLine)
+                    {
+                        structName = String(structLine[range])
+                        break
+                    }
+                }
+                k += 1
+            }
+
+            // Semer 정보 저장
+            if !structName.isEmpty, !errorExamples.isEmpty {
+                scemers.append(SemerInfo(requestName: structName, errorExamples: errorExamples))
+            }
+        }
+
+        i += 1
+    }
+
+    return scemers
+}
+
+// MARK: - API Request 파싱
+
+func extractAPIRequests(from content: String, constants: [String: String] = [:]) -> [APIRequestInfo] {
     var requests: [APIRequestInfo] = []
     let lines = content.components(separatedBy: .newlines)
 
@@ -874,14 +1332,26 @@ func extractAPIRequests(from content: String) -> [APIRequestInfo] {
                 }
             }
 
-            // struct 이름
-            if i + 1 < lines.count, let name = extractStructName(from: lines[i + 1]) {
-                // properties 추출
-                let properties = extractProperties(from: lines, startingAt: i + 2)
+            // struct 이름 (다른 매크로들을 건너뛰기)
+            var structLineIndex = i + 1
+            let maxLookAhead = 50 // 최대 50줄까지만 탐색
+            while structLineIndex < lines.count, structLineIndex < i + maxLookAhead {
+                let line = lines[structLineIndex].trimmingCharacters(in: .whitespaces)
 
-                if let request = parseAPIRequestBlock(block: block, name: name, properties: properties) {
-                    requests.append(request)
+                // struct를 찾았으면 처리
+                if line.hasPrefix("struct ") {
+                    if let name = extractStructName(from: lines[structLineIndex]) {
+                        // properties 추출
+                        let properties = extractProperties(from: lines, startingAt: structLineIndex + 1)
+
+                        if let request = parseAPIRequestBlock(block: block, name: name, properties: properties, constants: constants) {
+                            requests.append(request)
+                        }
+                    }
+                    break
                 }
+
+                structLineIndex += 1
             }
         }
 
@@ -1021,7 +1491,7 @@ func extractCustomHeaderName(from line: String) -> String? {
     return String(line[range])
 }
 
-func parseAPIRequestBlock(block: String, name: String, properties: [PropertyInfo]) -> APIRequestInfo? {
+func parseAPIRequestBlock(block: String, name: String, properties: [PropertyInfo], constants: [String: String] = [:]) -> APIRequestInfo? {
     func extract(_: String, pattern: String) -> String? {
         guard let regex = try? NSRegularExpression(pattern: pattern, options: .dotMatchesLineSeparators),
               let match = regex.firstMatch(in: block, range: NSRange(block.startIndex..., in: block)),
@@ -1054,18 +1524,60 @@ func parseAPIRequestBlock(block: String, name: String, properties: [PropertyInfo
         return nil
     }
 
+    // baseURL 추출 (문자열 리터럴 또는 변수 참조)
+    var baseURL = ""
+
+    // 1. 문자열 리터럴: baseURL: "https://..."
+    if let baseURLMatch = try? NSRegularExpression(pattern: #"baseURL:\s*"([^"]+)""#).firstMatch(in: block, range: NSRange(block.startIndex..., in: block)),
+       let range = Range(baseURLMatch.range(at: 1), in: block)
+    {
+        baseURL = String(block[range])
+    }
+    // 2. 변수 참조: baseURL: constantName
+    else if let varMatch = try? NSRegularExpression(pattern: #"baseURL:\s*(\w+)"#).firstMatch(in: block, range: NSRange(block.startIndex..., in: block)),
+            let varRange = Range(varMatch.range(at: 1), in: block)
+    {
+        let varName = String(block[varRange])
+        baseURL = constants[varName] ?? ""
+    }
+
+    // baseURL이 비어있으면 nil 반환
+    guard !baseURL.isEmpty else {
+        return nil
+    }
+
+    // errorResponses 파싱: errorResponses: [404: ErrorResponse.self, 500: ServerError.self]
+    var errorResponses: [String: String] = [:]
+    if block.contains("errorResponses:") {
+        let errorPattern = #"(\d{3}):\s*(\w+)\.self"#
+        if let regex = try? NSRegularExpression(pattern: errorPattern) {
+            let nsRange = NSRange(block.startIndex..., in: block)
+            let matches = regex.matches(in: block, range: nsRange)
+            for match in matches {
+                if let statusRange = Range(match.range(at: 1), in: block),
+                   let typeRange = Range(match.range(at: 2), in: block)
+                {
+                    let statusCode = String(block[statusRange])
+                    let typeName = String(block[typeRange])
+                    errorResponses[statusCode] = typeName
+                }
+            }
+        }
+    }
+
     return APIRequestInfo(
         name: name,
         response: response,
         title: extract("title", pattern: #"title:\s*"([^"]+)""#) ?? name,
         description: extract("description", pattern: #"description:\s*"([^"]+)""#) ?? "",
-        baseURL: extract("baseURL", pattern: #"baseURL:\s*(\w+)"#) ?? "",
+        baseURL: baseURL,
         path: extract("path", pattern: #"path:\s*"([^"]+)""#) ?? "/",
         method: extract("method", pattern: #"method:\s*\.(\w+)"#) ?? "get",
         tags: extractArray("tags"),
         responseExample: extractMultiline("responseExample"),
         requestBodyExample: extractMultiline("requestBodyExample"),
-        properties: properties
+        properties: properties,
+        errorResponses: errorResponses
     )
 }
 
@@ -1194,21 +1706,25 @@ do {
     let requests = try parseAPIRequests(from: projectPaths)
     printSuccess("\(requests.count)개의 API 요청 발견")
 
-    printInfo("@DocumentedType 파싱 중...")
-    // DocumentType 경로가 없으면 projectPaths 사용
-    let typesPaths = documentTypePaths.isEmpty ? projectPaths : documentTypePaths
-    let types = try parseDocumentedTypes(from: typesPaths)
-    printSuccess("\(types.count)개의 타입 발견")
+    printInfo("@Response/@TestableDTO 파싱 중...")
+    let dtos = try parseTestableDTOs(from: projectPaths)
+    printSuccess("\(dtos.count)개의 DTO 발견")
+    if !dtos.isEmpty {
+        printInfo("발견된 DTO: \(dtos.map { $0.name }.joined(separator: ", "))")
+    }
 
-    // 타입 이름 출력
-    if !types.isEmpty {
-        printInfo("발견된 타입: \(types.map { $0.name }.joined(separator: ", "))")
+    printInfo("@TestableSchemer 파싱 중...")
+    let scemers = try parseTestableScemers(from: projectPaths)
+    printSuccess("\(scemers.count)개의 Schemer 발견")
+    if !scemers.isEmpty {
+        printInfo("발견된 Schemer: \(scemers.map { $0.requestName }.joined(separator: ", "))")
     }
 
     printInfo("OpenAPI 스펙 생성 중...")
     let spec = generateSimpleOpenAPI(
         requests: requests,
-        types: types,
+        dtos: dtos,
+        scemers: scemers,
         title: title,
         version: version,
         description: description,

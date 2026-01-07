@@ -11,7 +11,7 @@ let package = Package(
         .iOS(.v13),
         .macOS(.v10_15),
         .tvOS(.v13),
-        .watchOS(.v6),
+        .watchOS(.v6)
     ],
     products: [
         // Core library
@@ -28,15 +28,11 @@ let package = Package(
         .library(
             name: "AsyncNetworkMacros",
             targets: ["AsyncNetworkMacros"]
-        ),
-        .library(
-            name: "AsyncNetworkDocKit",
-            targets: ["AsyncNetworkDocKit"]
-        ),
+        )
     ],
     dependencies: [
         .package(url: "https://github.com/apple/swift-syntax.git", from: "600.0.0"),
-        .package(url: "https://github.com/apple/swift-docc-plugin", from: "1.0.0"),
+        .package(url: "https://github.com/apple/swift-docc-plugin", from: "1.0.0")
     ],
     targets: [
         // MARK: - Core Network Library
@@ -58,7 +54,7 @@ let package = Package(
             name: "AsyncNetwork",
             dependencies: [
                 "AsyncNetworkCore",
-                "AsyncNetworkMacros",
+                "AsyncNetworkMacros"
             ],
             path: "Projects/AsyncNetwork/Sources/AsyncNetwork"
         ),
@@ -75,7 +71,7 @@ let package = Package(
             name: "AsyncNetworkMacros",
             dependencies: [
                 "AsyncNetworkMacrosImpl",
-                "AsyncNetworkCore",
+                "AsyncNetworkCore"
             ],
             path: "Projects/AsyncNetworkMacros/Sources/AsyncNetworkMacros"
         ),
@@ -87,7 +83,7 @@ let package = Package(
             dependencies: [
                 .product(name: "SwiftSyntax", package: "swift-syntax"),
                 .product(name: "SwiftSyntaxMacros", package: "swift-syntax"),
-                .product(name: "SwiftCompilerPlugin", package: "swift-syntax"),
+                .product(name: "SwiftCompilerPlugin", package: "swift-syntax")
             ],
             path: "Projects/AsyncNetworkMacros/Sources/AsyncNetworkMacrosImpl"
         ),
@@ -99,33 +95,9 @@ let package = Package(
             dependencies: [
                 "AsyncNetworkMacros",
                 "AsyncNetworkMacrosImpl",
-                .product(name: "SwiftSyntaxMacrosTestSupport", package: "swift-syntax"),
+                .product(name: "SwiftSyntaxMacrosTestSupport", package: "swift-syntax")
             ],
             path: "Projects/AsyncNetworkMacros/Tests"
-        ),
-
-        // MARK: - Documentation Kit (iOS only - SwiftUI App features)
-
-        .target(
-            name: "AsyncNetworkDocKit",
-            dependencies: [
-                "AsyncNetwork",
-            ],
-            path: "Projects/AsyncNetworkDocKit/Sources",
-            swiftSettings: [
-                .define("DOCKIT_IOS_ONLY"),
-            ]
-        ),
-
-        // MARK: - Documentation Kit Tests
-
-        .testTarget(
-            name: "AsyncNetworkDocKitTests",
-            dependencies: [
-                "AsyncNetworkDocKit",
-                "AsyncNetworkCore",
-            ],
-            path: "Projects/AsyncNetworkDocKit/Tests"
-        ),
+        )
     ]
 )
