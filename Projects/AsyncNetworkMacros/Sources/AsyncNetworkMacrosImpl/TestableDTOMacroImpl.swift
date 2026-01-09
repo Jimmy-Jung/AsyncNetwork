@@ -195,7 +195,7 @@ public struct TestableDTOMacroImpl: MemberMacro, ExtensionMacro {
 
         return """
         /// 데이터 검증
-        func assertValid() throws {
+        func assertValid() {
             \(raw: validationCode)
         }
         """
@@ -344,25 +344,25 @@ public struct TestableDTOMacroImpl: MemberMacro, ExtensionMacro {
         switch cleanType {
         case "Int", "Int8", "Int16", "Int32", "Int64":
             if prop.name.lowercased().contains("id") {
-                return "try #require(\(prop.name) > 0, \"\(prop.name) must be positive\")"
+                return "assert(\(prop.name) > 0, \"\(prop.name) must be positive\")"
             }
         case "String":
             if prop.name.lowercased().contains("email") {
                 if prop.isOptional {
                     return """
                     if let \(prop.name) = \(prop.name) {
-                            try #require(\(prop.name).contains("@"), "\(prop.name) must contain @")
+                            assert(\(prop.name).contains("@"), "\(prop.name) must contain @")
                         }
                     """
                 } else {
                     return """
-                    try #require(\(prop.name).contains("@"), "\(prop.name) must contain @")
-                        try #require(\(prop.name).contains("."), "\(prop.name) must contain .")
+                    assert(\(prop.name).contains("@"), "\(prop.name) must contain @")
+                        assert(\(prop.name).contains("."), "\(prop.name) must contain .")
                     """
                 }
             } else if !prop.name.lowercased().contains("optional") {
                 if !prop.isOptional {
-                    return "try #require(!\(prop.name).isEmpty, \"\(prop.name) must not be empty\")"
+                    return "assert(!\(prop.name).isEmpty, \"\(prop.name) must not be empty\")"
                 }
             }
         default:
