@@ -23,7 +23,7 @@ let apiExampleURL = "https://api.example.com"
     baseURL: jsonPlaceholderURL,
     path: "/posts",
     method: .get,
-    tags: ["Posts", "Read"]
+    tags: ["Posts"]
 )
 struct GetAllPostsRequest {
     @QueryParameter var userId: Int?
@@ -37,7 +37,7 @@ struct GetAllPostsRequest {
     baseURL: jsonPlaceholderURL,
     path: "/posts/{id}",
     method: .get,
-    tags: ["Posts", "Read"],
+    tags: ["Posts"],
     testScenarios: [.success, .notFound, .serverError],
     errorExamples: [
         "404": """{"error": "Post not found", "code": "POST_NOT_FOUND"}""",
@@ -57,7 +57,7 @@ struct GetPostByIdRequest {
     baseURL: jsonPlaceholderURL,
     path: "/posts",
     method: .post,
-    tags: ["Posts", "Write"],
+    tags: ["Posts"],
     errorExamples: [
         "400": """{"error": "Invalid request body", "code": "BAD_REQUEST"}""",
         "500": """{"error": "Internal server error"}"""
@@ -76,7 +76,7 @@ struct CreatePostRequest {
     baseURL: jsonPlaceholderURL,
     path: "/posts/{id}",
     method: .put,
-    tags: ["Posts", "Write"],
+    tags: ["Posts"],
     errorExamples: [
         "404": """{"error": "Post not found"}""",
         "400": """{"error": "Invalid request body"}"""
@@ -94,7 +94,7 @@ struct UpdatePostRequest {
     baseURL: jsonPlaceholderURL,
     path: "/posts/{id}",
     method: .delete,
-    tags: ["Posts", "Write"],
+    tags: ["Posts"],
     errorExamples: [
         "404": """{"error": "Post not found"}""",
         "403": """{"error": "Forbidden", "code": "FORBIDDEN"}"""
@@ -113,7 +113,7 @@ struct DeletePostRequest {
     baseURL: jsonPlaceholderURL,
     path: "/users",
     method: .get,
-    tags: ["Users", "Read"],
+    tags: ["Users"],
     errorResponses: [
         500: ServerError.self
     ]
@@ -127,7 +127,7 @@ struct GetAllUsersRequest {}
     baseURL: jsonPlaceholderURL,
     path: "/users/{id}",
     method: .get,
-    tags: ["Users", "Read"],
+    tags: ["Users"],
     errorResponses: [
         404: NotFoundError.self,
         500: ServerError.self
@@ -149,7 +149,7 @@ struct GetUserByIdRequest {
     baseURL: jsonPlaceholderURL,
     path: "/users",
     method: .post,
-    tags: ["Users", "Write"],
+    tags: ["Users"],
     errorExamples: [
         "400": """{"error": "Invalid user data"}""",
         "409": """{"error": "User already exists", "code": "CONFLICT"}"""
@@ -170,7 +170,7 @@ struct CreateUserRequest {
     baseURL: jsonPlaceholderURL,
     path: "/posts/{postId}/comments",
     method: .get,
-    tags: ["Comments", "Read"],
+    tags: ["Comments"],
     errorExamples: [
         "404": """{"error": "Post not found"}"""
     ]
@@ -186,7 +186,7 @@ struct GetPostCommentsRequest {
     baseURL: jsonPlaceholderURL,
     path: "/comments",
     method: .post,
-    tags: ["Comments", "Write"],
+    tags: ["Comments"],
     errorExamples: [
         "400": """{"error": "Invalid comment data"}"""
     ]
@@ -204,7 +204,7 @@ struct CreateCommentRequest {
     baseURL: jsonPlaceholderURL,
     path: "/users/{userId}/albums",
     method: .get,
-    tags: ["Albums", "Read"],
+    tags: ["Albums"],
     errorExamples: [
         "404": """{"error": "User not found"}"""
     ]
@@ -220,7 +220,7 @@ struct GetUserAlbumsRequest {
     baseURL: jsonPlaceholderURL,
     path: "/albums/{albumId}/photos",
     method: .get,
-    tags: ["Albums", "Read"],
+    tags: ["Albums"],
     errorExamples: [
         "404": """{"error": "Album not found"}"""
     ]
@@ -238,7 +238,7 @@ struct GetAlbumPhotosRequest {
     baseURL: apiExampleURL,
     path: "/orders",
     method: .post,
-    tags: ["Orders", "Write", "Complex"],
+    tags: ["Orders"],
     errorExamples: [
         "400": """{"error": "Invalid order data", "details": ["Missing shipping address"]}""",
         "402": """{"error": "Payment required", "code": "PAYMENT_FAILED"}""",
@@ -260,7 +260,7 @@ struct CreateOrderRequest {
     baseURL: apiExampleURL,
     path: "/orders/{orderId}",
     method: .get,
-    tags: ["Orders", "Read", "Complex"],
+    tags: ["Orders"],
     errorExamples: [
         "404": """{"error": "Order not found", "orderId": 9001}""",
         "403": """{"error": "Access denied", "code": "FORBIDDEN"}"""
