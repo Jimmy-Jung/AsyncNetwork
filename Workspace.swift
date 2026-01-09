@@ -4,6 +4,7 @@ let workspace = Workspace(
     name: "AsyncNetwork",
     projects: [
         // AsyncNetwork는 SPM으로 관리 (Package.swift)
+        "Projects/AsyncNetworkSampleApp",
     ],
     schemes: [],
     fileHeaderTemplate: nil,

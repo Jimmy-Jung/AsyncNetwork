@@ -39,6 +39,22 @@ struct PropertyWrappersTests {
         }
     }
 
+    private struct TestRequestWithRequiredQuery: APIRequest {
+        var baseURLString: String = "https://api.example.com"
+        var path: String = "/test"
+        var method: HTTPMethod = .get
+
+        @QueryParameter var userId: Int?
+        @QueryParameter var name: String?
+        @QueryParameter var page: Int?
+
+        init(userId: Int, name: String, page: Int? = nil) {
+            self._userId = QueryParameter(wrappedValue: userId)
+            self._name = QueryParameter(wrappedValue: name)
+            self._page = QueryParameter(wrappedValue: page)
+        }
+    }
+
     private struct TestBody: Codable, Sendable {
         let name: String
         let value: Int
@@ -117,6 +133,44 @@ struct PropertyWrappersTests {
 
         // URL 인코딩되어야 함
         #expect(urlString.contains("hello%20world") || urlString.contains("hello+world"))
+    }
+    
+    @Test("QueryParameter - Non-optional 필수 파라미터")
+    func queryParameterRequiredValues() throws {
+        // Given
+        let request = TestRequestWithRequiredQuery(userId: 123, name: "john", page: 5)
+
+        // When
+        let urlRequest = try request.asURLRequest()
+
+        // Then
+        let url = try #require(urlRequest.url)
+        let components = URLComponents(url: url, resolvingAgainstBaseURL: false)
+        let queryItems = components?.queryItems
+
+        // 필수 파라미터는 항상 존재
+        #expect(queryItems?.contains(where: { $0.name == "userId" && $0.value == "123" }) == true)
+        #expect(queryItems?.contains(where: { $0.name == "name" && $0.value == "john" }) == true)
+        #expect(queryItems?.contains(where: { $0.name == "page" && $0.value == "5" }) == true)
+    }
+    
+    @Test("QueryParameter - Non-optional과 Optional 혼합")
+    func queryParameterMixedRequiredAndOptional() throws {
+        // Given
+        let request = TestRequestWithRequiredQuery(userId: 456, name: "alice", page: nil)
+
+        // When
+        let urlRequest = try request.asURLRequest()
+
+        // Then
+        let url = try #require(urlRequest.url)
+        let components = URLComponents(url: url, resolvingAgainstBaseURL: false)
+        let queryItems = components?.queryItems
+
+        // 필수 파라미터는 존재하고, optional nil은 없음
+        #expect(queryItems?.contains(where: { $0.name == "userId" && $0.value == "456" }) == true)
+        #expect(queryItems?.contains(where: { $0.name == "name" && $0.value == "alice" }) == true)
+        #expect(queryItems?.contains(where: { $0.name == "page" }) == false)
     }
 
     // MARK: - Multiple PropertyWrappers Tests
