@@ -5,14 +5,13 @@
 //  Created by jimmy on 2026/01/07.
 //
 
-import UIKit
-import Combine
 import AsyncViewModel
+import Combine
+import UIKit
 
 final class AlbumListViewController: UIViewController {
-    
     // MARK: - UI Components
-    
+
     private lazy var collectionView: UICollectionView = {
         let layout = createLayout()
         let collectionView = UICollectionView(frame: .zero, collectionViewLayout: layout)
@@ -23,20 +22,20 @@ final class AlbumListViewController: UIViewController {
         collectionView.backgroundColor = .systemBackground
         return collectionView
     }()
-    
+
     private lazy var refreshControl: UIRefreshControl = {
         let control = UIRefreshControl()
         control.addTarget(self, action: #selector(handleRefresh), for: .valueChanged)
         return control
     }()
-    
+
     private lazy var loadingIndicator: UIActivityIndicatorView = {
         let indicator = UIActivityIndicatorView(style: .large)
         indicator.translatesAutoresizingMaskIntoConstraints = false
         indicator.hidesWhenStopped = true
         return indicator
     }()
-    
+
     private lazy var errorLabel: UILabel = {
         let label = UILabel()
         label.translatesAutoresizingMaskIntoConstraints = false
@@ -46,7 +45,7 @@ final class AlbumListViewController: UIViewController {
         label.isHidden = true
         return label
     }()
-    
+
     private lazy var retryButton: UIButton = {
         let button = UIButton(type: .system)
         button.translatesAutoresizingMaskIntoConstraints = false
@@ -55,73 +54,74 @@ final class AlbumListViewController: UIViewController {
         button.isHidden = true
         return button
     }()
-    
+
     // MARK: - Properties
-    
+
     private let viewModel: AlbumListViewModel
     private var cancellables = Set<AnyCancellable>()
-    
+
     // MARK: - Initialization
-    
+
     init(viewModel: AlbumListViewModel) {
         self.viewModel = viewModel
         super.init(nibName: nil, bundle: nil)
     }
-    
-    required init?(coder: NSCoder) {
+
+    @available(*, unavailable)
+    required init?(coder _: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
-    
+
     // MARK: - Lifecycle
-    
+
     override func viewDidLoad() {
         super.viewDidLoad()
         setupUI()
         setupBindings()
-        
+
         // viewDidAppear Input 전송
         viewModel.send(.viewDidAppear)
     }
-    
+
     override func viewDidDisappear(_ animated: Bool) {
         super.viewDidDisappear(animated)
-        
+
         // cleanup Input 전송
         viewModel.send(.viewDidDisappear)
     }
-    
+
     // MARK: - Setup
-    
+
     private func setupUI() {
-        title = "Albums"
+        title = "앨범"
         view.backgroundColor = .systemBackground
-        
+
         view.addSubview(collectionView)
         view.addSubview(loadingIndicator)
         view.addSubview(errorLabel)
         view.addSubview(retryButton)
-        
+
         collectionView.refreshControl = refreshControl
-        
+
         NSLayoutConstraint.activate([
             collectionView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
             collectionView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             collectionView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             collectionView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
-            
+
             loadingIndicator.centerXAnchor.constraint(equalTo: view.centerXAnchor),
             loadingIndicator.centerYAnchor.constraint(equalTo: view.centerYAnchor),
-            
+
             errorLabel.centerXAnchor.constraint(equalTo: view.centerXAnchor),
             errorLabel.centerYAnchor.constraint(equalTo: view.centerYAnchor, constant: -40),
             errorLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 40),
             errorLabel.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -40),
-            
+
             retryButton.topAnchor.constraint(equalTo: errorLabel.bottomAnchor, constant: 20),
             retryButton.centerXAnchor.constraint(equalTo: view.centerXAnchor)
         ])
     }
-    
+
     private func createLayout() -> UICollectionViewLayout {
         let itemSize = NSCollectionLayoutSize(
             widthDimension: .fractionalWidth(0.5),
@@ -129,19 +129,19 @@ final class AlbumListViewController: UIViewController {
         )
         let item = NSCollectionLayoutItem(layoutSize: itemSize)
         item.contentInsets = NSDirectionalEdgeInsets(top: 8, leading: 8, bottom: 8, trailing: 8)
-        
+
         let groupSize = NSCollectionLayoutSize(
             widthDimension: .fractionalWidth(1.0),
             heightDimension: .absolute(180)
         )
         let group = NSCollectionLayoutGroup.horizontal(layoutSize: groupSize, subitems: [item])
-        
+
         let section = NSCollectionLayoutSection(group: group)
         section.contentInsets = NSDirectionalEdgeInsets(top: 8, leading: 8, bottom: 8, trailing: 8)
-        
+
         return UICollectionViewCompositionalLayout(section: section)
     }
-    
+
     private func setupBindings() {
         // State 변경 구독
         viewModel.$state
@@ -152,7 +152,7 @@ final class AlbumListViewController: UIViewController {
                 self?.collectionView.reloadData()
             }
             .store(in: &cancellables)
-        
+
         viewModel.$state
             .map(\.isLoading)
             .removeDuplicates()
@@ -166,7 +166,7 @@ final class AlbumListViewController: UIViewController {
                 }
             }
             .store(in: &cancellables)
-        
+
         viewModel.$state
             .map(\.error)
             .removeDuplicates()
@@ -176,19 +176,19 @@ final class AlbumListViewController: UIViewController {
             }
             .store(in: &cancellables)
     }
-    
+
     // MARK: - Actions
-    
+
     @objc private func handleRefresh() {
         viewModel.send(.refreshButtonTapped)
     }
-    
+
     @objc private func handleRetry() {
         viewModel.send(.retryButtonTapped)
     }
-    
+
     // MARK: - Error Handling
-    
+
     private func handleError(_ error: SendableError?) {
         if let error = error {
             errorLabel.text = error.localizedDescription
@@ -206,18 +206,21 @@ final class AlbumListViewController: UIViewController {
 // MARK: - UICollectionViewDataSource
 
 extension AlbumListViewController: UICollectionViewDataSource {
-    func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
+    func collectionView(_: UICollectionView, numberOfItemsInSection _: Int) -> Int {
         return viewModel.state.albums.count
     }
-    
-    func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
+
+    func collectionView(
+        _ collectionView: UICollectionView,
+        cellForItemAt indexPath: IndexPath
+    ) -> UICollectionViewCell {
         guard let cell = collectionView.dequeueReusableCell(
             withReuseIdentifier: AlbumCell.reuseIdentifier,
             for: indexPath
         ) as? AlbumCell else {
             return UICollectionViewCell()
         }
-        
+
         let album = viewModel.state.albums[indexPath.item]
         cell.configure(with: album)
         return cell
@@ -227,21 +230,19 @@ extension AlbumListViewController: UICollectionViewDataSource {
 // MARK: - UICollectionViewDelegate
 
 extension AlbumListViewController: UICollectionViewDelegate {
-    func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
+    func collectionView(_: UICollectionView, didSelectItemAt indexPath: IndexPath) {
         let album = viewModel.state.albums[indexPath.item]
         print("Selected album: \(album.title)")
-        // TODO: Navigate to AlbumDetailViewController
     }
 }
 
 // MARK: - AlbumCell
 
 private final class AlbumCell: UICollectionViewCell {
-    
     static let reuseIdentifier = "AlbumCell"
-    
+
     // MARK: - UI Components
-    
+
     private let containerView: UIView = {
         let view = UIView()
         view.translatesAutoresizingMaskIntoConstraints = false
@@ -250,7 +251,7 @@ private final class AlbumCell: UICollectionViewCell {
         view.layer.masksToBounds = true
         return view
     }()
-    
+
     private let imageView: UIImageView = {
         let imageView = UIImageView()
         imageView.translatesAutoresizingMaskIntoConstraints = false
@@ -260,7 +261,7 @@ private final class AlbumCell: UICollectionViewCell {
         imageView.tintColor = .secondaryLabel
         return imageView
     }()
-    
+
     private let titleLabel: UILabel = {
         let label = UILabel()
         label.translatesAutoresizingMaskIntoConstraints = false
@@ -269,47 +270,50 @@ private final class AlbumCell: UICollectionViewCell {
         label.textAlignment = .center
         return label
     }()
-    
+
     // MARK: - Initialization
-    
+
     override init(frame: CGRect) {
         super.init(frame: frame)
         setupUI()
     }
-    
-    required init?(coder: NSCoder) {
+
+    @available(*, unavailable)
+    required init?(coder _: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
-    
+
     // MARK: - Setup
-    
+
     private func setupUI() {
         contentView.addSubview(containerView)
         containerView.addSubview(imageView)
         containerView.addSubview(titleLabel)
-        
+
         NSLayoutConstraint.activate([
             containerView.topAnchor.constraint(equalTo: contentView.topAnchor),
             containerView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
             containerView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
             containerView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor),
-            
+
             imageView.topAnchor.constraint(equalTo: containerView.topAnchor),
             imageView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor),
             imageView.trailingAnchor.constraint(equalTo: containerView.trailingAnchor),
             imageView.heightAnchor.constraint(equalTo: containerView.heightAnchor, multiplier: 0.7),
-            
+
             titleLabel.topAnchor.constraint(equalTo: imageView.bottomAnchor, constant: 8),
             titleLabel.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 8),
             titleLabel.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -8),
-            titleLabel.bottomAnchor.constraint(lessThanOrEqualTo: containerView.bottomAnchor, constant: -8)
+            titleLabel.bottomAnchor.constraint(
+                lessThanOrEqualTo: containerView.bottomAnchor,
+                constant: -8
+            )
         ])
     }
-    
+
     // MARK: - Configuration
-    
+
     func configure(with album: Album) {
         titleLabel.text = album.title
     }
 }
-

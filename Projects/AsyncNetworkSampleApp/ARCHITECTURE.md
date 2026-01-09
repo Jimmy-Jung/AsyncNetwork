@@ -222,12 +222,22 @@ sequenceDiagram
 - ✅ 앨범별 사진 그리드 뷰
 - ✅ 이미지 로딩 (AsyncImage)
 
-### 5. 네트워크 상태 모니터링
+### 5. Settings (Developer 기능) ⭐ NEW
+- ✅ NetworkConfiguration 프리셋 전환 (Development/Default/Stable/Fast/Test)
+- ✅ RetryPolicy 프리셋 전환 (Default/Aggressive/Conservative)
+- ✅ LoggingLevel 전환 (Verbose/Info/Error/None)
+- ✅ 실시간 NetworkMonitor 상태 표시
+  - 연결 상태 (Connected/Disconnected)
+  - 연결 타입 (Wi-Fi/Cellular/Ethernet)
+  - Expensive/Constrained 플래그
+- ✅ Reset to Defaults 기능
+
+### 6. 네트워크 상태 모니터링
 - ✅ 실시간 네트워크 연결 상태 표시
 - ✅ 오프라인 상태 감지 및 처리
 - ✅ 네트워크 복구 시 자동 재시도
 
-### 6. 에러 처리
+### 7. 에러 처리
 - ✅ 네트워크 에러 처리
 - ✅ HTTP 상태 코드 에러 처리
 - ✅ 사용자 친화적 에러 메시지
