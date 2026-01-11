@@ -7,7 +7,8 @@ import PackageDescription
     let packageSettings = PackageSettings(
         productTypes: [
             "AsyncNetwork": .framework,
-            "AsyncViewModel": .framework
+            "AsyncViewModel": .framework,
+            "TraceKit": .framework
         ],
         baseSettings: .settings(
             configurations: [
@@ -24,6 +25,8 @@ let package = Package(
         // AsyncNetwork (Local)
         .package(path: "../"),
         // AsyncViewModel (Remote)
-        .package(url: "https://github.com/Jimmy-Jung/AsyncViewModel.git", from: "1.2.0")
+        .package(url: "https://github.com/Jimmy-Jung/AsyncViewModel.git", from: "1.2.0"),
+        // TraceKit (Remote)
+        .package(url: "https://github.com/Jimmy-Jung/TraceKit", from: "1.1.1")
     ]
 )

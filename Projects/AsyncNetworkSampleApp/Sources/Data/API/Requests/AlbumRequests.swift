@@ -29,14 +29,14 @@ struct PhotoNotFoundError: Codable, Sendable, Error {
     description: """
     특정 사용자의 모든 앨범을 가져옵니다.
     
-    ## 파라미터
-    - userId: 앨범을 조회할 User의 ID (필수)
+    파라미터:
+    • userId: 앨범을 조회할 User의 ID (필수)
     
-    ## 기능
-    - userId 기준 필터링
-    - 페이지네이션 지원
+    기능:
+    • userId 기준 필터링
+    • 페이지네이션 지원
     
-    ## 응답 형식
+    응답 형식:
     Album 객체의 배열을 반환합니다.
     """,
     baseURL: jsonPlaceholderURL,
@@ -74,11 +74,11 @@ struct GetAlbumsForUserRequest {
     description: """
     특정 ID를 가진 앨범을 가져옵니다.
     
-    ## 파라미터
-    - id: Album의 고유 식별자
+    파라미터:
+    • id: Album의 고유 식별자
     
-    ## 에러 처리
-    - 404: 앨범을 찾을 수 없음
+    에러 처리:
+    • 404: 앨범을 찾을 수 없음
     """,
     baseURL: jsonPlaceholderURL,
     path: "/albums/{id}",
@@ -110,15 +110,15 @@ struct GetAlbumByIdRequest {
     description: """
     특정 앨범의 모든 사진을 가져옵니다.
     
-    ## 파라미터
-    - albumId: 사진을 조회할 Album의 ID (필수)
+    파라미터:
+    • albumId: 사진을 조회할 Album의 ID (필수)
     
-    ## 기능
-    - albumId 기준 필터링
-    - 페이지네이션 지원
-    - 썸네일 URL 포함
+    기능:
+    • albumId 기준 필터링
+    • 페이지네이션 지원
+    • 썸네일 URL 포함
     
-    ## 응답 형식
+    응답 형식:
     Photo 객체의 배열을 반환합니다. 각 객체는 원본 이미지 URL과 썸네일 URL을 포함합니다.
     """,
     baseURL: jsonPlaceholderURL,
@@ -156,14 +156,14 @@ struct GetPhotosForAlbumRequest {
     description: """
     특정 ID를 가진 사진을 가져옵니다.
     
-    ## 파라미터
-    - id: Photo의 고유 식별자
+    파라미터:
+    • id: Photo의 고유 식별자
     
-    ## 응답
+    응답:
     원본 이미지 URL과 썸네일 URL을 포함한 Photo 객체
     
-    ## 에러 처리
-    - 404: 사진을 찾을 수 없음
+    에러 처리:
+    • 404: 사진을 찾을 수 없음
     """,
     baseURL: jsonPlaceholderURL,
     path: "/photos/{id}",

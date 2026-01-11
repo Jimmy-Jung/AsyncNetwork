@@ -227,7 +227,7 @@ private actor MockHTTPClient: HTTPClientProtocol {
 private func createMockNetworkService() -> NetworkService {
     NetworkService(
         httpClient: MockHTTPClient(),
-        retryPolicy: RetryPolicy.default,
+        retryPolicy: RetryPolicy(),
         responseProcessor: ResponseProcessor(),
         interceptors: []
     )

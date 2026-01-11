@@ -30,11 +30,11 @@ struct UserValidationError: Codable, Sendable, Error {
     description: """
     JSONPlaceholder에서 모든 사용자를 가져옵니다.
     
-    ## 기능
-    - 페이지네이션 지원 (_limit 파라미터)
-    - 완전한 사용자 프로필 정보 포함
+    기능:
+    • 페이지네이션 지원 (_limit 파라미터)
+    • 완전한 사용자 프로필 정보 포함
     
-    ## 응답 형식
+    응답 형식:
     User 객체의 배열을 반환합니다. 각 객체는 주소, 회사, 연락처 정보를 포함합니다.
     """,
     baseURL: jsonPlaceholderURL,
@@ -66,14 +66,14 @@ struct GetAllUsersRequest {
     description: """
     특정 ID를 가진 사용자를 가져옵니다.
     
-    ## 파라미터
-    - id: User의 고유 식별자
+    파라미터:
+    • id: User의 고유 식별자
     
-    ## 응답
+    응답:
     완전한 사용자 프로필 정보 (주소, 회사, 연락처 포함)
     
-    ## 에러 처리
-    - 404: 사용자를 찾을 수 없음
+    에러 처리:
+    • 404: 사용자를 찾을 수 없음
     """,
     baseURL: jsonPlaceholderURL,
     path: "/users/{id}",
@@ -105,20 +105,20 @@ struct GetUserByIdRequest {
     description: """
     새로운 사용자를 생성합니다.
     
-    ## 요청 바디
-    - name: 사용자 이름 (필수)
-    - username: 사용자명 (필수, 고유)
-    - email: 이메일 주소 (필수, 유효한 형식)
+    요청 바디:
+    • name: 사용자 이름 (필수)
+    • username: 사용자명 (필수, 고유)
+    • email: 이메일 주소 (필수, 유효한 형식)
     
-    ## 검증 규칙
-    - name: 1-100자
-    - username: 3-20자, 영문/숫자만
-    - email: 유효한 이메일 형식
+    검증 규칙:
+    • name: 1-100자
+    • username: 3-20자, 영문/숫자만
+    • email: 유효한 이메일 형식
     
-    ## 에러 처리
-    - 400: 잘못된 요청 데이터
-    - 409: 이미 존재하는 username 또는 email
-    - 422: 검증 실패
+    에러 처리:
+    • 400: 잘못된 요청 데이터
+    • 409: 이미 존재하는 username 또는 email
+    • 422: 검증 실패
     """,
     baseURL: jsonPlaceholderURL,
     path: "/users",

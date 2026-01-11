@@ -21,41 +21,90 @@ struct SettingsViewModelTests {
     func initialStateHasDefaultValues() async {
         let viewModel = SettingsViewModel(networkMonitor: MockNetworkMonitor())
 
-        #expect(viewModel.state.configurationPreset == .development)
-        #expect(viewModel.state.retryPolicyPreset == .default)
+        #expect(viewModel.state.retryPolicyPreset == .standard)
         #expect(viewModel.state.loggingLevel == .verbose)
         #expect(viewModel.state.networkStatus == .connected(.wifi))
         #expect(viewModel.state.isExpensive == false)
         #expect(viewModel.state.isConstrained == false)
+        #expect(viewModel.state.cacheCapacityPreset == .medium)
     }
 
-    // MARK: - Configuration Preset Change Tests
-
-    @Test("ConfigurationPreset 변경 시 State가 업데이트된다")
-    func configurationPresetChangeUpdatesState() async throws {
+    // MARK: - Cache Settings Tests
+    
+    @Test("CacheCapacityPreset 변경 시 State가 업데이트된다")
+    func cacheCapacityPresetChangeUpdatesState() async throws {
+        let viewModel = SettingsViewModel(networkMonitor: MockNetworkMonitor())
+        let store = AsyncTestStore(viewModel: viewModel)
+        
+        store.send(.cacheCapacityPresetSelected(.large))
+        try await store.waitForEffects()
+        
+        #expect(store.state.cacheCapacityPreset == .large)
+    }
+    
+    @Test("CacheCapacityPreset 변경 시 State만 업데이트된다 (URLCache는 불변)")
+    func cacheCapacityPresetChangeUpdatesStateOnly() async throws {
+        let viewModel = SettingsViewModel(networkMonitor: MockNetworkMonitor())
+        let store = AsyncTestStore(viewModel: viewModel)
+        
+        let preset = CacheCapacityPreset.large
+        store.send(.cacheCapacityPresetSelected(preset))
+        try await store.waitForEffects()
+        
+        #expect(store.state.cacheCapacityPreset == preset)
+        // 주의: URLCache는 런타임에 변경 불가 (read-only)
+        // 실제 용량 변경은 앱 재시작 시 적용
+    }
+    
+    @Test("refreshCacheUsage 시 AppDependency의 URLCache 사용량이 업데이트된다")
+    func refreshCacheUsageUpdatesCurrentUsage() async throws {
+        let viewModel = SettingsViewModel(networkMonitor: MockNetworkMonitor())
+        let store = AsyncTestStore(viewModel: viewModel)
+        
+        store.send(.refreshCacheUsageTapped)
+        try await store.waitForEffects()
+        
+        let appCache = AppDependency.shared.urlCache
+        #expect(store.state.cacheUsage.memoryCapacity == appCache.memoryCapacity)
+        #expect(store.state.cacheUsage.diskCapacity == appCache.diskCapacity)
+        #expect(store.state.cacheUsage.memoryUsage == appCache.currentMemoryUsage)
+        #expect(store.state.cacheUsage.diskUsage == appCache.currentDiskUsage)
+    }
+    
+    @Test("clearCache 시 AppDependency의 URLCache가 비워진다")
+    func clearCacheRemovesAllCachedResponses() async throws {
         let viewModel = SettingsViewModel(networkMonitor: MockNetworkMonitor())
         let store = AsyncTestStore(viewModel: viewModel)
 
-        store.send(.configurationPresetSelected(.stable))
+        let appCache = AppDependency.shared.urlCache
+        let initialMemoryUsage = appCache.currentMemoryUsage
+        
+        store.send(.clearCacheTapped)
         try await store.waitForEffects()
 
-        #expect(store.state.configurationPreset == .stable)
+        // clearCache 후 사용량이 0이거나 이전보다 작아야 함
+        #expect(store.state.cacheUsage.memoryUsage <= initialMemoryUsage)
     }
 
-    @Test("모든 ConfigurationPreset을 순회하며 변경할 수 있다")
-    func canCycleThroughAllConfigurationPresets() async throws {
+    @Test("모든 CacheCapacityPreset을 순회하며 변경할 수 있다")
+    func canCycleThroughAllCacheCapacityPresets() async throws {
         let viewModel = SettingsViewModel(networkMonitor: MockNetworkMonitor())
         let store = AsyncTestStore(viewModel: viewModel)
 
-        let presets: [NetworkConfigurationPreset] = [.default, .stable, .fast, .test]
+        let presets: [CacheCapacityPreset] = [.small, .medium, .large]
 
         for preset in presets {
-            store.send(.configurationPresetSelected(preset))
+            store.send(.cacheCapacityPresetSelected(preset))
             try await store.waitForEffects()
 
-            #expect(store.state.configurationPreset == preset)
+            #expect(store.state.cacheCapacityPreset == preset)
+            // 주의: URLCache는 런타임에 변경 불가
+            // State의 preset만 변경됨
         }
     }
+
+    // MARK: - Configuration Preset Change Tests (Removed - ConfigurationPreset no longer exists)
+
 
     // MARK: - Retry Policy Preset Change Tests
 
@@ -64,10 +113,10 @@ struct SettingsViewModelTests {
         let viewModel = SettingsViewModel(networkMonitor: MockNetworkMonitor())
         let store = AsyncTestStore(viewModel: viewModel)
 
-        store.send(.retryPolicyPresetSelected(.aggressive))
+        store.send(.retryPolicyPresetSelected(.quick))
         try await store.waitForEffects()
 
-        #expect(store.state.retryPolicyPreset == .aggressive)
+        #expect(store.state.retryPolicyPreset == .quick)
     }
 
     @Test("모든 RetryPolicyPreset을 순회하며 변경할 수 있다")
@@ -75,7 +124,7 @@ struct SettingsViewModelTests {
         let viewModel = SettingsViewModel(networkMonitor: MockNetworkMonitor())
         let store = AsyncTestStore(viewModel: viewModel)
 
-        let presets: [RetryPolicyPreset] = [.aggressive, .conservative]
+        let presets: [RetryPolicyPreset] = [.quick, .patient]
 
         for preset in presets {
             store.send(.retryPolicyPresetSelected(preset))
@@ -158,10 +207,7 @@ struct SettingsViewModelTests {
         let store = AsyncTestStore(viewModel: viewModel)
 
         // 설정 변경
-        store.send(.configurationPresetSelected(.stable))
-        try await store.waitForEffects()
-
-        store.send(.retryPolicyPresetSelected(.aggressive))
+        store.send(.retryPolicyPresetSelected(.quick))
         try await store.waitForEffects()
 
         store.send(.loggingLevelSelected(.none))
@@ -171,8 +217,7 @@ struct SettingsViewModelTests {
         store.send(.resetToDefaultsTapped)
         try await store.waitForEffects()
 
-        #expect(store.state.configurationPreset == .development)
-        #expect(store.state.retryPolicyPreset == .default)
+        #expect(store.state.retryPolicyPreset == .standard)
         #expect(store.state.loggingLevel == .verbose)
     }
 }

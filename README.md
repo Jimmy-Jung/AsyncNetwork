@@ -92,11 +92,10 @@ let service = NetworkService()
 
 // 커스텀 설정으로 초기화
 let service = NetworkService(
-    configuration: NetworkConfiguration(
-        timeout: 60.0,
-        enableLogging: true,
+    httpClient: HTTPClient(timeout: 60),
+    retryPolicy: .aggressive,
         checkNetworkBeforeRequest: true
-    ),
+)
     plugins: [
         ConsoleLoggingInterceptor(minimumLevel: .info)
     ]
@@ -282,7 +281,7 @@ AsyncNetwork은 세 가지 주요 모듈로 구성됩니다:
 AsyncNetwork/
 ├── Models/              # 도메인 모델 (HTTPMethod, HTTPResponse 등)
 ├── Protocols/           # 프로토콜 정의 (APIRequest, RequestInterceptor 등)
-├── Configuration/       # 설정 및 정책 (NetworkConfiguration, RetryPolicy)
+├── Configuration/       # 설정 및 정책 (RetryPolicy)
 ├── Client/              # HTTP 클라이언트 (HTTPClient, HTTPHeaders)
 ├── Interceptors/        # 인터셉터 (LoggingInterceptor 등)
 ├── Processing/          # 응답 처리 (ResponseProcessor, StatusCodeValidator)
@@ -549,7 +548,7 @@ let customProcessor = ResponseProcessor(
 // 3. 서비스에 적용
 let service = NetworkService(
     httpClient: HTTPClient(),
-    retryPolicy: RetryPolicy.default,
+    retryPolicy: RetryPolicy(),
     responseProcessor: customProcessor
 )
 ```
@@ -795,9 +794,7 @@ default:
 
 // 오프라인 체크 비활성화 (테스트 환경 등)
 let service = NetworkService(
-    configuration: NetworkConfiguration(
         checkNetworkBeforeRequest: false
-    )
 )
 ```
 

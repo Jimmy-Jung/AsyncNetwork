@@ -11,6 +11,166 @@ import Testing
 /// Settings 도메인 모델 테스트
 @Suite("Settings 도메인 모델")
 struct SettingsTests {
+    // MARK: - ETag Cache Tests
+    
+    @Test("ETagCacheCapacityPreset은 모든 프리셋을 제공한다")
+    func etagCacheCapacityPresetProvidesAllPresets() {
+        let presets = ETagCacheCapacityPreset.allCases
+        
+        #expect(presets.count == 4)
+        #expect(presets.contains(.small))
+        #expect(presets.contains(.medium))
+        #expect(presets.contains(.large))
+        #expect(presets.contains(.custom))
+    }
+    
+    @Test("ETagCacheCapacityPreset의 displayName은 명확하다")
+    func etagCacheCapacityPresetDisplayNamesAreClear() {
+        #expect(ETagCacheCapacityPreset.small.displayName == "작음 (Small)")
+        #expect(ETagCacheCapacityPreset.medium.displayName == "중간 (Medium)")
+        #expect(ETagCacheCapacityPreset.large.displayName == "큼 (Large)")
+        #expect(ETagCacheCapacityPreset.custom.displayName == "커스텀")
+    }
+    
+    @Test("ETagCacheCapacityPreset의 capacity는 올바른 값을 반환한다")
+    func etagCacheCapacityPresetReturnsCorrectCapacity() {
+        #expect(ETagCacheCapacityPreset.small.capacity == 50)
+        #expect(ETagCacheCapacityPreset.medium.capacity == 200)
+        #expect(ETagCacheCapacityPreset.large.capacity == 500)
+    }
+    
+    @Test("ETagCacheUsage는 사용률을 올바르게 계산한다")
+    func etagCacheUsageCalculatesUsagePercentageCorrectly() {
+        let usage = ETagCacheUsage(currentCount: 50, capacity: 200)
+        
+        #expect(usage.usagePercentage == 25.0)
+    }
+    
+    @Test("ETagCacheUsage는 0 용량일 때 0%를 반환한다")
+    func etagCacheUsageReturnsZeroPercentageWhenCapacityIsZero() {
+        let usage = ETagCacheUsage(currentCount: 10, capacity: 0)
+        
+        #expect(usage.usagePercentage == 0.0)
+    }
+    
+    @Test("ETagCacheUsage.formattedUsage는 읽기 쉬운 형식을 반환한다")
+    func etagCacheUsageFormattedUsageIsReadable() {
+        let usage = ETagCacheUsage(currentCount: 50, capacity: 200)
+        
+        let formatted = usage.formattedUsage
+        #expect(formatted == "50 / 200 URLs")
+    }
+    
+    @Test("ETagCacheUsage.formattedPercentage는 읽기 쉬운 형식을 반환한다")
+    func etagCacheUsageFormattedPercentageIsReadable() {
+        let usage = ETagCacheUsage(currentCount: 50, capacity: 200)
+        
+        let formatted = usage.formattedPercentage
+        #expect(formatted == "25.0%")
+    }
+    
+    // MARK: - HTTP Cache (CacheCapacityPreset) Tests
+    
+    @Test("CacheCapacityPreset은 모든 프리셋을 제공한다")
+    func cacheCapacityPresetProvidesAllPresets() {
+        let presets = CacheCapacityPreset.allCases
+        
+        #expect(presets.count == 4)
+        #expect(presets.contains(.small))
+        #expect(presets.contains(.medium))
+        #expect(presets.contains(.large))
+        #expect(presets.contains(.custom))
+    }
+    
+    @Test("CacheCapacityPreset의 displayName은 명확하다")
+    func cacheCapacityPresetDisplayNamesAreClear() {
+        #expect(CacheCapacityPreset.small.displayName == "작음 (Small)")
+        #expect(CacheCapacityPreset.medium.displayName == "중간 (Medium)")
+        #expect(CacheCapacityPreset.large.displayName == "큼 (Large)")
+        #expect(CacheCapacityPreset.custom.displayName == "커스텀")
+    }
+    
+    @Test("CacheCapacityPreset의 memoryCapacity는 올바른 값을 반환한다")
+    func cacheCapacityPresetReturnsCorrectMemoryCapacity() {
+        #expect(CacheCapacityPreset.small.memoryCapacity == 4 * 1024 * 1024) // 4MB
+        #expect(CacheCapacityPreset.medium.memoryCapacity == 10 * 1024 * 1024) // 10MB
+        #expect(CacheCapacityPreset.large.memoryCapacity == 20 * 1024 * 1024) // 20MB
+    }
+    
+    @Test("CacheCapacityPreset의 diskCapacity는 올바른 값을 반환한다")
+    func cacheCapacityPresetReturnsCorrectDiskCapacity() {
+        #expect(CacheCapacityPreset.small.diskCapacity == 20 * 1024 * 1024) // 20MB
+        #expect(CacheCapacityPreset.medium.diskCapacity == 50 * 1024 * 1024) // 50MB
+        #expect(CacheCapacityPreset.large.diskCapacity == 100 * 1024 * 1024) // 100MB
+    }
+    
+    // MARK: - CacheUsage Tests
+    
+    @Test("CacheUsage는 메모리 사용률을 올바르게 계산한다")
+    func cacheUsageCalculatesMemoryUsagePercentageCorrectly() {
+        let usage = CacheUsage(
+            memoryUsage: 5 * 1024 * 1024,         // 5MB
+            diskUsage: 0,
+            memoryCapacity: 10 * 1024 * 1024,     // 10MB
+            diskCapacity: 50 * 1024 * 1024
+        )
+        
+        #expect(usage.memoryUsagePercentage == 50.0)
+    }
+    
+    @Test("CacheUsage는 디스크 사용률을 올바르게 계산한다")
+    func cacheUsageCalculatesDiskUsagePercentageCorrectly() {
+        let usage = CacheUsage(
+            memoryUsage: 0,
+            diskUsage: 25 * 1024 * 1024,          // 25MB
+            memoryCapacity: 10 * 1024 * 1024,
+            diskCapacity: 100 * 1024 * 1024       // 100MB
+        )
+        
+        #expect(usage.diskUsagePercentage == 25.0)
+    }
+    
+    @Test("CacheUsage는 0 용량일 때 0%를 반환한다")
+    func cacheUsageReturnsZeroPercentageWhenCapacityIsZero() {
+        let usage = CacheUsage(
+            memoryUsage: 5 * 1024 * 1024,
+            diskUsage: 10 * 1024 * 1024,
+            memoryCapacity: 0,
+            diskCapacity: 0
+        )
+        
+        #expect(usage.memoryUsagePercentage == 0.0)
+        #expect(usage.diskUsagePercentage == 0.0)
+    }
+    
+    @Test("CacheUsage.formattedMemoryUsage는 읽기 쉬운 형식을 반환한다")
+    func cacheUsageFormattedMemoryUsageIsReadable() {
+        let usage = CacheUsage(
+            memoryUsage: 5 * 1024 * 1024,         // 5MB
+            diskUsage: 0,
+            memoryCapacity: 10 * 1024 * 1024,     // 10MB
+            diskCapacity: 50 * 1024 * 1024
+        )
+        
+        let formatted = usage.formattedMemoryUsage
+        #expect(formatted.contains("MB"))
+        #expect(formatted.contains("/"))
+    }
+    
+    @Test("CacheUsage.formattedDiskUsage는 읽기 쉬운 형식을 반환한다")
+    func cacheUsageFormattedDiskUsageIsReadable() {
+        let usage = CacheUsage(
+            memoryUsage: 0,
+            diskUsage: 25 * 1024 * 1024,          // 25MB
+            memoryCapacity: 10 * 1024 * 1024,
+            diskCapacity: 100 * 1024 * 1024       // 100MB
+        )
+        
+        let formatted = usage.formattedDiskUsage
+        #expect(formatted.contains("MB"))
+        #expect(formatted.contains("/"))
+    }
+    
     // MARK: - NetworkConfigurationPreset Tests
 
     @Test("NetworkConfigurationPreset은 모든 프리셋을 제공한다")
@@ -49,24 +209,28 @@ struct SettingsTests {
     func retryPolicyPresetProvidesAllPresets() {
         let presets = RetryPolicyPreset.allCases
 
-        #expect(presets.count == 3)
-        #expect(presets.contains(.default))
-        #expect(presets.contains(.aggressive))
-        #expect(presets.contains(.conservative))
+        #expect(presets.count == 5)
+        #expect(presets.contains(.standard))
+        #expect(presets.contains(.quick))
+        #expect(presets.contains(.patient))
+        #expect(presets.contains(.none))
+        #expect(presets.contains(.custom))
     }
 
     @Test("RetryPolicyPreset의 displayName은 명확하다")
     func retryPolicyPresetDisplayNamesAreClear() {
-        #expect(RetryPolicyPreset.default.displayName == "Default")
-        #expect(RetryPolicyPreset.aggressive.displayName == "Aggressive")
-        #expect(RetryPolicyPreset.conservative.displayName == "Conservative")
+        #expect(RetryPolicyPreset.standard.displayName == "표준 (Standard)")
+        #expect(RetryPolicyPreset.quick.displayName == "빠름 (Quick)")
+        #expect(RetryPolicyPreset.patient.displayName == "느림 (Patient)")
+        #expect(RetryPolicyPreset.none.displayName == "재시도 없음")
+        #expect(RetryPolicyPreset.custom.displayName == "커스텀")
     }
 
     @Test("RetryPolicyPreset의 maxRetries는 올바른 값을 반환한다")
     func retryPolicyPresetReturnsCorrectMaxRetries() {
-        #expect(RetryPolicyPreset.default.maxRetries == 3)
-        #expect(RetryPolicyPreset.aggressive.maxRetries == 5)
-        #expect(RetryPolicyPreset.conservative.maxRetries == 1)
+        #expect(RetryPolicyPreset.standard.maxRetries == 3)
+        #expect(RetryPolicyPreset.quick.maxRetries == 5)
+        #expect(RetryPolicyPreset.patient.maxRetries == 1)
     }
 
     // MARK: - LoggingLevel Tests

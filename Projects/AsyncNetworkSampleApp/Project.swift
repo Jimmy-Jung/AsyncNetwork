@@ -43,7 +43,8 @@ let project = Project(
             ],
                     dependencies: [
                         .external(name: "AsyncNetwork"),
-                        .external(name: "AsyncViewModel")
+                        .external(name: "AsyncViewModel"),
+                        .external(name: "TraceKit")
                     ],
             settings: .settings(
                 base: [
@@ -71,7 +72,8 @@ let project = Project(
             dependencies: [
                 .target(name: "AsyncNetworkSampleApp"),
                 .external(name: "AsyncNetwork"),
-                .external(name: "AsyncViewModel")
+                .external(name: "AsyncViewModel"),
+                .external(name: "TraceKit")
             ],
             settings: .settings(
                 base: [
