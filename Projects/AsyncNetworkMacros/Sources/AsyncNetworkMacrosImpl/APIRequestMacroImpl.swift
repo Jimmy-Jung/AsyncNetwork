@@ -218,6 +218,16 @@ public struct APIRequestMacroImpl: MemberMacro, ExtensionMacro {
             members.append(method)
         }
 
+        // metadata 생성 (PropertyWrapper 정보 추출하여 헤더 기본값 포함)
+        if !existingProperties.contains("metadata") {
+            let properties = scanPropertyWrappers(from: structDecl)
+            members.append(generateMetadata(
+                typeName: structDecl.name.text,
+                args: args,
+                properties: properties
+            ))
+        }
+
         // 테스트 관련 멤버 생성 (testScenarios나 errorExamples가 있는 경우)
         if !args.testScenarios.isEmpty || !args.errorExamples.isEmpty {
             // MockScenario enum
@@ -300,7 +310,7 @@ public struct APIRequestMacroImpl: MemberMacro, ExtensionMacro {
 
         // 경로에 플레이스홀더가 있는지 확인 (동적 경로 필요)
         let hasPlaceholders = args.path.contains("{") && args.path.contains("}")
-        
+
         if hasPlaceholders {
             // 플레이스홀더가 있으면 동적 경로 생성
             return generateDynamicPath(args: args)
@@ -453,7 +463,8 @@ public struct APIRequestMacroImpl: MemberMacro, ExtensionMacro {
 
             for binding in variableDecl.bindings {
                 guard let pattern = binding.pattern.as(IdentifierPatternSyntax.self),
-                      let typeAnnotation = binding.typeAnnotation else {
+                      let typeAnnotation = binding.typeAnnotation
+                else {
                     continue
                 }
 
@@ -505,7 +516,7 @@ public struct APIRequestMacroImpl: MemberMacro, ExtensionMacro {
         let assignments = propertyInfos.map { info -> String in
             if let wrapper = info.wrapperInfo {
                 let isOptional = info.type.hasSuffix("?")
-                
+
                 // Property wrapper의 initializer를 직접 호출
                 if let customKey = wrapper.key {
                     // 커스텀 키가 있는 경우
@@ -546,8 +557,7 @@ public struct APIRequestMacroImpl: MemberMacro, ExtensionMacro {
     private static func extractGenericType(from typeString: String) -> String? {
         // RequestBody<PostBody> 형태에서 PostBody 추출
         if let startIndex = typeString.firstIndex(of: "<"),
-           let endIndex = typeString.lastIndex(of: ">")
-        {
+           let endIndex = typeString.lastIndex(of: ">") {
             let innerType = String(typeString[typeString.index(after: startIndex) ..< endIndex])
             return innerType.trimmingCharacters(in: .whitespaces)
         }
@@ -723,7 +733,7 @@ public struct APIRequestMacroImpl: MemberMacro, ExtensionMacro {
     private static func validateQueryParameter(
         propertyName: String,
         typeString: String,
-        isOptional: Bool,
+        isOptional _: Bool,
         httpMethod: String
     ) -> PropertyWrapperSuggestion? {
         // POST/PUT/PATCH의 바디 키워드가 있는 프로퍼티는 QueryParameter가 아닐 가능성
@@ -954,7 +964,7 @@ public struct APIRequestMacroImpl: MemberMacro, ExtensionMacro {
             "accept", "language",
             "cookie", "session",
             "apikey", "key",
-            "bearer", "basic",
+            "bearer", "basic"
         ]
 
         return headerKeywords.contains { propertyName.contains($0) }
@@ -980,18 +990,18 @@ public struct APIRequestMacroImpl: MemberMacro, ExtensionMacro {
     ) -> DeclSyntax {
         // errorExamples 기반으로 필요한 케이스 결정
         var requiredScenarios: Set<String> = ["success"]
-        
+
         // errorExamples에서 시나리오 추출
         for statusCode in errorExamples.keys {
             let caseName = getCaseNameForStatusCode(statusCode)
             requiredScenarios.insert(caseName)
         }
-        
+
         // 사용자 정의 시나리오 추가
         for scenario in scenarios {
             requiredScenarios.insert(scenario)
         }
-        
+
         // 기본 시나리오 추가 (사용자가 명시한 경우)
         let commonScenarios = ["networkError", "timeout", "notFound", "serverError", "unauthorized", "clientError"]
         for scenario in scenarios {
@@ -999,10 +1009,10 @@ public struct APIRequestMacroImpl: MemberMacro, ExtensionMacro {
                 requiredScenarios.insert(scenario)
             }
         }
-        
+
         let sortedScenarios = requiredScenarios.sorted()
         let cases = sortedScenarios.map { "case \($0)" }.joined(separator: "\n    ")
-        
+
         return """
         /// Mock 테스트 시나리오
         enum MockScenario {
@@ -1021,7 +1031,7 @@ public struct APIRequestMacroImpl: MemberMacro, ExtensionMacro {
         // 배열 타입이거나 EmptyResponse인지 확인
         let isArrayType = responseType.hasPrefix("[") && responseType.hasSuffix("]")
         let isEmptyResponse = responseType == "EmptyResponse"
-        
+
         let fixtureCall: String
         if isEmptyResponse {
             // EmptyResponse는 초기화자 사용
@@ -1033,7 +1043,7 @@ public struct APIRequestMacroImpl: MemberMacro, ExtensionMacro {
             // 일반 타입의 경우 fixture() 메서드 호출
             fixtureCall = "let response = \(responseType).fixture()"
         }
-        
+
         var cases = """
         switch scenario {
             case .success:
@@ -1050,13 +1060,13 @@ public struct APIRequestMacroImpl: MemberMacro, ExtensionMacro {
 
         // 생성할 케이스 추적 (중복 방지)
         var generatedCases: Set<String> = ["success"]
-        
+
         // errorExamples 기반 에러 케이스 생성
         for (statusCode, json) in errorExamples.sorted(by: { $0.key < $1.key }) {
             let code = Int(statusCode) ?? 500
             let escaped = escapeJSON(json)
             let caseName = getCaseNameForStatusCode(statusCode)
-            
+
             if generatedCases.contains(caseName) {
                 continue // 이미 생성된 케이스는 스킵
             }
@@ -1082,102 +1092,102 @@ public struct APIRequestMacroImpl: MemberMacro, ExtensionMacro {
                 continue
             }
             generatedCases.insert(scenario)
-            
+
             switch scenario {
             case "networkError":
                 cases += """
 
-            case .networkError:
-                return (nil, nil, URLError(.notConnectedToInternet))
-            """
+                case .networkError:
+                    return (nil, nil, URLError(.notConnectedToInternet))
+                """
             case "timeout":
                 cases += """
 
-            case .timeout:
-                return (nil, nil, URLError(.timedOut))
-            """
+                case .timeout:
+                    return (nil, nil, URLError(.timedOut))
+                """
             case "notFound":
                 cases += """
 
-            case .notFound:
-                let errorData = Data(\"\"\"
-                {
-                    "error": "Not found",
-                    "code": "NOT_FOUND"
-                }
-                \"\"\".utf8)
-                let httpResponse = HTTPURLResponse(
-                    url: url,
-                    statusCode: 404,
-                    httpVersion: nil,
-                    headerFields: ["Content-Type": "application/json"]
-                )
-                return (errorData, httpResponse, nil)
-            """
+                case .notFound:
+                    let errorData = Data(\"\"\"
+                    {
+                        "error": "Not found",
+                        "code": "NOT_FOUND"
+                    }
+                    \"\"\".utf8)
+                    let httpResponse = HTTPURLResponse(
+                        url: url,
+                        statusCode: 404,
+                        httpVersion: nil,
+                        headerFields: ["Content-Type": "application/json"]
+                    )
+                    return (errorData, httpResponse, nil)
+                """
             case "serverError":
                 cases += """
 
-            case .serverError:
-                let httpResponse = HTTPURLResponse(
-                    url: url,
-                    statusCode: 500,
-                    httpVersion: nil,
-                    headerFields: nil
-                )
-                return (nil, httpResponse, nil)
-            """
+                case .serverError:
+                    let httpResponse = HTTPURLResponse(
+                        url: url,
+                        statusCode: 500,
+                        httpVersion: nil,
+                        headerFields: nil
+                    )
+                    return (nil, httpResponse, nil)
+                """
             case "unauthorized":
                 cases += """
 
-            case .unauthorized:
-                let errorData = Data(\"\"\"
-                {
-                    "error": "Unauthorized",
-                    "code": "UNAUTHORIZED"
-                }
-                \"\"\".utf8)
-                let httpResponse = HTTPURLResponse(
-                    url: url,
-                    statusCode: 401,
-                    httpVersion: nil,
-                    headerFields: ["Content-Type": "application/json"]
-                )
-                return (errorData, httpResponse, nil)
-            """
+                case .unauthorized:
+                    let errorData = Data(\"\"\"
+                    {
+                        "error": "Unauthorized",
+                        "code": "UNAUTHORIZED"
+                    }
+                    \"\"\".utf8)
+                    let httpResponse = HTTPURLResponse(
+                        url: url,
+                        statusCode: 401,
+                        httpVersion: nil,
+                        headerFields: ["Content-Type": "application/json"]
+                    )
+                    return (errorData, httpResponse, nil)
+                """
             case "clientError":
                 cases += """
 
-            case .clientError:
-                let errorData = Data(\"\"\"
-                {
-                    "error": "Bad Request",
-                    "code": "BAD_REQUEST"
-                }
-                \"\"\".utf8)
-                let httpResponse = HTTPURLResponse(
-                    url: url,
-                    statusCode: 400,
-                    httpVersion: nil,
-                    headerFields: ["Content-Type": "application/json"]
-                )
-                return (errorData, httpResponse, nil)
-            """
+                case .clientError:
+                    let errorData = Data(\"\"\"
+                    {
+                        "error": "Bad Request",
+                        "code": "BAD_REQUEST"
+                    }
+                    \"\"\".utf8)
+                    let httpResponse = HTTPURLResponse(
+                        url: url,
+                        statusCode: 400,
+                        httpVersion: nil,
+                        headerFields: ["Content-Type": "application/json"]
+                    )
+                    return (errorData, httpResponse, nil)
+                """
             default:
                 // 알 수 없는 시나리오는 기본 에러 반환
                 cases += """
 
-            case .\(scenario):
-                let httpResponse = HTTPURLResponse(
-                    url: url,
-                    statusCode: 500,
-                    httpVersion: nil,
-                    headerFields: nil
-                )
-                return (nil, httpResponse, nil)
-            """
+                case .\(scenario):
+                    let httpResponse = HTTPURLResponse(
+                        url: url,
+                        statusCode: 500,
+                        httpVersion: nil,
+                        headerFields: nil
+                    )
+                    return (nil, httpResponse, nil)
+                """
             }
         }
-        
+
         cases += """
 
             }
@@ -1187,7 +1197,7 @@ public struct APIRequestMacroImpl: MemberMacro, ExtensionMacro {
         /// Mock 응답 제공자
         static func mockResponse(for scenario: MockScenario) -> (Data?, URLResponse?, Error?) {
             let url = URL(string: "https://api.example.com")!
-            
+
             \(raw: cases)
         }
         """
@@ -1213,6 +1223,67 @@ public struct APIRequestMacroImpl: MemberMacro, ExtensionMacro {
             .replacingOccurrences(of: "\r", with: "\\r")
             .replacingOccurrences(of: "\t", with: "\\t")
     }
+
+    // MARK: - Metadata Generation
+
+    /// EndpointMetadata 생성 (헤더 기본값 포함)
+    private static func generateMetadata(
+        typeName: String,
+        args: MacroArguments,
+        properties: [PropertyWrapperInfo]
+    ) -> DeclSyntax {
+        // tags 배열을 문자열로 변환
+        let tagsString = args.tags.map { "\"\($0)\"" }.joined(separator: ", ")
+
+        // description escape 처리
+        let escapedDescription = args.description
+            .replacingOccurrences(of: "\\", with: "\\\\")
+            .replacingOccurrences(of: "\"", with: "\\\"")
+            .replacingOccurrences(of: "\n", with: "\\n")
+
+        let escapedTitle = args.title
+            .replacingOccurrences(of: "\\", with: "\\\\")
+            .replacingOccurrences(of: "\"", with: "\\\"")
+
+        // @HeaderField 및 @CustomHeader의 기본값을 headers 딕셔너리로 변환
+        var headerEntries: [String] = []
+        for prop in properties {
+            if prop.wrapperType == "HeaderField" || prop.wrapperType == "CustomHeader",
+               let headerKey = prop.headerKey,
+               let defaultValue = prop.defaultValue {
+                // 기본값을 escape 처리
+                let escapedValue = defaultValue
+                    .replacingOccurrences(of: "\\", with: "\\\\")
+                    .replacingOccurrences(of: "\"", with: "\\\"")
+                headerEntries.append("\"\(headerKey)\": \"\(escapedValue)\"")
+            }
+        }
+        let headersString = headerEntries.isEmpty ? "[:]" : "[\(headerEntries.joined(separator: ", "))]"
+
+        // @PathParameter, @QueryParameter 이름을 parameters 배열로 변환
+        let parameterNames = properties
+            .filter { ["PathParameter", "QueryParameter"].contains($0.wrapperType) }
+            .map { "\"\($0.name)\"" }
+        let parametersString = parameterNames.isEmpty ? "[]" : "[\(parameterNames.joined(separator: ", "))]"
+
+        return """
+        /// 엔드포인트 메타데이터
+        public static var metadata: EndpointMetadata {
+            EndpointMetadata(
+                id: "\(raw: typeName)",
+                title: "\(raw: escapedTitle)",
+                description: "\(raw: escapedDescription)",
+                method: "\(raw: args.method)",
+                path: "\(raw: args.path)",
+                baseURLString: \(raw: args.baseURL),
+                headers: \(raw: headersString),
+                tags: [\(raw: tagsString)],
+                parameters: \(raw: parametersString),
+                responseTypeName: "\(raw: args.responseType)"
+            )
+        }
+        """
+    }
 }
 
 // MARK: - Plugin Registration
@@ -1222,6 +1293,6 @@ struct AsyncNetworkMacrosPlugin: CompilerPlugin {
     let providingMacros: [Macro.Type] = [
         APIRequestMacroImpl.self,
         TestableDTOMacroImpl.self,
-        TestableSemerMacroImpl.self,
+        TestableSemerMacroImpl.self
     ]
 }

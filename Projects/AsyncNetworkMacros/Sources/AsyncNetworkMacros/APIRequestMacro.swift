@@ -208,6 +208,7 @@
     named(path),
     named(method),
     named(task),
+    named(metadata),
     named(MockScenario),
     named(mockResponse),
     named(Tests),
