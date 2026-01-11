@@ -16,11 +16,32 @@ public protocol APIRequest: Sendable {
     var method: HTTPMethod { get }
     var headers: [String: String]? { get }
     var timeout: TimeInterval { get }
+
+    /// 엔드포인트 메타데이터
+    /// @APIRequest 매크로가 자동으로 생성합니다.
+    static var metadata: EndpointMetadata { get }
 }
 
 public extension APIRequest {
     var timeout: TimeInterval { 30.0 }
     var headers: [String: String]? { nil }
+
+    /// 기본 메타데이터 구현
+    /// @APIRequest 매크로가 적용된 타입은 자동으로 이 구현을 오버라이드합니다.
+    static var metadata: EndpointMetadata {
+        EndpointMetadata(
+            id: "\(Self.self)",
+            title: "\(Self.self)",
+            description: "",
+            method: "GET",
+            path: "",
+            baseURLString: "",
+            headers: [:],
+            tags: [],
+            parameters: [],
+            responseTypeName: "EmptyResponse"
+        )
+    }
 
     func getBaseURL() throws -> URL {
         guard let url = URL(string: baseURLString) else {

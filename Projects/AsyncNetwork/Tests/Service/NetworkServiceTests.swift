@@ -54,7 +54,7 @@ struct NetworkServiceTests {
     // MARK: - Tests
 
     @Test("성공적인 네트워크 요청 및 디코딩")
-    func successfulRequestAndDecoding() async throws {        // Given
+    func successfulRequestAndDecoding() async throws { // Given
         let path = "/users/success"
         let configuration = URLSessionConfiguration.ephemeral
         configuration.protocolClasses = [MockURLProtocol.self]
@@ -77,7 +77,7 @@ struct NetworkServiceTests {
 
         let service = NetworkService(
             httpClient: httpClient,
-            retryPolicy: .none,
+            retryPolicy: RetryPolicy(configuration: RetryConfiguration(maxRetries: 0)),
             responseProcessor: ResponseProcessor()
         )
 
@@ -103,24 +103,17 @@ struct NetworkServiceTests {
         let expectedUser = TestUser(id: 1, name: "Retry User")
         let responseData = try JSONEncoder().encode(expectedUser)
 
-        // ✅ Sendable한 상태 관리를 위해 actor 사용
+        // ✅ Sendable한 상태 관리
         actor RetryState {
             private(set) var attemptCount = 0
-
             func incrementAndGet() -> Int {
                 attemptCount += 1
                 return attemptCount
-            }
-
-            func getCount() -> Int {
-                attemptCount
             }
         }
         let state = RetryState()
 
         await MockURLProtocol.register(path: path) { [state] request in
-            // ✅ 동기 클로저 내부에서 actor 호출은 불가능하므로
-            // 간단한 카운터를 사용 (테스트 목적이므로 허용)
             let semaphore = DispatchSemaphore(value: 0)
             var currentAttempt = 0
             Task {
@@ -130,7 +123,7 @@ struct NetworkServiceTests {
             semaphore.wait()
 
             if currentAttempt == 1 {
-                throw URLError(.timedOut) // 재시도 가능한 에러
+                throw URLError(.timedOut)
             }
 
             let response = HTTPURLResponse(
@@ -168,7 +161,7 @@ struct NetworkServiceTests {
     }
 
     @Test("최대 재시도 횟수 초과 시 에러 반환")
-    func failAfterMaxRetries() async throws {        // Given
+    func failAfterMaxRetries() async throws { // Given
         let path = "/users/fail_max_retries"
         let configuration = URLSessionConfiguration.ephemeral
         configuration.protocolClasses = [MockURLProtocol.self]
@@ -201,7 +194,7 @@ struct NetworkServiceTests {
     }
 
     @Test("인터셉터 동작 확인")
-    func verifyRequestInterceptor() async throws {        // Given
+    func verifyRequestInterceptor() async throws { // Given
         let path = "/users/interceptor"
         let configuration = URLSessionConfiguration.ephemeral
         configuration.protocolClasses = [MockURLProtocol.self]
@@ -228,7 +221,7 @@ struct NetworkServiceTests {
 
         let service = NetworkService(
             httpClient: httpClient,
-            retryPolicy: .none,
+            retryPolicy: RetryPolicy(configuration: RetryConfiguration(maxRetries: 0)),
             responseProcessor: ResponseProcessor(),
             interceptors: [TestInterceptor()]
         )
@@ -244,7 +237,7 @@ struct NetworkServiceTests {
     }
 
     @Test("associatedtype Response를 사용한 타입 추론 요청")
-    func requestWithAssociatedTypeResponse() async throws {        // Given
+    func requestWithAssociatedTypeResponse() async throws { // Given
         let path = "/users/typed"
         let configuration = URLSessionConfiguration.ephemeral
         configuration.protocolClasses = [MockURLProtocol.self]
@@ -266,7 +259,7 @@ struct NetworkServiceTests {
 
         let service = NetworkService(
             httpClient: httpClient,
-            retryPolicy: .none,
+            retryPolicy: RetryPolicy(configuration: RetryConfiguration(maxRetries: 0)),
             responseProcessor: ResponseProcessor()
         )
 
@@ -280,7 +273,7 @@ struct NetworkServiceTests {
     }
 
     @Test("associatedtype Response와 명시적 타입 지정 비교")
-    func compareAssociatedTypeVsExplicitType() async throws {        // Given
+    func compareAssociatedTypeVsExplicitType() async throws { // Given
         let path = "/users/compare"
         let configuration = URLSessionConfiguration.ephemeral
         configuration.protocolClasses = [MockURLProtocol.self]
@@ -302,7 +295,7 @@ struct NetworkServiceTests {
 
         let service = NetworkService(
             httpClient: httpClient,
-            retryPolicy: .none,
+            retryPolicy: RetryPolicy(configuration: RetryConfiguration(maxRetries: 0)),
             responseProcessor: ResponseProcessor()
         )
 
@@ -319,7 +312,7 @@ struct NetworkServiceTests {
     }
 
     @Test("빈 응답 EmptyResponse 처리")
-    func requestWithEmptyResponse() async throws {        // Given
+    func requestWithEmptyResponse() async throws { // Given
         let configuration = URLSessionConfiguration.ephemeral
         configuration.protocolClasses = [MockURLProtocol.self]
         let session = URLSession(configuration: configuration)
@@ -337,7 +330,7 @@ struct NetworkServiceTests {
 
         let service = NetworkService(
             httpClient: httpClient,
-            retryPolicy: .none,
+            retryPolicy: RetryPolicy(configuration: RetryConfiguration(maxRetries: 0)),
             responseProcessor: ResponseProcessor()
         )
 
