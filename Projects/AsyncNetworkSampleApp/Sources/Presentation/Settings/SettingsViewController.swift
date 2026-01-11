@@ -18,6 +18,7 @@ final class SettingsViewController: UITableViewController {
         case configuration
         case retryPolicy
         case logging
+        case developerTools
         case reset
 
         var title: String {
@@ -26,6 +27,7 @@ final class SettingsViewController: UITableViewController {
             case .configuration: return "네트워크 설정"
             case .retryPolicy: return "재시도 정책"
             case .logging: return "로깅 레벨"
+            case .developerTools: return "개발자 도구"
             case .reset: return "초기화"
             }
         }
@@ -99,6 +101,7 @@ final class SettingsViewController: UITableViewController {
         case .configuration: return NetworkConfigurationPreset.allCases.count
         case .retryPolicy: return RetryPolicyPreset.allCases.count
         case .logging: return LoggingLevel.allCases.count
+        case .developerTools: return 1 // Error Simulator
         case .reset: return 1
         }
     }
@@ -121,6 +124,8 @@ final class SettingsViewController: UITableViewController {
             return configureRetryPolicyCell(at: indexPath)
         case .logging:
             return configureLoggingCell(at: indexPath)
+        case .developerTools:
+            return configureDeveloperToolsCell(at: indexPath)
         case .reset:
             return configureResetCell(at: indexPath)
         }
@@ -145,6 +150,8 @@ final class SettingsViewController: UITableViewController {
         case .logging:
             let level = LoggingLevel.allCases[indexPath.row]
             viewModel.send(.loggingLevelSelected(level))
+        case .developerTools:
+            showErrorSimulator()
         case .reset:
             showResetConfirmation()
         }
@@ -196,9 +203,13 @@ final class SettingsViewController: UITableViewController {
         let cell = tableView.dequeueReusableCell(withIdentifier: "Cell", for: indexPath)
         let preset = NetworkConfigurationPreset.allCases[indexPath.row]
 
-        cell.textLabel?.text = preset.displayName
-        cell.textLabel?.textColor = .label
-        cell.textLabel?.textAlignment = .left
+        // 모든 속성 초기화
+        var config = cell.defaultContentConfiguration()
+        config.text = preset.displayName
+        config.secondaryText = nil
+        config.image = nil
+        cell.contentConfiguration = config
+
         cell.accessoryType = viewModel.state.configurationPreset == preset ? .checkmark : .none
 
         return cell
@@ -208,9 +219,13 @@ final class SettingsViewController: UITableViewController {
         let cell = tableView.dequeueReusableCell(withIdentifier: "Cell", for: indexPath)
         let preset = RetryPolicyPreset.allCases[indexPath.row]
 
-        cell.textLabel?.text = "\(preset.displayName) (\(preset.maxRetries) 회 재시도)"
-        cell.textLabel?.textColor = .label
-        cell.textLabel?.textAlignment = .left
+        // 모든 속성 초기화
+        var config = cell.defaultContentConfiguration()
+        config.text = "\(preset.displayName) (\(preset.maxRetries) 회 재시도)"
+        config.secondaryText = nil
+        config.image = nil
+        cell.contentConfiguration = config
+
         cell.accessoryType = viewModel.state.retryPolicyPreset == preset ? .checkmark : .none
 
         return cell
@@ -220,10 +235,29 @@ final class SettingsViewController: UITableViewController {
         let cell = tableView.dequeueReusableCell(withIdentifier: "Cell", for: indexPath)
         let level = LoggingLevel.allCases[indexPath.row]
 
-        cell.textLabel?.text = level.displayName
-        cell.textLabel?.textColor = .label
-        cell.textLabel?.textAlignment = .left
+        // 모든 속성 초기화
+        var config = cell.defaultContentConfiguration()
+        config.text = level.displayName
+        config.secondaryText = nil
+        config.image = nil
+        cell.contentConfiguration = config
+
         cell.accessoryType = viewModel.state.loggingLevel == level ? .checkmark : .none
+
+        return cell
+    }
+
+    private func configureDeveloperToolsCell(at indexPath: IndexPath) -> UITableViewCell {
+        let cell = tableView.dequeueReusableCell(withIdentifier: "Cell", for: indexPath)
+
+        var config = cell.defaultContentConfiguration()
+        config.text = "Error Simulator"
+        config.secondaryText = "네트워크 에러 시뮬레이션 및 재시도 테스트"
+        config.image = UIImage(systemName: "hammer.circle.fill")
+        config.imageProperties.tintColor = .systemOrange
+
+        cell.contentConfiguration = config
+        cell.accessoryType = .disclosureIndicator
 
         return cell
     }
@@ -231,14 +265,27 @@ final class SettingsViewController: UITableViewController {
     private func configureResetCell(at indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "Cell", for: indexPath)
 
-        cell.textLabel?.text = "기본값으로 초기화"
-        cell.textLabel?.textColor = .systemRed
-        cell.textLabel?.textAlignment = .center
+        // 모든 속성 초기화
+        var config = cell.defaultContentConfiguration()
+        config.text = "기본값으로 초기화"
+        config.textProperties.color = .systemRed
+        config.textProperties.alignment = .center
+        config.secondaryText = nil
+        config.image = nil
+        cell.contentConfiguration = config
+
+        cell.accessoryType = .none
 
         return cell
     }
 
     // MARK: - Actions
+
+    private func showErrorSimulator() {
+        let errorSimulatorViewModel = ErrorSimulatorViewModel()
+        let errorSimulatorVC = ErrorSimulatorViewController(viewModel: errorSimulatorViewModel)
+        navigationController?.pushViewController(errorSimulatorVC, animated: true)
+    }
 
     private func showResetConfirmation() {
         let alert = UIAlertController(
