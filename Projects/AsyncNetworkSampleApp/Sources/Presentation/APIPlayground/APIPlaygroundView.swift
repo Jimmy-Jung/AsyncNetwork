@@ -1,5 +1,5 @@
 //
-//  APIPlaygroundSwiftView.swift
+//  APIPlaygroundView.swift
 //  AsyncNetworkSampleApp
 //
 //  Created by jimmy on 2026/01/11.
@@ -10,15 +10,15 @@ import AsyncViewModel
 import SwiftUI
 
 /// API Playground 메인 뷰 (3열 레이아웃, AsyncNetworkDocKit 스타일 적용)
-struct APIPlaygroundSwiftView: View {
-    @StateObject private var viewModel: APIPlaygroundSwiftViewModel
+struct APIPlaygroundView: View {
+    @StateObject private var viewModel: APIPlaygroundViewModel
     @State private var columnVisibility: NavigationSplitViewVisibility = .all
 
     let networkService: NetworkService
 
     init(networkService: NetworkService) {
         self.networkService = networkService
-        _viewModel = StateObject(wrappedValue: APIPlaygroundSwiftViewModel())
+        _viewModel = StateObject(wrappedValue: APIPlaygroundViewModel())
     }
 
     var body: some View {
@@ -79,11 +79,11 @@ struct APIPlaygroundSwiftView: View {
             get: { viewModel.state.shouldPresentSettings },
             set: { if !$0 { viewModel.state.shouldPresentSettings = false } }
         )) {
-            SettingsSwiftView()
+            SettingsView()
         }
     }
 }
 
 #Preview {
-    APIPlaygroundSwiftView(networkService: AppDependency.shared.networkService)
+    APIPlaygroundView(networkService: AppDependency.shared.networkService)
 }

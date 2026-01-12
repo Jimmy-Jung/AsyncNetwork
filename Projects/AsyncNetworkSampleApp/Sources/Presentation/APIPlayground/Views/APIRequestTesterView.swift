@@ -5,6 +5,8 @@
 //  Created by jimmy on 2026/01/11.
 //
 
+// swiftlint:disable file_length type_body_length
+
 import AsyncNetwork
 import SwiftUI
 
@@ -45,10 +47,15 @@ struct APIRequestTesterView: View {
                     Divider()
                 }
 
+                // MARK: - Simulation Section
+
+                simulationSection
+                Divider()
+
                 sendButtonSection
 
-                if state.isLoading {
-                    ProgressView("Sending request...")
+                if state.isLoading || state.isRunningSimulation {
+                    ProgressView(state.isRunningSimulation ? "Running simulation..." : "Sending request...")
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 8)
                 }
@@ -59,6 +66,13 @@ struct APIRequestTesterView: View {
 
                 if state.hasBeenRequested && !state.response.isEmpty {
                     Divider()
+
+                    // 시뮬레이션 타임라인 표시
+                    if let timeline = state.currentSimulationTimeline {
+                        simulationTimelineSection(timeline)
+                        Divider()
+                    }
+
                     requestMetadataSection
                     Divider()
                     responseDisplaySection
@@ -198,8 +212,217 @@ struct APIRequestTesterView: View {
             .cornerRadius(8)
         }
         .buttonStyle(.plain)
-        .disabled(state.isLoading)
-        .opacity(state.isLoading ? 0.6 : 1.0)
+        .disabled(state.isLoading || state.isRunningSimulation)
+        .opacity(state.isLoading || state.isRunningSimulation ? 0.6 : 1.0)
+    }
+
+    // MARK: - Simulation Section
+
+    private var simulationSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Label("Retry & Error Simulation", systemImage: "arrow.triangle.2.circlepath.circle")
+                .font(.headline)
+
+            // Error Type Picker
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Error Type")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+
+                Picker("", selection: $state.errorSimulation.errorType) {
+                    ForEach(ErrorType.allCases) { type in
+                        HStack {
+                            Image(systemName: type.icon)
+                            Text(type.displayName)
+                        }
+                        .tag(type)
+                    }
+                }
+                .pickerStyle(.menu)
+                .frame(maxWidth: .infinity)
+                .padding(8)
+                .background(Color.secondary.opacity(0.1))
+                .cornerRadius(8)
+            }
+
+            // Failure Rate Slider
+            VStack(alignment: .leading, spacing: 8) {
+                HStack {
+                    Text("Failure Rate")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    Spacer()
+                    Text("\(Int(state.errorSimulation.failureRate * 100))%")
+                        .font(.caption)
+                        .fontWeight(.semibold)
+                        .foregroundStyle(.orange)
+                }
+
+                Slider(value: $state.errorSimulation.failureRate, in: 0 ... 1, step: 0.1)
+                    .tint(.orange)
+            }
+
+            // Simulate Button
+            Button {
+                requestTask?.cancel()
+                requestTask = Task {
+                    await runSimulation()
+                }
+            } label: {
+                HStack(spacing: 8) {
+                    Image(systemName: "play.circle.fill")
+                    Text("Start Simulation")
+                        .fontWeight(.semibold)
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 12)
+                .background(Color.orange)
+                .foregroundStyle(.white)
+                .cornerRadius(8)
+            }
+            .buttonStyle(.plain)
+            .disabled(state.isLoading || state.isRunningSimulation)
+            .opacity(state.isLoading || state.isRunningSimulation ? 0.6 : 1.0)
+
+            // Info
+            HStack(alignment: .top, spacing: 8) {
+                Image(systemName: "info.circle.fill")
+                    .foregroundStyle(.blue)
+                    .font(.caption)
+                Text("Settings에서 설정한 Retry Policy가 적용됩니다. 에러 타입과 실패율을 조합하여 재시도 동작을 테스트할 수 있습니다.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            .padding(8)
+            .background(Color.blue.opacity(0.1))
+            .cornerRadius(6)
+        }
+    }
+
+    // MARK: - Simulation Timeline Section
+
+    // swiftlint:disable:next function_body_length
+    private func simulationTimelineSection(_ timeline: ErrorSimulationTimeline) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Label {
+                HStack {
+                    HStack(spacing: 4) {
+                        Text(timeline.finalSuccess ? "✅" : "❌")
+                        Text("SIMULATION TIMELINE")
+                            .font(.headline)
+                            .fontWeight(.bold)
+                    }
+                    Spacer()
+                }
+            } icon: {
+                Image(systemName: "chart.line.uptrend.xyaxis.circle.fill")
+                    .foregroundStyle(timeline.finalSuccess ? .green : .orange)
+            }
+
+            VStack(alignment: .leading, spacing: 12) {
+                // Summary
+                HStack(spacing: 16) {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Error Type")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        HStack(spacing: 4) {
+                            Image(systemName: timeline.errorType.icon)
+                                .font(.caption)
+                            Text(timeline.errorType.displayName)
+                                .font(.caption)
+                                .fontWeight(.medium)
+                        }
+                    }
+
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Total Duration")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        Text(timeline.formattedDuration)
+                            .font(.caption)
+                            .fontWeight(.medium)
+                            .foregroundStyle(.blue)
+                    }
+
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Attempts")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        Text("\(timeline.attempts.count)")
+                            .font(.caption)
+                            .fontWeight(.medium)
+                    }
+
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Failure Rate")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        Text("\(Int(timeline.failureRate * 100))%")
+                            .font(.caption)
+                            .fontWeight(.medium)
+                            .foregroundStyle(.orange)
+                    }
+
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Max Retries")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        Text("\(timeline.maxRetries)")
+                            .font(.caption)
+                            .fontWeight(.medium)
+                    }
+                }
+
+                Divider()
+
+                // Attempts Timeline
+                ForEach(timeline.attempts) { attempt in
+                    HStack(alignment: .top, spacing: 12) {
+                        // Status Icon
+                        Image(systemName: attempt.success ? "checkmark.circle.fill" : "xmark.circle.fill")
+                            .foregroundStyle(attempt.success ? .green : .red)
+                            .font(.title3)
+
+                        // Attempt Info
+                        VStack(alignment: .leading, spacing: 4) {
+                            HStack {
+                                Text("Attempt #\(attempt.attemptNumber)")
+                                    .font(.caption)
+                                    .fontWeight(.semibold)
+                                Spacer()
+                                Text(attempt.formattedTimestamp)
+                                    .font(.caption2)
+                                    .foregroundStyle(.secondary)
+                            }
+
+                            if let error = attempt.error {
+                                Text(error)
+                                    .font(.caption2)
+                                    .foregroundStyle(.secondary)
+                            }
+
+                            if let delay = attempt.formattedDelay {
+                                HStack(spacing: 4) {
+                                    Image(systemName: "clock.fill")
+                                        .font(.caption2)
+                                    Text("Delay: \(delay)")
+                                        .font(.caption2)
+                                }
+                                .foregroundStyle(.blue)
+                            }
+                        }
+                    }
+                    .padding(8)
+                    .background(attempt.success ? Color.green.opacity(0.05) : Color.red.opacity(0.05))
+                    .cornerRadius(6)
+                }
+            }
+            .padding(12)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(Color.orange.opacity(0.05))
+            .cornerRadius(8)
+        }
     }
 
     // MARK: - Error Section
@@ -383,6 +606,24 @@ struct APIRequestTesterView: View {
                     }
                 }
 
+                if state.responseDuration > 0 {
+                    HStack(spacing: 8) {
+                        Text("⚡ Duration:")
+                            .font(.caption)
+                            .fontWeight(.semibold)
+                            .foregroundStyle(.secondary)
+
+                        Text(formatDuration(state.responseDuration))
+                            .font(.system(.body, design: .monospaced))
+                            .fontWeight(.bold)
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 6)
+                            .background(durationColor(state.responseDuration).opacity(0.2))
+                            .foregroundStyle(durationColor(state.responseDuration))
+                            .cornerRadius(6)
+                    }
+                }
+
                 if !state.responseHeaders.isEmpty {
                     Divider()
                     VStack(alignment: .leading, spacing: 4) {
@@ -462,6 +703,23 @@ struct APIRequestTesterView: View {
         }
     }
 
+    private func durationColor(_ milliseconds: Double) -> Color {
+        switch milliseconds {
+        case 0 ..< 200: return .green
+        case 200 ..< 500: return .blue
+        case 500 ..< 1000: return .orange
+        default: return .red
+        }
+    }
+
+    private func formatDuration(_ milliseconds: Double) -> String {
+        if milliseconds < 1000 {
+            return String(format: "%.0f ms", milliseconds)
+        } else {
+            return String(format: "%.2f s", milliseconds / 1000)
+        }
+    }
+
     // MARK: - Helpers
 
     private var needsParameters: Bool {
@@ -502,22 +760,18 @@ struct APIRequestTesterView: View {
         }
 
         // 헤더 기본값 설정
-        for (key, value) in request.headers {
-            if state.headerFields[key] == nil {
-                state.headerFields[key] = value
-            }
+        for (key, value) in request.headers where state.headerFields[key] == nil {
+            state.headerFields[key] = value
         }
 
         // 파라미터 기본값 설정
         let params = extractParameters()
-        for param in params {
-            if state.parameters[param] == nil {
-                switch param {
-                case "id": state.parameters[param] = "1"
-                case "userId": state.parameters[param] = "1"
-                case "username": state.parameters[param] = "octocat"
-                default: state.parameters[param] = ""
-                }
+        for param in params where state.parameters[param] == nil {
+            switch param {
+            case "id": state.parameters[param] = "1"
+            case "userId": state.parameters[param] = "1"
+            case "username": state.parameters[param] = "octocat"
+            default: state.parameters[param] = ""
             }
         }
 
@@ -533,6 +787,7 @@ struct APIRequestTesterView: View {
         }
     }
 
+    // swiftlint:disable:next function_body_length
     private func sendRequest() async {
         let currentRequestId = request.id
         let targetState = APIPlaygroundStateStore.shared.getState(for: currentRequestId)
@@ -548,10 +803,14 @@ struct APIRequestTesterView: View {
         targetState.responseHeaders = [:]
         targetState.requestBodySize = 0
         targetState.responseBodySize = 0
+        targetState.responseDuration = 0
 
         let dateFormatter = DateFormatter()
         dateFormatter.dateFormat = "HH:mm:ss.SSS"
         targetState.requestTimestamp = dateFormatter.string(from: Date())
+
+        // 성능 측정 시작
+        let startTime = Date()
 
         do {
             // 헤더 준비
@@ -585,18 +844,19 @@ struct APIRequestTesterView: View {
             // NetworkService로 요청 실행
             let httpResponse = try await networkService.requestRaw(apiRequest)
 
+            // 성능 측정 종료
+            let endTime = Date()
+            targetState.responseDuration = endTime.timeIntervalSince(startTime) * 1000 // milliseconds
+
             targetState.responseTimestamp = dateFormatter.string(from: Date())
             targetState.statusCode = httpResponse.statusCode
             targetState.responseBodySize = httpResponse.data.count
 
-            // 응답 헤더 파싱 (요청 헤더와 매칭되는 것만)
+            // 응답 헤더 파싱 (모든 헤더 표시)
             if let response = httpResponse.response {
-                let requestHeaderKeys = Set(request.headers.keys.map { $0.lowercased() })
                 for (key, value) in response.allHeaderFields {
                     if let keyString = key as? String, let valueString = value as? String {
-                        if requestHeaderKeys.contains(keyString.lowercased()) {
-                            targetState.responseHeaders[keyString] = valueString
-                        }
+                        targetState.responseHeaders[keyString] = valueString
                     }
                 }
             }
@@ -607,8 +867,7 @@ struct APIRequestTesterView: View {
                    withJSONObject: jsonObject,
                    options: [.prettyPrinted, .sortedKeys]
                ),
-               let prettyString = String(data: prettyData, encoding: .utf8)
-            {
+               let prettyString = String(data: prettyData, encoding: .utf8) {
                 targetState.response = prettyString
             } else {
                 targetState.response = String(data: httpResponse.data, encoding: .utf8) ?? "Unable to decode response"
@@ -632,6 +891,221 @@ struct APIRequestTesterView: View {
         }
 
         return path
+    }
+
+    // MARK: - Simulation Logic
+
+    // swiftlint:disable:next function_body_length
+    private func runSimulation() async {
+        let currentRequestId = request.id
+        let targetState = APIPlaygroundStateStore.shared.getState(for: currentRequestId)
+
+        targetState.markAsRequested()
+        targetState.isRunningSimulation = true
+        targetState.error = nil
+        targetState.response = ""
+        targetState.statusCode = nil
+        targetState.currentSimulationTimeline = nil
+
+        let simulation = targetState.errorSimulation
+
+        // AppDependency에서 현재 Retry Policy Preset 가져오기
+        let retryPreset = AppDependency.shared.currentRetryPolicyPreset
+        let maxRetries = retryPreset.maxRetries
+        let baseDelay = retryPreset.baseDelay
+
+        var timeline = ErrorSimulationTimeline(
+            errorType: simulation.errorType,
+            failureRate: simulation.failureRate,
+            maxRetries: maxRetries
+        )
+        var attemptNumber = 1
+        var success = false
+
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "HH:mm:ss.SSS"
+        targetState.requestTimestamp = dateFormatter.string(from: Date())
+
+        // 성능 측정 시작
+        let startTime = Date()
+
+        // 첫 번째 시도 - 항상 실제 네트워크 요청 실행
+        do {
+            let httpResponse = try await performRequest()
+
+            // 실패 시뮬레이션 여부 확인
+            let shouldFail = simulation.shouldFail()
+
+            if shouldFail {
+                // 시뮬레이션 실패: 성공 응답을 받았지만 실패로 처리
+                let attempt = ErrorSimulationAttempt(
+                    attemptNumber: attemptNumber,
+                    success: false,
+                    error: "Simulated: \(simulation.errorType.description) (실제 응답: \(httpResponse.statusCode) OK)",
+                    errorType: simulation.errorType,
+                    delay: nil
+                )
+                timeline.addAttempt(attempt)
+            } else {
+                // 시뮬레이션 성공
+                let endTime = Date()
+                targetState.responseDuration = endTime.timeIntervalSince(startTime) * 1000
+                targetState.responseTimestamp = dateFormatter.string(from: Date())
+
+                await processSuccessResponse(httpResponse, targetState: targetState)
+
+                let attempt = ErrorSimulationAttempt(
+                    attemptNumber: attemptNumber,
+                    success: true,
+                    error: nil,
+                    errorType: nil,
+                    delay: nil
+                )
+                timeline.addAttempt(attempt)
+
+                targetState.currentSimulationTimeline = timeline
+                targetState.isRunningSimulation = false
+                return
+            }
+        } catch {
+            // 실제 네트워크 에러 발생
+            let attempt = ErrorSimulationAttempt(
+                attemptNumber: attemptNumber,
+                success: false,
+                error: "Network Error: \(error.localizedDescription)",
+                errorType: simulation.errorType,
+                delay: nil
+            )
+            timeline.addAttempt(attempt)
+        }
+
+        // 재시도 로직 - Exponential Backoff with Jitter
+        while attemptNumber < maxRetries + 1, !success {
+            attemptNumber += 1
+
+            // Exponential Backoff with Jitter 계산
+            let exponentialDelay = baseDelay * pow(2.0, Double(attemptNumber - 2))
+            let jitter = Double.random(in: 0 ... 0.1) * exponentialDelay
+            let delay = exponentialDelay + jitter
+
+            try? await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
+
+            // 재시도 - 항상 실제 네트워크 요청 실행
+            do {
+                let httpResponse = try await performRequest()
+
+                // 실패 시뮬레이션 여부 확인
+                let shouldFail = simulation.shouldFail()
+
+                if shouldFail {
+                    // 시뮬레이션 실패
+                    let attempt = ErrorSimulationAttempt(
+                        attemptNumber: attemptNumber,
+                        success: false,
+                        error: "Simulated: \(simulation.errorType.description) (실제 응답: \(httpResponse.statusCode) OK)",
+                        errorType: simulation.errorType,
+                        delay: delay
+                    )
+                    timeline.addAttempt(attempt)
+                } else {
+                    // 시뮬레이션 성공
+                    let endTime = Date()
+                    targetState.responseDuration = endTime.timeIntervalSince(startTime) * 1000
+                    targetState.responseTimestamp = dateFormatter.string(from: Date())
+
+                    await processSuccessResponse(httpResponse, targetState: targetState)
+
+                    let attempt = ErrorSimulationAttempt(
+                        attemptNumber: attemptNumber,
+                        success: true,
+                        error: nil,
+                        errorType: nil,
+                        delay: delay
+                    )
+                    timeline.addAttempt(attempt)
+                    success = true
+                }
+            } catch {
+                // 실제 네트워크 에러 발생
+                let attempt = ErrorSimulationAttempt(
+                    attemptNumber: attemptNumber,
+                    success: false,
+                    error: "Network Error: \(error.localizedDescription)",
+                    errorType: simulation.errorType,
+                    delay: delay
+                )
+                timeline.addAttempt(attempt)
+            }
+        }
+
+        // 모든 시도 실패 시
+        if !success {
+            let endTime = Date()
+            targetState.responseDuration = endTime.timeIntervalSince(startTime) * 1000
+            targetState.responseTimestamp = dateFormatter.string(from: Date())
+            targetState.error = "All \(maxRetries + 1) attempts failed"
+        }
+
+        targetState.currentSimulationTimeline = timeline
+        targetState.isRunningSimulation = false
+    }
+
+    private func performRequest() async throws -> HTTPResponse {
+        let targetState = state
+
+        // 헤더 준비
+        var allHeaders: [String: String] = [:]
+        for (key, _) in request.headers {
+            if let userValue = targetState.headerFields[key], !userValue.isEmpty {
+                allHeaders[key] = userValue
+            }
+        }
+
+        // Request Body 준비
+        var bodyData: Data?
+        if needsRequestBody, !targetState.requestBody.isEmpty {
+            bodyData = targetState.requestBody.data(using: .utf8)
+            allHeaders["Content-Type"] = "application/json"
+        }
+
+        // DynamicAPIRequest 생성
+        let apiRequest = DynamicAPIRequest(
+            baseURL: request.baseURLString,
+            path: buildPath(),
+            method: HTTPMethod(rawValue: request.method.uppercased()) ?? .get,
+            headers: allHeaders.isEmpty ? nil : allHeaders,
+            queryParameters: nil,
+            body: bodyData
+        )
+
+        // NetworkService로 요청 실행
+        return try await networkService.requestRaw(apiRequest)
+    }
+
+    private func processSuccessResponse(_ httpResponse: HTTPResponse, targetState: APIPlaygroundState) async {
+        targetState.statusCode = httpResponse.statusCode
+        targetState.responseBodySize = httpResponse.data.count
+
+        // 응답 헤더 파싱
+        if let response = httpResponse.response {
+            for (key, value) in response.allHeaderFields {
+                if let keyString = key as? String, let valueString = value as? String {
+                    targetState.responseHeaders[keyString] = valueString
+                }
+            }
+        }
+
+        // 응답 본문 파싱 (JSON 포맷팅)
+        if let jsonObject = try? JSONSerialization.jsonObject(with: httpResponse.data),
+           let prettyData = try? JSONSerialization.data(
+               withJSONObject: jsonObject,
+               options: [.prettyPrinted, .sortedKeys]
+           ),
+           let prettyString = String(data: prettyData, encoding: .utf8) {
+            targetState.response = prettyString
+        } else {
+            targetState.response = String(data: httpResponse.data, encoding: .utf8) ?? "Unable to decode response"
+        }
     }
 }
 

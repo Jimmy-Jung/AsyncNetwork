@@ -65,8 +65,22 @@ final class APIPlaygroundState {
     /// 응답 Body 크기 (bytes)
     var responseBodySize: Int = 0
 
+    /// 응답 시간 (milliseconds)
+    var responseDuration: Double = 0
+
     /// 관련된 API 메서드 ID
     let methodId: String
+
+    // MARK: - Simulation Properties
+
+    /// 에러 시뮬레이션 설정
+    var errorSimulation: ErrorSimulation = .init()
+
+    /// 시뮬레이션 실행 중 여부
+    var isRunningSimulation: Bool = false
+
+    /// 현재 시뮬레이션 타임라인
+    var currentSimulationTimeline: ErrorSimulationTimeline?
 
     // MARK: - Initialization
 
@@ -95,6 +109,9 @@ final class APIPlaygroundState {
         responseHeaders.removeAll()
         requestBodySize = 0
         responseBodySize = 0
+        responseDuration = 0
+
+        // Simulation 상태는 유지
     }
 
     /// 요청이 실행되었음을 표시

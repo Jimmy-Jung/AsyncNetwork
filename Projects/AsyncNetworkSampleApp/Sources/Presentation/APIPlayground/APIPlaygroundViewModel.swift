@@ -1,5 +1,5 @@
 //
-//  APIPlaygroundSwiftViewModel.swift
+//  APIPlaygroundViewModel.swift
 //  AsyncNetworkSampleApp
 //
 //  Created by jimmy on 2026/01/11.
@@ -9,10 +9,10 @@ import AsyncNetwork
 import AsyncViewModel
 import Foundation
 
-/// API Playground SwiftUI를 위한 AsyncViewModel
+/// API Playground를 위한 AsyncViewModel
 @AsyncViewModel
 @MainActor
-final class APIPlaygroundSwiftViewModel {
+final class APIPlaygroundViewModel {
     // MARK: - Types
 
     enum Input: Equatable, Sendable {

@@ -29,20 +29,34 @@ final class MainTabBarController: UITabBarController {
 
     private func setupViewControllers() {
         // API Playground 탭 (SwiftUI - DocKit 스타일)
-        let apiPlaygroundSwiftVC = APIPlaygroundSwiftViewController(networkService: appDependency.networkService)
-        apiPlaygroundSwiftVC.title = "API Playground"
-        apiPlaygroundSwiftVC.tabBarItem = UITabBarItem(
+        let apiPlaygroundVC = APIPlaygroundViewController(networkService: appDependency.networkService)
+        apiPlaygroundVC.title = "API Playground"
+        apiPlaygroundVC.tabBarItem = UITabBarItem(
             title: "Playground",
             image: UIImage(systemName: "hammer.fill"),
             selectedImage: nil
         )
 
+        // Request Interceptors 탭 (SwiftUI)
+        // InterceptorsViewModel 사용 (분리됨)
+        let interceptorsViewModel = InterceptorsViewModel(
+            runtimeInterceptorManager: appDependency.runtimeInterceptorManager
+        )
+        let interceptorsVC = InterceptorsViewController(viewModel: interceptorsViewModel)
+        interceptorsVC.title = "Interceptors"
+        interceptorsVC.tabBarItem = UITabBarItem(
+            title: "Interceptors",
+            image: UIImage(systemName: "link.circle"),
+            selectedImage: UIImage(systemName: "link.circle.fill")
+        )
+
         viewControllers = [
-            apiPlaygroundSwiftVC  // SwiftUI는 이미 NavigationStack이 내장되어 있음
+            apiPlaygroundVC,
+            interceptorsVC
         ]
-        
-        // 탭바 숨김 (탭이 1개만 있으므로)
-        tabBar.isHidden = true
+
+        // 탭바 표시 (2개 이상의 탭이 있음)
+        tabBar.isHidden = false
     }
 
     private func setupAppearance() {

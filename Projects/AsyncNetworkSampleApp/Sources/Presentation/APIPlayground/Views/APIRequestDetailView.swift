@@ -140,20 +140,19 @@ struct APIRequestDetailView: View {
     // MARK: - Helper Views
 
     private func infoRow(label: String, value: String) -> some View {
-        HStack(alignment: .top, spacing: 8) {
+        HStack(alignment: .top, spacing: 12) {
             Text(label + ":")
                 .font(.callout)
                 .fontWeight(.semibold)
                 .foregroundStyle(.secondary)
-                .frame(width: 120, alignment: .trailing)
+                .frame(width: 130, alignment: .leading)
 
             Text(value)
                 .font(.system(.callout, design: .monospaced))
                 .foregroundStyle(.primary)
                 .textSelection(.enabled)
                 .lineLimit(nil)
-
-            Spacer()
+                .frame(maxWidth: .infinity, alignment: .leading)
         }
     }
 }

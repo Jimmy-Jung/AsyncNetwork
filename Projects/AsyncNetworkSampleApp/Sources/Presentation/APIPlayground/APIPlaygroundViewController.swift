@@ -1,5 +1,5 @@
 //
-//  APIPlaygroundSwiftViewController.swift
+//  APIPlaygroundViewController.swift
 //  AsyncNetworkSampleApp
 //
 //  Created by jimmy on 2026/01/11.
@@ -10,10 +10,10 @@ import SwiftUI
 import UIKit
 
 /// SwiftUI API Playground를 호스팅하는 UIKit ViewController
-final class APIPlaygroundSwiftViewController: UIHostingController<APIPlaygroundSwiftView> {
+final class APIPlaygroundViewController: UIHostingController<APIPlaygroundView> {
     init(networkService: NetworkService) {
-        super.init(rootView: APIPlaygroundSwiftView(networkService: networkService))
-        title = "API Playground (SwiftUI)"
+        super.init(rootView: APIPlaygroundView(networkService: networkService))
+        title = "API Playground"
     }
 
     @available(*, unavailable)
