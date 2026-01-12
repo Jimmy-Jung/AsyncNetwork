@@ -11,6 +11,7 @@ import Foundation
 
 /// 인터셉터 타입
 enum InterceptorType: String, CaseIterable, Sendable, Equatable, Identifiable {
+    case etag
     case consoleLogging = "console_logging"
     case auth
     case customHeader = "custom_header"
@@ -20,6 +21,7 @@ enum InterceptorType: String, CaseIterable, Sendable, Equatable, Identifiable {
 
     var displayName: String {
         switch self {
+        case .etag: return "ETag 캐시"
         case .consoleLogging: return "콘솔 로깅"
         case .auth: return "인증 토큰"
         case .customHeader: return "커스텀 헤더"
@@ -29,6 +31,8 @@ enum InterceptorType: String, CaseIterable, Sendable, Equatable, Identifiable {
 
     var description: String {
         switch self {
+        case .etag:
+            return "ETag 기반 조건부 요청으로 서버 데이터 변경 감지"
         case .consoleLogging:
             return "네트워크 요청/응답을 콘솔에 로깅합니다"
         case .auth:
@@ -42,6 +46,7 @@ enum InterceptorType: String, CaseIterable, Sendable, Equatable, Identifiable {
 
     var icon: String {
         switch self {
+        case .etag: return "arrow.triangle.2.circlepath"
         case .consoleLogging: return "doc.text.magnifyingglass"
         case .auth: return "lock.shield"
         case .customHeader: return "tag"
@@ -51,10 +56,11 @@ enum InterceptorType: String, CaseIterable, Sendable, Equatable, Identifiable {
 
     var order: Int {
         switch self {
-        case .consoleLogging: return 4 // 마지막
-        case .auth: return 1 // 첫번째
-        case .customHeader: return 2
-        case .timestamp: return 3
+        case .etag: return 0 // 가장 먼저
+        case .consoleLogging: return 5 // 마지막
+        case .auth: return 2
+        case .customHeader: return 3
+        case .timestamp: return 4
         }
     }
 }

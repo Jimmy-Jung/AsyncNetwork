@@ -16,9 +16,9 @@ enum ETagCacheCapacityPreset: String, CaseIterable, Sendable, Identifiable, Equa
     case medium
     case large
     case custom
-    
+
     var id: String { rawValue }
-    
+
     var displayName: String {
         switch self {
         case .small: return "작음 (Small)"
@@ -27,7 +27,7 @@ enum ETagCacheCapacityPreset: String, CaseIterable, Sendable, Identifiable, Equa
         case .custom: return "커스텀"
         }
     }
-    
+
     var description: String {
         switch self {
         case .small: return "최대 50개 URL"
@@ -36,7 +36,7 @@ enum ETagCacheCapacityPreset: String, CaseIterable, Sendable, Identifiable, Equa
         case .custom: return "사용자 정의 용량"
         }
     }
-    
+
     var capacity: Int {
         switch self {
         case .small: return 50
@@ -51,21 +51,21 @@ enum ETagCacheCapacityPreset: String, CaseIterable, Sendable, Identifiable, Equa
 struct ETagCacheUsage: Equatable, Sendable {
     let currentCount: Int
     let capacity: Int
-    
+
     var usageRatio: Double {
         guard capacity > 0 else { return 0 }
         return Double(currentCount) / Double(capacity)
     }
-    
+
     var usagePercentage: Double {
         guard capacity > 0 else { return 0 }
         return Double(currentCount) / Double(capacity) * 100
     }
-    
+
     var formattedUsage: String {
         "\(currentCount) / \(capacity)"
     }
-    
+
     var formattedPercentage: String {
         String(format: "%.0f%%", usagePercentage)
     }
@@ -81,8 +81,7 @@ enum RetryPolicyPreset: String, CaseIterable, Sendable, Identifiable, Equatable 
     case quick
     case patient
     case none
-    case custom
-    
+
     var id: String { rawValue }
 
     var displayName: String {
@@ -91,7 +90,6 @@ enum RetryPolicyPreset: String, CaseIterable, Sendable, Identifiable, Equatable 
         case .quick: return "빠름 (Quick)"
         case .patient: return "느림 (Patient)"
         case .none: return "재시도 없음"
-        case .custom: return "커스텀"
         }
     }
 
@@ -105,8 +103,6 @@ enum RetryPolicyPreset: String, CaseIterable, Sendable, Identifiable, Equatable 
             return "느린 재시도: 1회, 2초 간격 (~2초)"
         case .none:
             return "재시도하지 않음"
-        case .custom:
-            return "사용자 정의 설정"
         }
     }
 
@@ -116,17 +112,15 @@ enum RetryPolicyPreset: String, CaseIterable, Sendable, Identifiable, Equatable 
         case .quick: return 5
         case .patient: return 1
         case .none: return 0
-        case .custom: return 3
         }
     }
-    
+
     var baseDelay: TimeInterval {
         switch self {
         case .standard: return 1.0
         case .quick: return 0.5
         case .patient: return 2.0
         case .none: return 0
-        case .custom: return 1.0
         }
     }
 
@@ -135,8 +129,7 @@ enum RetryPolicyPreset: String, CaseIterable, Sendable, Identifiable, Equatable 
         case .standard: return .standard
         case .quick: return .quick
         case .patient: return .patient
-        case .none: return RetryConfiguration(maxRetries: 0, baseDelay: 0, maxDelay: 0, jitterRange: 0...0)
-        case .custom: return .standard // 나중에 커스텀 구현 가능
+        case .none: return RetryConfiguration(maxRetries: 0, baseDelay: 0, maxDelay: 0, jitterRange: 0 ... 0)
         }
     }
 }

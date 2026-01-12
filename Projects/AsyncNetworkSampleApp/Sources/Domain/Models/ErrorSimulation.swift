@@ -52,7 +52,7 @@ enum ErrorType: String, CaseIterable, Sendable, Equatable, Identifiable {
         switch self {
         case .timeout: return "clock.badge.exclamationmark"
         case .networkFailure: return "wifi.slash"
-        case .serverError: return "xmark.server"
+        case .serverError: return "exclamationmark.triangle.fill"
         case .invalidResponse: return "exclamationmark.bubble"
         case .unauthorized: return "lock.slash"
         case .notFound: return "questionmark.folder"
@@ -72,27 +72,27 @@ enum ErrorType: String, CaseIterable, Sendable, Equatable, Identifiable {
         switch self {
         case .timeout:
             return NSError(domain: "AsyncNetworkDemo", code: -1001, userInfo: [
-                NSLocalizedDescriptionKey: "The request timed out.",
+                NSLocalizedDescriptionKey: "The request timed out."
             ])
         case .networkFailure:
             return NSError(domain: "AsyncNetworkDemo", code: -1009, userInfo: [
-                NSLocalizedDescriptionKey: "The Internet connection appears to be offline.",
+                NSLocalizedDescriptionKey: "The Internet connection appears to be offline."
             ])
         case .serverError:
             return NSError(domain: "AsyncNetworkDemo", code: 500, userInfo: [
-                NSLocalizedDescriptionKey: "Internal Server Error",
+                NSLocalizedDescriptionKey: "Internal Server Error"
             ])
         case .invalidResponse:
             return NSError(domain: "AsyncNetworkDemo", code: -1011, userInfo: [
-                NSLocalizedDescriptionKey: "Invalid response received from server.",
+                NSLocalizedDescriptionKey: "Invalid response received from server."
             ])
         case .unauthorized:
             return NSError(domain: "AsyncNetworkDemo", code: 401, userInfo: [
-                NSLocalizedDescriptionKey: "Unauthorized: Authentication required.",
+                NSLocalizedDescriptionKey: "Unauthorized: Authentication required."
             ])
         case .notFound:
             return NSError(domain: "AsyncNetworkDemo", code: 404, userInfo: [
-                NSLocalizedDescriptionKey: "Not Found: Resource does not exist.",
+                NSLocalizedDescriptionKey: "Not Found: Resource does not exist."
             ])
         }
     }
@@ -103,29 +103,14 @@ enum ErrorType: String, CaseIterable, Sendable, Equatable, Identifiable {
 /// 에러 시뮬레이션 설정
 struct ErrorSimulation: Equatable, Sendable {
     var errorType: ErrorType
-    var retryPreset: RetryPolicyPreset
     var failureRate: Double // 0.0 ~ 1.0
-    var maxRetries: Int
-    var baseDelay: TimeInterval
 
     init(
         errorType: ErrorType = .timeout,
-        retryPreset: RetryPolicyPreset = .standard,
-        failureRate: Double = 0.8,
-        maxRetries: Int? = nil,
-        baseDelay: TimeInterval? = nil
+        failureRate: Double = 0.8
     ) {
         self.errorType = errorType
-        self.retryPreset = retryPreset
         self.failureRate = max(0.0, min(1.0, failureRate))
-        self.maxRetries = maxRetries ?? retryPreset.maxRetries
-        self.baseDelay = baseDelay ?? retryPreset.baseDelay
-    }
-
-    func nextDelay(for attempt: Int) -> TimeInterval {
-        let exponentialDelay = baseDelay * pow(2.0, Double(attempt - 1))
-        let jitter = Double.random(in: 0 ... 0.1) * exponentialDelay
-        return exponentialDelay + jitter
     }
 
     func shouldFail() -> Bool {
@@ -178,13 +163,17 @@ struct ErrorSimulationAttempt: Equatable, Sendable, Identifiable {
 
 /// 에러 시뮬레이션 타임라인
 struct ErrorSimulationTimeline: Equatable, Sendable {
-    let simulation: ErrorSimulation
+    let errorType: ErrorType
+    let failureRate: Double
+    let maxRetries: Int
     var attempts: [ErrorSimulationAttempt]
     let startTime: Date
     var endTime: Date?
 
-    init(simulation: ErrorSimulation) {
-        self.simulation = simulation
+    init(errorType: ErrorType, failureRate: Double, maxRetries: Int) {
+        self.errorType = errorType
+        self.failureRate = failureRate
+        self.maxRetries = maxRetries
         attempts = []
         startTime = Date()
         endTime = nil
@@ -192,7 +181,7 @@ struct ErrorSimulationTimeline: Equatable, Sendable {
 
     mutating func addAttempt(_ attempt: ErrorSimulationAttempt) {
         attempts.append(attempt)
-        if attempt.success || attempts.count > simulation.maxRetries {
+        if attempt.success || attempts.count > maxRetries {
             endTime = Date()
         }
     }
