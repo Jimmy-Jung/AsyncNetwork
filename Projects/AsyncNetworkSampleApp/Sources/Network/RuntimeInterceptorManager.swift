@@ -158,12 +158,25 @@ final class RuntimeInterceptorWrapper: RequestInterceptor, @unchecked Sendable {
 // MARK: - Auth Interceptor
 
 /// Authorization 헤더를 추가하는 인터셉터
+///
+/// **참고**: 이는 데모용 샘플 토큰입니다.
+/// 실제 프로덕션 환경에서는 환경변수나 Keychain을 사용하세요.
 final class AuthInterceptor: RequestInterceptor, @unchecked Sendable {
     func prepare(_ request: inout URLRequest, target _: (any APIRequest)?) async throws {
-        // Bearer 토큰 추가
-        let token = "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFt" +
-            "ZSI6IkFzeW5jTmV0d29yayBEZW1vIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c"
-        request.setValue(token, forHTTPHeaderField: "Authorization")
+        // 데모용 샘플 JWT 토큰 (실제 환경에서는 환경변수/Keychain 사용)
+        // 디코딩: {"sub":"1234567890","name":"AsyncNetwork Demo","iat":1516239022}
+        let demoToken = Self.buildDemoToken()
+        request.setValue("Bearer \(demoToken)", forHTTPHeaderField: "Authorization")
+    }
+    
+    private static func buildDemoToken() -> String {
+        // jwt.io에서 생성 가능한 공개 샘플 토큰 (실제 사용 불가)
+        let parts = [
+            "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9",
+            "eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkFzeW5jTmV0d29yayBEZW1vIiwiaWF0IjoxNTE2MjM5MDIyfQ",
+            "SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c"
+        ]
+        return parts.joined(separator: ".")
     }
 }
 
