@@ -14,19 +14,15 @@
 /// - `baseURLString`: 베이스 URL 문자열 (선택적)
 /// - `path`: API 엔드포인트 경로
 /// - `method`: HTTP 메서드 (GET, POST, PUT, DELETE 등)
-/// - `metadata`: 엔드포인트 메타데이터 (DocKit용)
 ///
-/// ## 사용 예시
+/// ## 기본 사용법
 ///
 /// ```swift
 /// @APIRequest(
 ///     response: [Post].self,
-///     title: "Get all posts",
-///     description: "Retrieve a list of all posts",
 ///     baseURL: "https://jsonplaceholder.typicode.com",
 ///     path: "/posts",
-///     method: .get,
-///     tags: ["Posts", "Read"]
+///     method: .get
 /// )
 /// struct GetPostsRequest {
 ///     @HeaderField(key: .contentType) var contentType: String? = "application/json"
@@ -58,24 +54,37 @@
 ///     var method: HTTPMethod {
 ///         .get
 ///     }
-///
-///     static var metadata: EndpointMetadata {
-///         EndpointMetadata(
-///             id: "GetPostsRequest",
-///             title: "Get all posts",
-///             description: "Retrieve a list of all posts",
-///             method: "get",
-///             path: "/posts",
-///             baseURLString: "https://jsonplaceholder.typicode.com",
-///             headers: ["Content-Type": "application/json"],
-///             tags: ["Posts", "Read"],
-///             parameters: [],
-///             responseTypeName: "[Post]"
-///         )
-///     }
 /// }
 ///
 /// extension GetPostsRequest: APIRequest {
+/// }
+/// ```
+///
+/// ## 문서화 및 테스트 기능
+///
+/// 문서화 메타데이터와 테스트 Mock 응답이 필요한 경우, 분리된 매크로를 함께 사용하세요:
+///
+/// ```swift
+/// @APIRequest(
+///     response: Post.self,
+///     baseURL: "https://api.example.com",
+///     path: "/posts/{id}",
+///     method: .get
+/// )
+/// @APIDocument(
+///     title: "Get post by ID",
+///     description: "Retrieve a single post by its ID",
+///     tags: ["Posts", "Read"]
+/// )
+/// @APITestable(
+///     scenarios: [.success, .notFound, .serverError],
+///     errorExamples: [
+///         "404": """{"error": "Post not found"}""",
+///         "500": """{"error": "Internal server error"}"""
+///     ]
+/// )
+/// struct GetPostRequest {
+///     @PathParameter var id: Int
 /// }
 /// ```
 ///
@@ -88,7 +97,6 @@
 ///
 /// @APIRequest(
 ///     response: Post.self,
-///     title: "Get a post",
 ///     baseURL: apiBaseURL,  // 상수 참조
 ///     path: "/posts/1",
 ///     method: .get
@@ -102,7 +110,6 @@
 /// ```swift
 /// @APIRequest(
 ///     response: Post.self,
-///     title: "Get a post",
 ///     baseURL: "https://api.example.com",  // metadata용으로만 사용
 ///     path: "/posts/1",
 ///     method: .get
@@ -124,7 +131,6 @@
 /// ```swift
 /// @APIRequest(
 ///     response: Post.self,
-///     title: "Update a post",
 ///     baseURL: "https://api.example.com",
 ///     path: "/posts/{id}",
 ///     method: .put
@@ -147,7 +153,6 @@
 /// ```swift
 /// @APIRequest(
 ///     response: User.self,
-///     title: "Get current user",
 ///     baseURL: "https://api.example.com",
 ///     path: "/user/me",
 ///     method: .get
@@ -173,86 +178,25 @@
 ///
 /// - 이 매크로는 `struct`에만 적용할 수 있습니다.
 /// - 필수 파라미터: `response`, `baseURL`, `path`, `method`
-/// - 선택적 파라미터: `title` (기본값: ""), `description` (기본값: ""), `tags`
 /// - 이미 선언된 프로퍼티는 매크로가 생성하지 않습니다.
 /// - `method` 파라미터는 HTTPMethod enum case로 지정합니다 (.get, .post, .put, .delete, .patch, .head, .options)
 /// - HTTP 헤더는 매크로 파라미터 대신 `@HeaderField` 프로퍼티 래퍼를 사용하세요
-///
-/// ## 테스트 기능 통합
-///
-/// `@APIRequest`는 이제 테스트 시나리오와 에러 예제를 직접 지원합니다:
-///
-/// ```swift
-/// @APIRequest(
-///     response: Post.self,
-///     title: "Get post by ID",
-///     baseURL: "https://api.example.com",
-///     path: "/posts/{id}",
-///     method: .get,
-///     testScenarios: [.success, .notFound, .serverError],
-///     errorExamples: [
-///         "404": """{"error": "Post not found", "code": "POST_NOT_FOUND"}""",
-///         "500": """{"error": "Internal server error"}"""
-///     ],
-///     includeRetryTests: true
-/// )
-/// struct GetPostRequest {
-///     @PathParameter var id: Int
-/// }
-/// ```
-///
-/// 이렇게 하면 `MockScenario` enum, `mockResponse(for:)` 메서드가 자동으로 생성됩니다.
+/// - 문서화가 필요하면 `@APIDocument` 매크로를 함께 사용하세요
+/// - 테스트 Mock이 필요하면 `@APITestable` 매크로를 함께 사용하세요
 @attached(member, names:
     named(Response),
     named(baseURLString),
     named(path),
     named(method),
-    named(task),
-    named(metadata),
-    named(MockScenario),
-    named(mockResponse),
-    named(Tests),
-    arbitrary)
+    named(task))
 @attached(extension, conformances: APIRequest)
 public macro APIRequest(
     response: Any.Type,
-    title: String = "",
-    description: String = "",
     baseURL: String,
     path: String,
     method: HTTPMethod,
-    tags: [String] = [],
-    errorResponses: [Int: Any.Type] = [:],
-    /// 테스트 시나리오 (선택적)
-    testScenarios: [TestScenario] = [],
-    /// OpenAPI 에러 응답 예제 (HTTP 상태 코드: JSON)
-    /// 예: ["404": """{"error": "Not found"}"""]
-    errorExamples: [String: String] = [:],
-    /// 재시도 테스트 포함 여부
-    includeRetryTests: Bool = true,
-    /// 성능 테스트 포함 여부
-    includePerformanceTests: Bool = false
+    errorResponses: [Int: Any.Type] = [:]
 ) = #externalMacro(
     module: "AsyncNetworkMacrosImpl",
     type: "APIRequestMacroImpl"
 )
-
-/// 테스트 시나리오 타입
-public enum TestScenario {
-    /// 성공 응답 (200 OK)
-    case success
-    /// 클라이언트 에러 (4xx)
-    case clientError
-    /// 서버 에러 (5xx)
-    case serverError
-    /// 네트워크 에러
-    case networkError
-    /// 타임아웃
-    case timeout
-    /// 잘못된 응답 (Invalid JSON)
-    case invalidResponse
-    /// 인증 실패 (401)
-    case unauthorized
-    /// 리소스 없음 (404)
-    case notFound
-}

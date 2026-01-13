@@ -5,7 +5,7 @@
 //  Created by jimmy on 2026/01/11.
 //
 
-import AsyncNetworkMacros
+import AsyncNetwork
 import Foundation
 
 /// GitHub User DTO (ETag 캐싱 데모용)
@@ -13,8 +13,7 @@ import Foundation
 /// GitHub API는 ETag를 완벽하게 지원합니다:
 /// - 첫 요청: 200 OK + ETag 헤더
 /// - 두 번째 요청 (If-None-Match): 304 Not Modified
-@Response(
-    mockStrategy: .random,
+@ResponseDocument(
     fixtureJSON: """
     {
       "login": "octocat",
@@ -33,7 +32,10 @@ import Foundation
       "created_at": "2008-01-14T04:33:35Z",
       "updated_at": "2024-01-01T00:00:00Z"
     }
-    """,
+    """
+)
+@ResponseTestable(
+    mockStrategy: .random,
     includeBuilder: true,
     defaultArrayCount: 1
 )

@@ -3,6 +3,7 @@
 //  AsyncNetworkSampleAppTests
 //
 //  Created by jimmy on 2026/01/06.
+//  Updated: 2026/01/12 - Added @APITestable MockScenario tests
 //
 
 import Foundation
@@ -27,22 +28,90 @@ struct CommentRequestsTests {
         #expect(request.limit == 20)
     }
     
+    @Test("GetCommentsForPostRequest - Success 시나리오")
+    func testGetCommentsForPostRequestSuccessScenario() throws {
+        // Given
+        let (data, response, error) = GetCommentsForPostRequest.mockResponse(for: .success)
+        
+        // Then
+        #expect(error == nil)
+        
+        let httpResponse = try #require(response as? HTTPURLResponse)
+        #expect(httpResponse.statusCode == 200)
+        
+        let responseData = try #require(data)
+        let comments = try JSONDecoder().decode([CommentDTO].self, from: responseData)
+        #expect(!comments.isEmpty, "댓글 배열이 비어있지 않아야 함")
+    }
+    
+    @Test("GetCommentsForPostRequest - ClientError 시나리오")
+    func testGetCommentsForPostRequestClientErrorScenario() throws {
+        // Given
+        let (_, response, error) = GetCommentsForPostRequest.mockResponse(for: .clientError)
+        
+        // Then
+        #expect(error == nil)
+        
+        let httpResponse = try #require(response as? HTTPURLResponse)
+        #expect(httpResponse.statusCode == 400)
+    }
+    
+    @Test("GetCommentsForPostRequest - ServerError 시나리오")
+    func testGetCommentsForPostRequestServerErrorScenario() throws {
+        // Given
+        let (_, response, error) = GetCommentsForPostRequest.mockResponse(for: .serverError)
+        
+        // Then
+        #expect(error == nil)
+        
+        let httpResponse = try #require(response as? HTTPURLResponse)
+        #expect(httpResponse.statusCode == 500)
+    }
+    
     // MARK: - GetCommentByIdRequest Tests
     
     @Test("GetCommentByIdRequest가 동적 경로를 생성하는지 확인")
     func testGetCommentByIdRequestPath() {
         // Given
-        let request = GetCommentByIdRequest(
-            baseURLString: "https://jsonplaceholder.typicode.com",
-            path: "/comments/42",
-            method: .get
-        )
+        let request = GetCommentByIdRequest(id: 42)
         
         // When
         let path = request.path
         
         // Then
         #expect(path == "/comments/42")
+    }
+    
+    @Test("GetCommentByIdRequest - Success 시나리오")
+    func testGetCommentByIdRequestSuccessScenario() throws {
+        // Given
+        let (data, response, error) = GetCommentByIdRequest.mockResponse(for: .success)
+        
+        // Then
+        #expect(error == nil)
+        
+        let httpResponse = try #require(response as? HTTPURLResponse)
+        #expect(httpResponse.statusCode == 200)
+        
+        let responseData = try #require(data)
+        let comment = try JSONDecoder().decode(CommentDTO.self, from: responseData)
+        #expect(comment.id > 0)
+    }
+    
+    @Test("GetCommentByIdRequest - NotFound 시나리오")
+    func testGetCommentByIdRequestNotFoundScenario() throws {
+        // Given
+        let (data, response, error) = GetCommentByIdRequest.mockResponse(for: .notFound)
+        
+        // Then
+        #expect(error == nil)
+        
+        let httpResponse = try #require(response as? HTTPURLResponse)
+        #expect(httpResponse.statusCode == 404)
+        
+        let errorData = try #require(data)
+        let commentError = try JSONDecoder().decode(CommentNotFoundError.self, from: errorData)
+        #expect(commentError.code == "COMMENT_NOT_FOUND")
     }
     
     // MARK: - CreateCommentRequest Tests
@@ -75,49 +144,49 @@ struct CommentRequestsTests {
         #expect(request.body?.body == "Great post!")
     }
     
-    // MARK: - Error Response Models Tests
-    
-    @Test("CommentNotFoundError가 Codable을 준수하는지 확인")
-    func testCommentNotFoundErrorCodable() throws {
+    @Test("CreateCommentRequest - Success 시나리오")
+    func testCreateCommentRequestSuccessScenario() throws {
         // Given
-        let json = """
-        {
-          "error": "Comment not found",
-          "code": "COMMENT_NOT_FOUND"
-        }
-        """
-        let data = json.data(using: .utf8)!
-        
-        // When
-        let decoder = JSONDecoder()
-        let error = try decoder.decode(CommentNotFoundError.self, from: data)
+        let (data, response, error) = CreateCommentRequest.mockResponse(for: .success)
         
         // Then
-        #expect(error.error == "Comment not found")
-        #expect(error.code == "COMMENT_NOT_FOUND")
+        #expect(error == nil)
+        
+        let httpResponse = try #require(response as? HTTPURLResponse)
+        #expect(httpResponse.statusCode == 200)
+        
+        let responseData = try #require(data)
+        let comment = try JSONDecoder().decode(CommentDTO.self, from: responseData)
+        #expect(comment.id > 0, "생성된 댓글은 ID를 가져야 함")
     }
     
-    @Test("CommentValidationError가 Codable을 준수하는지 확인")
-    func testCommentValidationErrorCodable() throws {
+    @Test("CreateCommentRequest - ClientError 시나리오")
+    func testCreateCommentRequestClientErrorScenario() throws {
         // Given
-        let json = """
-        {
-          "error": "Validation Failed",
-          "message": "Comment body is too long"
-        }
-        """
-        let data = json.data(using: .utf8)!
-        
-        // When
-        let decoder = JSONDecoder()
-        let error = try decoder.decode(CommentValidationError.self, from: data)
+        let (data, response, error) = CreateCommentRequest.mockResponse(for: .clientError)
         
         // Then
-        #expect(error.error == "Validation Failed")
-        #expect(error.message == "Comment body is too long")
+        #expect(error == nil)
+        
+        let httpResponse = try #require(response as? HTTPURLResponse)
+        #expect(httpResponse.statusCode == 400)
+        
+        let errorData = try #require(data)
+        let validationError = try JSONDecoder().decode(CommentValidationError.self, from: errorData)
+        #expect(validationError.error == "Validation Failed")
     }
     
-    // MARK: - CommentBodyDTO Tests
+    @Test("CreateCommentRequest - NotFound 시나리오")
+    func testCreateCommentRequestNotFoundScenario() throws {
+        // Given
+        let (_, response, error) = CreateCommentRequest.mockResponse(for: .notFound)
+        
+        // Then
+        #expect(error == nil)
+        
+        let httpResponse = try #require(response as? HTTPURLResponse)
+        #expect(httpResponse.statusCode == 404)
+    }
     
     @Test("CommentBodyDTO가 Codable을 준수하는지 확인")
     func testCommentBodyDTOCodable() throws {

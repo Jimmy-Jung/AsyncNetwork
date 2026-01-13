@@ -3,10 +3,10 @@
 //  AsyncNetworkSampleApp
 //
 //  Created by jimmy on 2026/01/06.
+//  Updated: 2026/01/12 - Migrated to separated macros
 //
 
 import AsyncNetwork
-import AsyncNetworkMacros
 import Foundation
 
 // MARK: - Error Response Models
@@ -25,6 +25,11 @@ struct CommentValidationError: Codable, Sendable, Error {
 
 @APIRequest(
     response: [CommentDTO].self,
+    baseURL: jsonPlaceholderURL,
+    path: "/comments",
+    method: .get
+)
+@APIDocument(
     title: "Get comments for a post",
     description: """
     특정 포스트의 모든 댓글을 가져옵니다.
@@ -39,11 +44,10 @@ struct CommentValidationError: Codable, Sendable, Error {
     응답 형식:
     Comment 객체의 배열을 반환합니다.
     """,
-    baseURL: jsonPlaceholderURL,
-    path: "/comments",
-    method: .get,
-    tags: ["Comments"],
-    testScenarios: [.success, .clientError, .serverError],
+    tags: ["Comments"]
+)
+@APITestable(
+    scenarios: [.success, .clientError, .serverError],
     errorExamples: [
         "400": """
         {
@@ -57,19 +61,30 @@ struct CommentValidationError: Codable, Sendable, Error {
           "message": "Failed to fetch comments"
         }
         """
-    ],
-    includeRetryTests: true,
-    includePerformanceTests: true
+    ]
 )
 struct GetCommentsForPostRequest {
     @QueryParameter var postId: Int?
     @QueryParameter(key: "_limit") var limit: Int?
+    
+    init(postId: Int? = nil, limit: Int? = nil) {
+        self.postId = postId
+        self.limit = limit
+    }
 }
 
 // MARK: - Get Comment by ID
 
 @APIRequest(
     response: CommentDTO.self,
+    baseURL: jsonPlaceholderURL,
+    path: "/comments/{id}",
+    method: .get,
+    errorResponses: [
+        404: CommentNotFoundError.self
+    ]
+)
+@APIDocument(
     title: "Get a comment by ID",
     description: """
     특정 ID를 가진 댓글을 가져옵니다.
@@ -80,14 +95,10 @@ struct GetCommentsForPostRequest {
     에러 처리:
     • 404: 댓글을 찾을 수 없음
     """,
-    baseURL: jsonPlaceholderURL,
-    path: "/comments/{id}",
-    method: .get,
-    tags: ["Comments"],
-    errorResponses: [
-        404: CommentNotFoundError.self
-    ],
-    testScenarios: [.success, .notFound],
+    tags: ["Comments"]
+)
+@APITestable(
+    scenarios: [.success, .notFound],
     errorExamples: [
         "404": """
         {
@@ -95,17 +106,29 @@ struct GetCommentsForPostRequest {
           "code": "COMMENT_NOT_FOUND"
         }
         """
-    ],
-    includeRetryTests: true
+    ]
 )
 struct GetCommentByIdRequest {
     @PathParameter var id: Int
+    
+    init(id: Int) {
+        self.id = id
+    }
 }
 
 // MARK: - Create Comment
 
 @APIRequest(
     response: CommentDTO.self,
+    baseURL: jsonPlaceholderURL,
+    path: "/comments",
+    method: .post,
+    errorResponses: [
+        400: CommentValidationError.self,
+        404: CommentNotFoundError.self
+    ]
+)
+@APIDocument(
     title: "Create a comment",
     description: """
     새로운 댓글을 생성합니다.
@@ -126,19 +149,14 @@ struct GetCommentByIdRequest {
     • 404: 연관된 포스트를 찾을 수 없음
     • 422: 검증 실패
     """,
-    baseURL: jsonPlaceholderURL,
-    path: "/comments",
-    method: .post,
-    tags: ["Comments"],
-    errorResponses: [
-        400: CommentValidationError.self,
-        404: CommentNotFoundError.self
-    ],
-    testScenarios: [.success, .clientError, .notFound, .serverError],
+    tags: ["Comments"]
+)
+@APITestable(
+    scenarios: [.success, .clientError, .notFound, .serverError],
     errorExamples: [
         "400": """
         {
-          "error": "Bad Request",
+          "error": "Validation Failed",
           "message": "Invalid comment data"
         }
         """,
@@ -154,12 +172,16 @@ struct GetCommentByIdRequest {
           "message": "Comment body is too long (max 1000 characters)"
         }
         """
-    ],
-    includeRetryTests: false
+    ]
 )
 struct CreateCommentRequest {
     @RequestBody var body: CommentBodyDTO?
     @HeaderField(key: .contentType) var contentType: String? = "application/json"
+    
+    init(body: CommentBodyDTO? = nil, contentType: String? = "application/json") {
+        self.body = body
+        self.contentType = contentType
+    }
 }
 
 // MARK: - Request Body DTO

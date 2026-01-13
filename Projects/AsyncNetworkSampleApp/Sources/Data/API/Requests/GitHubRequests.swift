@@ -3,10 +3,10 @@
 //  AsyncNetworkSampleApp
 //
 //  Created by jimmy on 2026/01/11.
+//  Updated: 2026/01/12 - Migrated to separated macros
 //
 
 import AsyncNetwork
-import AsyncNetworkMacros
 import Foundation
 
 let gitHubBaseURL = "https://api.github.com"
@@ -18,6 +18,11 @@ let gitHubBaseURL = "https://api.github.com"
 /// **참고**: GitHub API는 인증 없이 시간당 60회 제한이 있습니다.
 @APIRequest(
     response: GitHubUserDTO.self,
+    baseURL: gitHubBaseURL,
+    path: "/users/{username}",
+    method: .get
+)
+@APIDocument(
     title: "Get GitHub User",
     description: """
     GitHub API에서 사용자 정보를 가져옵니다.
@@ -30,11 +35,10 @@ let gitHubBaseURL = "https://api.github.com"
     참고:
     • GitHub API는 인증 없이 시간당 60회 제한
     """,
-    baseURL: gitHubBaseURL,
-    path: "/users/{username}",
-    method: .get,
-    tags: ["GitHub"],
-    testScenarios: [.success, .notFound, .serverError],
+    tags: ["GitHub"]
+)
+@APITestable(
+    scenarios: [.success, .notFound, .serverError],
     errorExamples: [
         "404": """
         {
@@ -42,16 +46,18 @@ let gitHubBaseURL = "https://api.github.com"
           "documentation_url": "https://docs.github.com/rest"
         }
         """,
-        "403": """
+        "500": """
         {
-          "message": "API rate limit exceeded",
-          "documentation_url": "https://docs.github.com/rest/overview/resources-in-the-rest-api#rate-limiting"
+          "error": "Internal Server Error",
+          "message": "GitHub service is unavailable"
         }
-        """,
-    ],
-    includeRetryTests: false,
-    includePerformanceTests: false
+        """
+    ]
 )
 struct GetGitHubUserRequest {
     @PathParameter var username: String
+    
+    init(username: String) {
+        self.username = username
+    }
 }

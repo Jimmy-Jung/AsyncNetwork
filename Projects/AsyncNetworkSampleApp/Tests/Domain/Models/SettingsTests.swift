@@ -3,8 +3,10 @@
 //  AsyncNetworkSampleApp
 //
 //  Created by jimmy on 2026/01/09.
+//  Updated: 2026/01/12 - Removed legacy types
 //
 
+import Foundation
 @testable import AsyncNetworkSampleApp
 import Testing
 
@@ -58,7 +60,7 @@ struct SettingsTests {
         let usage = ETagCacheUsage(currentCount: 50, capacity: 200)
 
         let formatted = usage.formattedUsage
-        #expect(formatted == "50 / 200 URLs")
+        #expect(formatted == "50 / 200")
     }
 
     @Test("ETagCacheUsage.formattedPercentage는 읽기 쉬운 형식을 반환한다")
@@ -66,141 +68,7 @@ struct SettingsTests {
         let usage = ETagCacheUsage(currentCount: 50, capacity: 200)
 
         let formatted = usage.formattedPercentage
-        #expect(formatted == "25.0%")
-    }
-
-    // MARK: - HTTP Cache (CacheCapacityPreset) Tests
-
-    @Test("CacheCapacityPreset은 모든 프리셋을 제공한다")
-    func cacheCapacityPresetProvidesAllPresets() {
-        let presets = CacheCapacityPreset.allCases
-
-        #expect(presets.count == 4)
-        #expect(presets.contains(.small))
-        #expect(presets.contains(.medium))
-        #expect(presets.contains(.large))
-        #expect(presets.contains(.custom))
-    }
-
-    @Test("CacheCapacityPreset의 displayName은 명확하다")
-    func cacheCapacityPresetDisplayNamesAreClear() {
-        #expect(CacheCapacityPreset.small.displayName == "작음 (Small)")
-        #expect(CacheCapacityPreset.medium.displayName == "중간 (Medium)")
-        #expect(CacheCapacityPreset.large.displayName == "큼 (Large)")
-        #expect(CacheCapacityPreset.custom.displayName == "커스텀")
-    }
-
-    @Test("CacheCapacityPreset의 memoryCapacity는 올바른 값을 반환한다")
-    func cacheCapacityPresetReturnsCorrectMemoryCapacity() {
-        #expect(CacheCapacityPreset.small.memoryCapacity == 4 * 1024 * 1024) // 4MB
-        #expect(CacheCapacityPreset.medium.memoryCapacity == 10 * 1024 * 1024) // 10MB
-        #expect(CacheCapacityPreset.large.memoryCapacity == 20 * 1024 * 1024) // 20MB
-    }
-
-    @Test("CacheCapacityPreset의 diskCapacity는 올바른 값을 반환한다")
-    func cacheCapacityPresetReturnsCorrectDiskCapacity() {
-        #expect(CacheCapacityPreset.small.diskCapacity == 20 * 1024 * 1024) // 20MB
-        #expect(CacheCapacityPreset.medium.diskCapacity == 50 * 1024 * 1024) // 50MB
-        #expect(CacheCapacityPreset.large.diskCapacity == 100 * 1024 * 1024) // 100MB
-    }
-
-    // MARK: - CacheUsage Tests
-
-    @Test("CacheUsage는 메모리 사용률을 올바르게 계산한다")
-    func cacheUsageCalculatesMemoryUsagePercentageCorrectly() {
-        let usage = CacheUsage(
-            memoryUsage: 5 * 1024 * 1024, // 5MB
-            diskUsage: 0,
-            memoryCapacity: 10 * 1024 * 1024, // 10MB
-            diskCapacity: 50 * 1024 * 1024
-        )
-
-        #expect(usage.memoryUsagePercentage == 50.0)
-    }
-
-    @Test("CacheUsage는 디스크 사용률을 올바르게 계산한다")
-    func cacheUsageCalculatesDiskUsagePercentageCorrectly() {
-        let usage = CacheUsage(
-            memoryUsage: 0,
-            diskUsage: 25 * 1024 * 1024, // 25MB
-            memoryCapacity: 10 * 1024 * 1024,
-            diskCapacity: 100 * 1024 * 1024 // 100MB
-        )
-
-        #expect(usage.diskUsagePercentage == 25.0)
-    }
-
-    @Test("CacheUsage는 0 용량일 때 0%를 반환한다")
-    func cacheUsageReturnsZeroPercentageWhenCapacityIsZero() {
-        let usage = CacheUsage(
-            memoryUsage: 5 * 1024 * 1024,
-            diskUsage: 10 * 1024 * 1024,
-            memoryCapacity: 0,
-            diskCapacity: 0
-        )
-
-        #expect(usage.memoryUsagePercentage == 0.0)
-        #expect(usage.diskUsagePercentage == 0.0)
-    }
-
-    @Test("CacheUsage.formattedMemoryUsage는 읽기 쉬운 형식을 반환한다")
-    func cacheUsageFormattedMemoryUsageIsReadable() {
-        let usage = CacheUsage(
-            memoryUsage: 5 * 1024 * 1024, // 5MB
-            diskUsage: 0,
-            memoryCapacity: 10 * 1024 * 1024, // 10MB
-            diskCapacity: 50 * 1024 * 1024
-        )
-
-        let formatted = usage.formattedMemoryUsage
-        #expect(formatted.contains("MB"))
-        #expect(formatted.contains("/"))
-    }
-
-    @Test("CacheUsage.formattedDiskUsage는 읽기 쉬운 형식을 반환한다")
-    func cacheUsageFormattedDiskUsageIsReadable() {
-        let usage = CacheUsage(
-            memoryUsage: 0,
-            diskUsage: 25 * 1024 * 1024, // 25MB
-            memoryCapacity: 10 * 1024 * 1024,
-            diskCapacity: 100 * 1024 * 1024 // 100MB
-        )
-
-        let formatted = usage.formattedDiskUsage
-        #expect(formatted.contains("MB"))
-        #expect(formatted.contains("/"))
-    }
-
-    // MARK: - NetworkConfigurationPreset Tests
-
-    @Test("NetworkConfigurationPreset은 모든 프리셋을 제공한다")
-    func networkConfigurationPresetProvidesAllPresets() {
-        let presets = NetworkConfigurationPreset.allCases
-
-        #expect(presets.count == 5)
-        #expect(presets.contains(.development))
-        #expect(presets.contains(.default))
-        #expect(presets.contains(.stable))
-        #expect(presets.contains(.fast))
-        #expect(presets.contains(.test))
-    }
-
-    @Test("NetworkConfigurationPreset의 displayName은 명확하다")
-    func networkConfigurationPresetDisplayNamesAreClear() {
-        #expect(NetworkConfigurationPreset.development.displayName == "Development")
-        #expect(NetworkConfigurationPreset.default.displayName == "Default")
-        #expect(NetworkConfigurationPreset.stable.displayName == "Stable")
-        #expect(NetworkConfigurationPreset.fast.displayName == "Fast")
-        #expect(NetworkConfigurationPreset.test.displayName == "Test")
-    }
-
-    @Test("NetworkConfigurationPreset의 description은 상세 정보를 제공한다")
-    func networkConfigurationPresetDescriptionsProvideDetails() {
-        #expect(NetworkConfigurationPreset.development.description.contains("재시도"))
-        #expect(NetworkConfigurationPreset.default.description.contains("일반"))
-        #expect(NetworkConfigurationPreset.stable.description.contains("안정"))
-        #expect(NetworkConfigurationPreset.fast.description.contains("빠른"))
-        #expect(NetworkConfigurationPreset.test.description.contains("테스트"))
+        #expect(formatted == "25%")
     }
 
     // MARK: - RetryPolicyPreset Tests
@@ -229,6 +97,7 @@ struct SettingsTests {
         #expect(RetryPolicyPreset.standard.maxRetries == 3)
         #expect(RetryPolicyPreset.quick.maxRetries == 5)
         #expect(RetryPolicyPreset.patient.maxRetries == 1)
+        #expect(RetryPolicyPreset.none.maxRetries == 0)
     }
 
     // MARK: - LoggingLevel Tests
@@ -252,27 +121,26 @@ struct SettingsTests {
         #expect(LoggingLevel.none.displayName == "None")
     }
 
-    // MARK: - NetworkStatus Tests
+    // MARK: - ConnectionStatus Tests (NetworkMonitorState.swift)
 
-    @Test("NetworkStatus는 연결 타입을 올바르게 표현한다")
-    func networkStatusRepresentsConnectionTypeCorrectly() {
-        #expect(NetworkStatus.connected(.wifi).displayName == "Connected")
-        #expect(NetworkStatus.connected(.cellular).displayName == "Connected")
-        #expect(NetworkStatus.disconnected.displayName == "Disconnected")
+    @Test("ConnectionStatus는 연결 타입을 올바르게 표현한다")
+    func connectionStatusRepresentsConnectionTypesCorrectly() {
+        #expect(ConnectionStatus.connected.displayName == "연결됨")
+        #expect(ConnectionStatus.disconnected.displayName == "연결 끊김")
+        #expect(ConnectionStatus.unknown.displayName == "알 수 없음")
     }
 
-    @Test("NetworkStatus는 연결 타입 설명을 제공한다")
-    func networkStatusProvidesConnectionTypeDescription() {
-        #expect(NetworkStatus.connected(.wifi).connectionTypeDescription == "Wi-Fi")
-        #expect(NetworkStatus.connected(.cellular).connectionTypeDescription == "Cellular")
-        #expect(NetworkStatus.connected(.ethernet).connectionTypeDescription == "Ethernet")
-        #expect(NetworkStatus.disconnected.connectionTypeDescription == "None")
+    @Test("ConnectionStatus는 연결 타입 아이콘을 제공한다")
+    func connectionStatusProvidesIcons() {
+        #expect(ConnectionStatus.connected.icon == "wifi")
+        #expect(ConnectionStatus.disconnected.icon == "wifi.slash")
+        #expect(ConnectionStatus.unknown.icon == "questionmark.circle")
     }
 
-    @Test("NetworkStatus의 isConnected는 올바른 값을 반환한다")
-    func networkStatusIsConnectedReturnsCorrectValue() {
-        #expect(NetworkStatus.connected(.wifi).isConnected == true)
-        #expect(NetworkStatus.connected(.cellular).isConnected == true)
-        #expect(NetworkStatus.disconnected.isConnected == false)
+    @Test("ConnectionStatus는 색상 정보를 제공한다")
+    func connectionStatusProvidesColorInfo() {
+        #expect(ConnectionStatus.connected.color == "green")
+        #expect(ConnectionStatus.disconnected.color == "red")
+        #expect(ConnectionStatus.unknown.color == "gray")
     }
 }

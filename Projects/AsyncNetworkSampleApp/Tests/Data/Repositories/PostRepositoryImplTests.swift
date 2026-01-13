@@ -98,7 +98,7 @@ struct PostRepositoryImplTests {
         #expect(domainModel.body == dto.body)
         
         // assertValid() 검증
-        try dto.assertValid()
+        dto.assertValid()
     }
     
     @Test("PostDTO fixture가 일관된 데이터를 제공하는지 확인")
@@ -134,7 +134,7 @@ struct PostRepositoryImplTests {
         #expect(domain.userId == 42)
         #expect(domain.title == "Custom Title")
         
-        try customDTO.assertValid()
+        customDTO.assertValid()
     }
     
     @Test("PostDTO mockArray로 여러 테스트 데이터를 생성하는지 확인")
@@ -150,7 +150,7 @@ struct PostRepositoryImplTests {
         
         // 모든 Mock이 유효한지 확인
         for dto in dtos {
-            try dto.assertValid()
+            dto.assertValid()
         }
     }
 }

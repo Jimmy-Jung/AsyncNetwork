@@ -3,6 +3,7 @@
 //  AsyncNetworkSampleAppTests
 //
 //  Created by jimmy on 2026/01/06.
+//  Updated: 2026/01/12 - Added @APITestable MockScenario tests
 //
 
 import Foundation
@@ -27,14 +28,46 @@ struct UserRequestsTests {
         #expect(request.page == 1)
     }
     
-    @Test("GetAllUsersRequest가 기본값을 가지는지 확인")
-    func testGetAllUsersRequestDefaults() {
+    @Test("GetAllUsersRequest - Success 시나리오")
+    func testGetAllUsersRequestSuccessScenario() throws {
         // Given
-        let request = GetAllUsersRequest()
+        let (data, response, error) = GetAllUsersRequest.mockResponse(for: .success)
         
         // Then
-        #expect(request.method == .get)
-        #expect(request.path == "/users")
+        #expect(error == nil)
+        
+        let httpResponse = try #require(response as? HTTPURLResponse)
+        #expect(httpResponse.statusCode == 200)
+        
+        let responseData = try #require(data)
+        let users = try JSONDecoder().decode([UserDTO].self, from: responseData)
+        #expect(!users.isEmpty, "사용자 배열이 비어있지 않아야 함")
+    }
+    
+    @Test("GetAllUsersRequest - ServerError 시나리오")
+    func testGetAllUsersRequestServerErrorScenario() throws {
+        // Given
+        let (_, response, error) = GetAllUsersRequest.mockResponse(for: .serverError)
+        
+        // Then
+        #expect(error == nil)
+        
+        let httpResponse = try #require(response as? HTTPURLResponse)
+        #expect(httpResponse.statusCode == 500)
+    }
+    
+    @Test("GetAllUsersRequest - Timeout 시나리오")
+    func testGetAllUsersRequestTimeoutScenario() {
+        // Given
+        let (data, response, error) = GetAllUsersRequest.mockResponse(for: .timeout)
+        
+        // Then
+        #expect(data == nil)
+        #expect(response == nil)
+        #expect(error != nil)
+        
+        let nsError = error as? NSError
+        #expect(nsError?.code == NSURLErrorTimedOut)
     }
     
     // MARK: - GetUserByIdRequest Tests
@@ -52,15 +85,36 @@ struct UserRequestsTests {
         #expect(url.path == "/users/10")
     }
     
-    @Test("GetUserByIdRequest가 ID를 올바르게 설정하는지 확인")
-    func testGetUserByIdRequestId() {
+    @Test("GetUserByIdRequest - Success 시나리오")
+    func testGetUserByIdRequestSuccessScenario() throws {
         // Given
-        let userId = 42
-        let request = GetUserByIdRequest(id: userId)
+        let (data, response, error) = GetUserByIdRequest.mockResponse(for: .success)
         
         // Then
-        #expect(request.id == userId)
-        #expect(request.method == .get)
+        #expect(error == nil)
+        
+        let httpResponse = try #require(response as? HTTPURLResponse)
+        #expect(httpResponse.statusCode == 200)
+        
+        let responseData = try #require(data)
+        let user = try JSONDecoder().decode(UserDTO.self, from: responseData)
+        #expect(user.id > 0)
+    }
+    
+    @Test("GetUserByIdRequest - NotFound 시나리오")
+    func testGetUserByIdRequestNotFoundScenario() throws {
+        // Given
+        let (data, response, error) = GetUserByIdRequest.mockResponse(for: .notFound)
+        
+        // Then
+        #expect(error == nil)
+        
+        let httpResponse = try #require(response as? HTTPURLResponse)
+        #expect(httpResponse.statusCode == 404)
+        
+        let errorData = try #require(data)
+        let userError = try JSONDecoder().decode(UserNotFoundError.self, from: errorData)
+        #expect(userError.code == "USER_NOT_FOUND")
     }
     
     // MARK: - CreateUserRequest Tests
@@ -95,61 +149,37 @@ struct UserRequestsTests {
         #expect(request.body?.email == "test@example.com")
     }
     
-    @Test("CreateUserRequest가 POST 메서드를 사용하는지 확인")
-    func testCreateUserRequestMethod() {
+    @Test("CreateUserRequest - Success 시나리오")
+    func testCreateUserRequestSuccessScenario() throws {
         // Given
-        let request = CreateUserRequest()
+        let (data, response, error) = CreateUserRequest.mockResponse(for: .success)
         
         // Then
-        #expect(request.method == .post)
-        #expect(request.path == "/users")
+        #expect(error == nil)
+        
+        let httpResponse = try #require(response as? HTTPURLResponse)
+        #expect(httpResponse.statusCode == 200)
+        
+        let responseData = try #require(data)
+        let user = try JSONDecoder().decode(UserDTO.self, from: responseData)
+        #expect(user.id > 0, "생성된 사용자는 ID를 가져야 함")
     }
     
-    // MARK: - Error Response Models Tests
-    
-    @Test("UserNotFoundError가 Codable을 준수하는지 확인")
-    func testUserNotFoundErrorCodable() throws {
+    @Test("CreateUserRequest - ClientError 시나리오")
+    func testCreateUserRequestClientErrorScenario() throws {
         // Given
-        let json = """
-        {
-          "error": "User not found",
-          "code": "USER_NOT_FOUND"
-        }
-        """
-        let data = json.data(using: .utf8)!
-        
-        // When
-        let decoder = JSONDecoder()
-        let error = try decoder.decode(UserNotFoundError.self, from: data)
+        let (data, response, error) = CreateUserRequest.mockResponse(for: .clientError)
         
         // Then
-        #expect(error.error == "User not found")
-        #expect(error.code == "USER_NOT_FOUND")
-    }
-    
-    @Test("UserValidationError가 Codable을 준수하는지 확인")
-    func testUserValidationErrorCodable() throws {
-        // Given
-        let json = """
-        {
-          "error": "Validation Failed",
-          "message": "Email format is invalid",
-          "fields": ["email"]
-        }
-        """
-        let data = json.data(using: .utf8)!
+        #expect(error == nil)
         
-        // When
-        let decoder = JSONDecoder()
-        let error = try decoder.decode(UserValidationError.self, from: data)
+        let httpResponse = try #require(response as? HTTPURLResponse)
+        #expect(httpResponse.statusCode == 400)
         
-        // Then
-        #expect(error.error == "Validation Failed")
-        #expect(error.message == "Email format is invalid")
-        #expect(error.fields?.contains("email") == true)
+        let errorData = try #require(data)
+        let validationError = try JSONDecoder().decode(UserValidationError.self, from: errorData)
+        #expect(validationError.error == "Validation Failed")
     }
-    
-    // MARK: - UserBodyDTO Tests
     
     @Test("UserBodyDTO가 Codable을 준수하는지 확인")
     func testUserBodyDTOCodable() throws {
@@ -175,25 +205,5 @@ struct UserRequestsTests {
         #expect(decoded.name == body.name)
         #expect(decoded.username == body.username)
         #expect(decoded.email == body.email)
-    }
-    
-    @Test("UserBodyDTO가 옵셔널 필드를 지원하는지 확인")
-    func testUserBodyDTOOptionalFields() throws {
-        // Given
-        let body = UserBodyDTO(
-            name: "Test User",
-            username: "testuser",
-            email: "test@example.com",
-            address: nil,
-            phone: "+1234567890",
-            website: "https://example.com",
-            company: nil
-        )
-        
-        // Then
-        #expect(body.phone == "+1234567890")
-        #expect(body.website == "https://example.com")
-        #expect(body.address == nil)
-        #expect(body.company == nil)
     }
 }

@@ -3,10 +3,10 @@
 //  AsyncNetworkSampleApp
 //
 //  Created by jimmy on 2026/01/06.
+//  Updated: 2026/01/12 - Migrated to separated macros
 //
 
 import AsyncNetwork
-import AsyncNetworkMacros
 import Foundation
 
 // MARK: - Error Response Models
@@ -26,6 +26,11 @@ struct UserValidationError: Codable, Sendable, Error {
 
 @APIRequest(
     response: [UserDTO].self,
+    baseURL: jsonPlaceholderURL,
+    path: "/users",
+    method: .get
+)
+@APIDocument(
     title: "Get all users",
     description: """
     JSONPlaceholder에서 모든 사용자를 가져옵니다.
@@ -37,11 +42,10 @@ struct UserValidationError: Codable, Sendable, Error {
     응답 형식:
     User 객체의 배열을 반환합니다. 각 객체는 주소, 회사, 연락처 정보를 포함합니다.
     """,
-    baseURL: jsonPlaceholderURL,
-    path: "/users",
-    method: .get,
-    tags: ["Users"],
-    testScenarios: [.success, .serverError, .timeout],
+    tags: ["Users"]
+)
+@APITestable(
+    scenarios: [.success, .serverError, .timeout],
     errorExamples: [
         "500": """
         {
@@ -49,19 +53,30 @@ struct UserValidationError: Codable, Sendable, Error {
           "message": "Failed to fetch users"
         }
         """
-    ],
-    includeRetryTests: true,
-    includePerformanceTests: true
+    ]
 )
 struct GetAllUsersRequest {
     @QueryParameter(key: "_limit") var limit: Int?
     @QueryParameter(key: "_page") var page: Int?
+    
+    init(limit: Int? = nil, page: Int? = nil) {
+        self.limit = limit
+        self.page = page
+    }
 }
 
 // MARK: - Get User by ID
 
 @APIRequest(
     response: UserDTO.self,
+    baseURL: jsonPlaceholderURL,
+    path: "/users/{id}",
+    method: .get,
+    errorResponses: [
+        404: UserNotFoundError.self
+    ]
+)
+@APIDocument(
     title: "Get a user by ID",
     description: """
     특정 ID를 가진 사용자를 가져옵니다.
@@ -75,14 +90,10 @@ struct GetAllUsersRequest {
     에러 처리:
     • 404: 사용자를 찾을 수 없음
     """,
-    baseURL: jsonPlaceholderURL,
-    path: "/users/{id}",
-    method: .get,
-    tags: ["Users"],
-    errorResponses: [
-        404: UserNotFoundError.self
-    ],
-    testScenarios: [.success, .notFound, .serverError],
+    tags: ["Users"]
+)
+@APITestable(
+    scenarios: [.success, .notFound, .serverError],
     errorExamples: [
         "404": """
         {
@@ -90,17 +101,29 @@ struct GetAllUsersRequest {
           "code": "USER_NOT_FOUND"
         }
         """
-    ],
-    includeRetryTests: true
+    ]
 )
 struct GetUserByIdRequest {
     @PathParameter var id: Int
+    
+    init(id: Int) {
+        self.id = id
+    }
 }
 
 // MARK: - Create User
 
 @APIRequest(
     response: UserDTO.self,
+    baseURL: jsonPlaceholderURL,
+    path: "/users",
+    method: .post,
+    errorResponses: [
+        400: UserValidationError.self,
+        422: UserValidationError.self
+    ]
+)
+@APIDocument(
     title: "Create a new user",
     description: """
     새로운 사용자를 생성합니다.
@@ -120,19 +143,14 @@ struct GetUserByIdRequest {
     • 409: 이미 존재하는 username 또는 email
     • 422: 검증 실패
     """,
-    baseURL: jsonPlaceholderURL,
-    path: "/users",
-    method: .post,
-    tags: ["Users"],
-    errorResponses: [
-        400: UserValidationError.self,
-        422: UserValidationError.self
-    ],
-    testScenarios: [.success, .clientError, .serverError],
+    tags: ["Users"]
+)
+@APITestable(
+    scenarios: [.success, .clientError, .serverError],
     errorExamples: [
         "400": """
         {
-          "error": "Bad Request",
+          "error": "Validation Failed",
           "message": "Invalid user data"
         }
         """,
@@ -149,12 +167,16 @@ struct GetUserByIdRequest {
           "fields": ["email"]
         }
         """
-    ],
-    includeRetryTests: false
+    ]
 )
 struct CreateUserRequest {
     @RequestBody var body: UserBodyDTO?
     @HeaderField(key: .contentType) var contentType: String? = "application/json"
+    
+    init(body: UserBodyDTO? = nil, contentType: String? = "application/json") {
+        self.body = body
+        self.contentType = contentType
+    }
 }
 
 // MARK: - Request Body DTO

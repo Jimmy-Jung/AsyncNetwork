@@ -98,14 +98,22 @@ public struct APIRequestMacroImpl: MemberMacro, ExtensionMacro {
         // 3. 기존 프로퍼티 수집
         let existingProperties = collectExistingProperties(from: structDecl)
 
-        // 4. PropertyWrapper 제안 진단
+        // 4. @APIDocument 매크로 존재 여부 확인
+        let hasAPIDocument = declaration.attributes.contains { attribute in
+            guard let customAttribute = attribute.as(AttributeSyntax.self) else { return false }
+            let attributeName = customAttribute.attributeName.as(IdentifierTypeSyntax.self)?.name.text
+            return attributeName == "APIDocument"
+        }
+
+        // 5. PropertyWrapper 제안 진단
         emitPropertyWrapperSuggestions(for: structDecl, args: args, context: context)
 
-        // 5. 멤버 선언 생성
+        // 6. 멤버 선언 생성
         return assembleMemberDeclarations(
             for: structDecl,
             args: args,
-            existingProperties: existingProperties
+            existingProperties: existingProperties,
+            hasAPIDocument: hasAPIDocument
         )
     }
 
@@ -194,7 +202,8 @@ public struct APIRequestMacroImpl: MemberMacro, ExtensionMacro {
     private static func assembleMemberDeclarations(
         for structDecl: StructDeclSyntax,
         args: MacroArguments,
-        existingProperties: Set<String>
+        existingProperties: Set<String>,
+        hasAPIDocument: Bool = false
     ) -> [DeclSyntax] {
         var members: [DeclSyntax] = []
 
@@ -218,8 +227,10 @@ public struct APIRequestMacroImpl: MemberMacro, ExtensionMacro {
             members.append(method)
         }
 
-        // metadata 생성 (PropertyWrapper 정보 추출하여 헤더 기본값 포함)
-        if !existingProperties.contains("metadata") {
+        // ⚠️ Backward Compatibility: @APIDocument가 없는 경우에만 metadata 생성
+        // @APIDocument가 있으면 해당 매크로가 metadata를 생성
+        // 이렇게 하면 기존 코드(title, description, tags를 @APIRequest에 전달)가 여전히 작동
+        if !hasAPIDocument, !existingProperties.contains("metadata") {
             let properties = scanPropertyWrappers(from: structDecl)
             members.append(generateMetadata(
                 typeName: structDecl.name.text,
@@ -228,31 +239,14 @@ public struct APIRequestMacroImpl: MemberMacro, ExtensionMacro {
             ))
         }
 
-        // 테스트 관련 멤버 생성 (testScenarios나 errorExamples가 있는 경우)
-        if !args.testScenarios.isEmpty || !args.errorExamples.isEmpty {
-            // MockScenario enum
-            if !existingProperties.contains("MockScenario") {
-                members.append(generateMockScenarioEnum(
-                    scenarios: args.testScenarios,
-                    errorExamples: args.errorExamples
-                ))
-            }
+        // ❌ 제거: MockScenario 생성 (@APITestable 매크로로 이동)
+        // ❌ 제거: mockResponse() 생성 (@APITestable 매크로로 이동)
 
-            // mockResponse() 메서드
-            if !existingProperties.contains("mockResponse") {
-                members.append(generateMockResponseMethod(
-                    typeName: structDecl.name.text,
-                    responseType: args.responseType,
-                    scenarios: args.testScenarios,
-                    errorExamples: args.errorExamples
-                ))
-            }
-        }
-
-        // memberwise initializer 생성
-        if let initializer = generateMemberwiseInitializer(for: structDecl, existingProperties: existingProperties) {
-            members.append(initializer)
-        }
+        // ❌ 제거: memberwise initializer 생성
+        // Swift 6의 매크로 시스템에서 init은 명시적으로 선언되어야 하며,
+        // MemberMacro로 생성하면 "not covered by macro" 에러가 발생합니다.
+        // 대신 각 Request 구조체에서 직접 init을 정의하거나,
+        // Swift의 기본 memberwise initializer를 사용합니다.
 
         return members
     }
@@ -557,7 +551,8 @@ public struct APIRequestMacroImpl: MemberMacro, ExtensionMacro {
     private static func extractGenericType(from typeString: String) -> String? {
         // RequestBody<PostBody> 형태에서 PostBody 추출
         if let startIndex = typeString.firstIndex(of: "<"),
-           let endIndex = typeString.lastIndex(of: ">") {
+           let endIndex = typeString.lastIndex(of: ">")
+        {
             let innerType = String(typeString[typeString.index(after: startIndex) ..< endIndex])
             return innerType.trimmingCharacters(in: .whitespaces)
         }
@@ -964,7 +959,7 @@ public struct APIRequestMacroImpl: MemberMacro, ExtensionMacro {
             "accept", "language",
             "cookie", "session",
             "apikey", "key",
-            "bearer", "basic"
+            "bearer", "basic",
         ]
 
         return headerKeywords.contains { propertyName.contains($0) }
@@ -1250,7 +1245,8 @@ public struct APIRequestMacroImpl: MemberMacro, ExtensionMacro {
         for prop in properties {
             if prop.wrapperType == "HeaderField" || prop.wrapperType == "CustomHeader",
                let headerKey = prop.headerKey,
-               let defaultValue = prop.defaultValue {
+               let defaultValue = prop.defaultValue
+            {
                 // 기본값을 escape 처리
                 let escapedValue = defaultValue
                     .replacingOccurrences(of: "\\", with: "\\\\")
@@ -1292,7 +1288,9 @@ public struct APIRequestMacroImpl: MemberMacro, ExtensionMacro {
 struct AsyncNetworkMacrosPlugin: CompilerPlugin {
     let providingMacros: [Macro.Type] = [
         APIRequestMacroImpl.self,
-        TestableDTOMacroImpl.self,
-        TestableSemerMacroImpl.self
+        APIDocumentMacroImpl.self,
+        APITestableMacroImpl.self,
+        ResponseDocumentMacroImpl.self,
+        ResponseTestableMacroImpl.self,
     ]
 }

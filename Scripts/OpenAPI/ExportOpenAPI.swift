@@ -45,6 +45,13 @@ struct APIRequestInfo: Codable {
     let errorResponses: [String: String] // [statusCode: TypeName]
 }
 
+/// @APIDocument 매크로 정보
+struct APIDocumentInfo: Codable {
+    let title: String
+    let description: String
+    let tags: [String]
+}
+
 struct PropertyInfo: Codable {
     let name: String
     let type: String
@@ -329,12 +336,27 @@ func generateOperation(request: APIRequestInfo, baseURLMap _: [String: String], 
     let parameters = request.properties.filter { ["path", "query", "header", "customHeader"].contains($0.wrapper) }
     let bodyProp = request.properties.first { $0.wrapper == "body" }
 
+    // JSON escape 처리
+    let escapedTitle = request.title
+        .replacingOccurrences(of: "\\", with: "\\\\")
+        .replacingOccurrences(of: "\"", with: "\\\"")
+        .replacingOccurrences(of: "\n", with: "\\n")
+        .replacingOccurrences(of: "\r", with: "\\r")
+        .replacingOccurrences(of: "\t", with: "\\t")
+    
+    let escapedDescription = request.description
+        .replacingOccurrences(of: "\\", with: "\\\\")
+        .replacingOccurrences(of: "\"", with: "\\\"")
+        .replacingOccurrences(of: "\n", with: "\\n")
+        .replacingOccurrences(of: "\r", with: "\\r")
+        .replacingOccurrences(of: "\t", with: "\\t")
+
     var json = """
-        
-              "\(request.method)": {
-                "summary": "\(request.title)",
-                "description": "\(request.description.replacingOccurrences(of: "\"", with: "\\\""))",
-                "tags": [\(request.tags.map { "\"\($0)\"" }.joined(separator: ", "))]
+    
+          "\(request.method)": {
+            "summary": "\(escapedTitle)",
+            "description": "\(escapedDescription)",
+            "tags": [\(request.tags.map { "\"\($0)\"" }.joined(separator: ", "))]
     """
 
     // Parameters
@@ -996,17 +1018,32 @@ func parseTypePropertyLine(line: String) -> TypeProperty? {
     )
 }
 
-func findSwiftFiles(in directory: String) throws -> [String] {
+func findSwiftFiles(in path: String) throws -> [String] {
     let fileManager = FileManager.default
     var swiftFiles: [String] = []
-
-    guard let enumerator = fileManager.enumerator(atPath: directory) else {
-        throw NSError(domain: "Parser", code: 1, userInfo: [NSLocalizedDescriptionKey: "Cannot enumerate: \(directory)"])
+    
+    var isDirectory: ObjCBool = false
+    guard fileManager.fileExists(atPath: path, isDirectory: &isDirectory) else {
+        throw NSError(domain: "Parser", code: 1, userInfo: [NSLocalizedDescriptionKey: "Path does not exist: \(path)"])
+    }
+    
+    // 파일인 경우
+    if !isDirectory.boolValue {
+        if path.hasSuffix(".swift"), !path.contains("Generated") {
+            return [path]
+        } else {
+            return []
+        }
+    }
+    
+    // 디렉토리인 경우
+    guard let enumerator = fileManager.enumerator(atPath: path) else {
+        throw NSError(domain: "Parser", code: 1, userInfo: [NSLocalizedDescriptionKey: "Cannot enumerate: \(path)"])
     }
 
     while let file = enumerator.nextObject() as? String {
         if file.hasSuffix(".swift"), !file.contains("Generated") {
-            swiftFiles.append("\(directory)/\(file)")
+            swiftFiles.append("\(path)/\(file)")
         }
     }
 
@@ -1037,8 +1074,8 @@ func extractConstants(from content: String) -> [String: String] {
     var constants: [String: String] = [:]
     let lines = content.components(separatedBy: .newlines)
 
-    // let constantName = "value" 패턴 찾기
-    let pattern = #"^\s*let\s+(\w+)\s*=\s*"([^"]+)""#
+    // let constantName = "value" 또는 let constantName: Type = "value" 패턴 찾기
+    let pattern = #"^\s*let\s+(\w+)(?::\s*\w+)?\s*=\s*"([^"]+)""#
     guard let regex = try? NSRegularExpression(pattern: pattern, options: []) else {
         return constants
     }
@@ -1313,13 +1350,13 @@ func extractAPIRequests(from content: String, constants: [String: String] = [:])
 
         if line.trimmingCharacters(in: .whitespaces).hasPrefix("@APIRequest(") {
             // @APIRequest 블록 추출
-            var block = ""
+            var apiRequestBlock = ""
             var depth = 0
             var foundParen = false
 
             for j in i ..< lines.count {
                 let currentLine = lines[j]
-                block += currentLine + "\n"
+                apiRequestBlock += currentLine + "\n"
 
                 for char in currentLine {
                     if char == "(" { foundParen = true; depth += 1 }
@@ -1330,6 +1367,42 @@ func extractAPIRequests(from content: String, constants: [String: String] = [:])
                     i = j
                     break
                 }
+            }
+
+            // 같은 Request에 적용된 다른 매크로 찾기 (@APIDocument, @APITestable 등)
+            var apiDocumentBlock: String?
+            var currentLineIndex = i + 1
+            while currentLineIndex < lines.count, currentLineIndex < i + 50 {
+                let checkLine = lines[currentLineIndex].trimmingCharacters(in: .whitespaces)
+                
+                // struct 발견 시 종료 (더 이상 매크로 없음)
+                if checkLine.hasPrefix("struct ") {
+                    break
+                }
+                
+                // @APIDocument 발견
+                if checkLine.hasPrefix("@APIDocument(") {
+                    var docBlock = ""
+                    var docDepth = 0
+                    var docFoundParen = false
+                    
+                    for k in currentLineIndex ..< lines.count {
+                        let docLine = lines[k]
+                        docBlock += docLine + "\n"
+                        
+                        for char in docLine {
+                            if char == "(" { docFoundParen = true; docDepth += 1 }
+                            else if char == ")" { docDepth -= 1; if docFoundParen, docDepth == 0 { break } }
+                        }
+                        
+                        if docFoundParen, docDepth == 0 {
+                            apiDocumentBlock = docBlock
+                            break
+                        }
+                    }
+                }
+                
+                currentLineIndex += 1
             }
 
             // struct 이름 (다른 매크로들을 건너뛰기)
@@ -1344,9 +1417,28 @@ func extractAPIRequests(from content: String, constants: [String: String] = [:])
                         // properties 추출
                         let properties = extractProperties(from: lines, startingAt: structLineIndex + 1)
 
-                        if let request = parseAPIRequestBlock(block: block, name: name, properties: properties, constants: constants) {
+                        if let request = parseAPIRequestBlock(
+                            apiRequestBlock: apiRequestBlock,
+                            apiDocumentBlock: apiDocumentBlock,
+                            name: name,
+                            properties: properties,
+                            constants: constants
+                        ) {
                             requests.append(request)
                         }
+                    }
+                    // struct를 처리했으므로 다음 struct의 닫는 괄호까지 건너뛰기
+                    i = structLineIndex
+                    var braceDepth = 0
+                    var foundOpenBrace = false
+                    while i < lines.count {
+                        let checkLine = lines[i]
+                        for char in checkLine {
+                            if char == "{" { foundOpenBrace = true; braceDepth += 1 }
+                            else if char == "}" { braceDepth -= 1 }
+                        }
+                        if foundOpenBrace, braceDepth == 0 { break }
+                        i += 1
                     }
                     break
                 }
@@ -1491,8 +1583,14 @@ func extractCustomHeaderName(from line: String) -> String? {
     return String(line[range])
 }
 
-func parseAPIRequestBlock(block: String, name: String, properties: [PropertyInfo], constants: [String: String] = [:]) -> APIRequestInfo? {
-    func extract(_: String, pattern: String) -> String? {
+func parseAPIRequestBlock(
+    apiRequestBlock: String,
+    apiDocumentBlock: String?,
+    name: String,
+    properties: [PropertyInfo],
+    constants: [String: String] = [:]
+) -> APIRequestInfo? {
+    func extract(_: String, pattern: String, from block: String) -> String? {
         guard let regex = try? NSRegularExpression(pattern: pattern, options: .dotMatchesLineSeparators),
               let match = regex.firstMatch(in: block, range: NSRange(block.startIndex..., in: block)),
               let range = Range(match.range(at: 1), in: block)
@@ -1502,8 +1600,8 @@ func parseAPIRequestBlock(block: String, name: String, properties: [PropertyInfo
         return String(block[range])
     }
 
-    func extractArray(_ key: String) -> [String] {
-        guard let content = extract(key, pattern: key + #":\s*\[(.*?)\]"#) else { return [] }
+    func extractArray(_ key: String, from block: String) -> [String] {
+        guard let content = extract(key, pattern: key + #":\s*\[(.*?)\]"#, from: block) else { return [] }
         let pattern = #""([^"]+)""#
         guard let regex = try? NSRegularExpression(pattern: pattern) else { return [] }
         let matches = regex.matches(in: content, range: NSRange(content.startIndex..., in: content))
@@ -1513,14 +1611,14 @@ func parseAPIRequestBlock(block: String, name: String, properties: [PropertyInfo
         }
     }
 
-    func extractMultiline(_ key: String) -> String? {
+    func extractMultiline(_ key: String, from block: String) -> String? {
         let tripleQuote = "\"\"\""
         let pattern = key + ":\\s*" + tripleQuote + "(.*?)" + tripleQuote
-        guard let content = extract(key, pattern: pattern) else { return nil }
+        guard let content = extract(key, pattern: pattern, from: block) else { return nil }
         return content.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
-    guard let response = extract("response", pattern: #"response:\s*(\[?\w+\]?)(?:\.self)?"#) else {
+    guard let response = extract("response", pattern: #"response:\s*(\[?\w+\]?)(?:\.self)?"#, from: apiRequestBlock) else {
         return nil
     }
 
@@ -1528,16 +1626,16 @@ func parseAPIRequestBlock(block: String, name: String, properties: [PropertyInfo
     var baseURL = ""
 
     // 1. 문자열 리터럴: baseURL: "https://..."
-    if let baseURLMatch = try? NSRegularExpression(pattern: #"baseURL:\s*"([^"]+)""#).firstMatch(in: block, range: NSRange(block.startIndex..., in: block)),
-       let range = Range(baseURLMatch.range(at: 1), in: block)
+    if let baseURLMatch = try? NSRegularExpression(pattern: #"baseURL:\s*"([^"]+)""#).firstMatch(in: apiRequestBlock, range: NSRange(apiRequestBlock.startIndex..., in: apiRequestBlock)),
+       let range = Range(baseURLMatch.range(at: 1), in: apiRequestBlock)
     {
-        baseURL = String(block[range])
+        baseURL = String(apiRequestBlock[range])
     }
     // 2. 변수 참조: baseURL: constantName
-    else if let varMatch = try? NSRegularExpression(pattern: #"baseURL:\s*(\w+)"#).firstMatch(in: block, range: NSRange(block.startIndex..., in: block)),
-            let varRange = Range(varMatch.range(at: 1), in: block)
+    else if let varMatch = try? NSRegularExpression(pattern: #"baseURL:\s*(\w+)"#).firstMatch(in: apiRequestBlock, range: NSRange(apiRequestBlock.startIndex..., in: apiRequestBlock)),
+            let varRange = Range(varMatch.range(at: 1), in: apiRequestBlock)
     {
-        let varName = String(block[varRange])
+        let varName = String(apiRequestBlock[varRange])
         baseURL = constants[varName] ?? ""
     }
 
@@ -1548,34 +1646,68 @@ func parseAPIRequestBlock(block: String, name: String, properties: [PropertyInfo
 
     // errorResponses 파싱: errorResponses: [404: ErrorResponse.self, 500: ServerError.self]
     var errorResponses: [String: String] = [:]
-    if block.contains("errorResponses:") {
+    if apiRequestBlock.contains("errorResponses:") {
         let errorPattern = #"(\d{3}):\s*(\w+)\.self"#
         if let regex = try? NSRegularExpression(pattern: errorPattern) {
-            let nsRange = NSRange(block.startIndex..., in: block)
-            let matches = regex.matches(in: block, range: nsRange)
+            let nsRange = NSRange(apiRequestBlock.startIndex..., in: apiRequestBlock)
+            let matches = regex.matches(in: apiRequestBlock, range: nsRange)
             for match in matches {
-                if let statusRange = Range(match.range(at: 1), in: block),
-                   let typeRange = Range(match.range(at: 2), in: block)
+                if let statusRange = Range(match.range(at: 1), in: apiRequestBlock),
+                   let typeRange = Range(match.range(at: 2), in: apiRequestBlock)
                 {
-                    let statusCode = String(block[statusRange])
-                    let typeName = String(block[typeRange])
+                    let statusCode = String(apiRequestBlock[statusRange])
+                    let typeName = String(apiRequestBlock[typeRange])
                     errorResponses[statusCode] = typeName
                 }
             }
         }
     }
 
+    // @APIDocument에서 title, description, tags 추출 (우선순위 높음)
+    var title = ""
+    var description = ""
+    var tags: [String] = []
+    
+    if let docBlock = apiDocumentBlock {
+        // @APIDocument의 파라미터 파싱
+        title = extract("title", pattern: #"title:\s*"([^"]+)""#, from: docBlock) ?? ""
+        
+        // description (multiline 지원)
+        if let multilineDesc = extractMultiline("description", from: docBlock) {
+            description = multilineDesc
+        } else {
+            description = extract("description", pattern: #"description:\s*"([^"]+)""#, from: docBlock) ?? ""
+        }
+        
+        tags = extractArray("tags", from: docBlock)
+    }
+    
+    // @APIDocument가 없으면 @APIRequest에서 fallback (deprecated)
+    if title.isEmpty {
+        title = extract("title", pattern: #"title:\s*"([^"]+)""#, from: apiRequestBlock) ?? name
+    }
+    if description.isEmpty {
+        if let multilineDesc = extractMultiline("description", from: apiRequestBlock) {
+            description = multilineDesc
+        } else {
+            description = extract("description", pattern: #"description:\s*"([^"]+)""#, from: apiRequestBlock) ?? ""
+        }
+    }
+    if tags.isEmpty {
+        tags = extractArray("tags", from: apiRequestBlock)
+    }
+
     return APIRequestInfo(
         name: name,
         response: response,
-        title: extract("title", pattern: #"title:\s*"([^"]+)""#) ?? name,
-        description: extract("description", pattern: #"description:\s*"([^"]+)""#) ?? "",
+        title: title,
+        description: description,
         baseURL: baseURL,
-        path: extract("path", pattern: #"path:\s*"([^"]+)""#) ?? "/",
-        method: extract("method", pattern: #"method:\s*\.(\w+)"#) ?? "get",
-        tags: extractArray("tags"),
-        responseExample: extractMultiline("responseExample"),
-        requestBodyExample: extractMultiline("requestBodyExample"),
+        path: extract("path", pattern: #"path:\s*"([^"]+)""#, from: apiRequestBlock) ?? "/",
+        method: extract("method", pattern: #"method:\s*\.(\w+)"#, from: apiRequestBlock) ?? "get",
+        tags: tags,
+        responseExample: extractMultiline("responseExample", from: apiRequestBlock),
+        requestBodyExample: extractMultiline("requestBodyExample", from: apiRequestBlock),
         properties: properties,
         errorResponses: errorResponses
     )

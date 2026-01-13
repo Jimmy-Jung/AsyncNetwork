@@ -8,8 +8,7 @@
 import AsyncNetwork
 import Foundation
 
-@Response(
-    mockStrategy: .random,
+@ResponseDocument(
     fixtureJSON: """
     {
       "id": 1,
@@ -34,7 +33,10 @@ import Foundation
         "bs": "harness real-time e-markets"
       }
     }
-    """,
+    """
+)
+@ResponseTestable(
+    mockStrategy: .random,
     includeBuilder: true,
     defaultArrayCount: 10
 )
@@ -49,8 +51,7 @@ struct UserDTO: Codable, Sendable {
     let company: CompanyDTO?
 }
 
-@Response(
-    mockStrategy: .random,
+@ResponseDocument(
     fixtureJSON: """
     {
       "street": "Kulas Light",
@@ -62,7 +63,10 @@ struct UserDTO: Codable, Sendable {
         "lng": "81.1496"
       }
     }
-    """,
+    """
+)
+@ResponseTestable(
+    mockStrategy: .random,
     includeBuilder: true,
     defaultArrayCount: 5
 )
@@ -74,14 +78,16 @@ struct AddressDTO: Codable, Sendable {
     let geo: GeoDTO
 }
 
-@Response(
-    mockStrategy: .random,
+@ResponseDocument(
     fixtureJSON: """
     {
       "lat": "-37.3159",
       "lng": "81.1496"
     }
-    """,
+    """
+)
+@ResponseTestable(
+    mockStrategy: .random,
     includeBuilder: true,
     defaultArrayCount: 5
 )
@@ -90,15 +96,17 @@ struct GeoDTO: Codable, Sendable {
     let lng: String
 }
 
-@Response(
-    mockStrategy: .random,
+@ResponseDocument(
     fixtureJSON: """
     {
       "name": "Romaguera-Crona",
       "catchPhrase": "Multi-layered client-server neural-net",
       "bs": "harness real-time e-markets"
     }
-    """,
+    """
+)
+@ResponseTestable(
+    mockStrategy: .random,
     includeBuilder: true,
     defaultArrayCount: 5
 )

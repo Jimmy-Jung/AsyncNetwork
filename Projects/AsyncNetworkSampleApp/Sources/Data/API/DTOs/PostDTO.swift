@@ -6,10 +6,9 @@
 //
 
 import Foundation
-import AsyncNetworkMacros
+import AsyncNetwork
 
-@Response(
-    mockStrategy: .random,
+@ResponseDocument(
     fixtureJSON: """
     {
       "userId": 1,
@@ -17,7 +16,10 @@ import AsyncNetworkMacros
       "title": "sunt aut facere",
       "body": "quia et suscipit"
     }
-    """,
+    """
+)
+@ResponseTestable(
+    mockStrategy: .random,
     includeBuilder: true,
     defaultArrayCount: 10
 )

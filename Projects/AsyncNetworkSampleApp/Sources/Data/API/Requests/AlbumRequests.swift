@@ -3,10 +3,10 @@
 //  AsyncNetworkSampleApp
 //
 //  Created by jimmy on 2026/01/06.
+//  Updated: 2026/01/12 - Migrated to separated macros
 //
 
 import AsyncNetwork
-import AsyncNetworkMacros
 import Foundation
 
 // MARK: - Error Response Models
@@ -25,6 +25,11 @@ struct PhotoNotFoundError: Codable, Sendable, Error {
 
 @APIRequest(
     response: [AlbumDTO].self,
+    baseURL: jsonPlaceholderURL,
+    path: "/albums",
+    method: .get
+)
+@APIDocument(
     title: "Get albums for a user",
     description: """
     특정 사용자의 모든 앨범을 가져옵니다.
@@ -39,11 +44,10 @@ struct PhotoNotFoundError: Codable, Sendable, Error {
     응답 형식:
     Album 객체의 배열을 반환합니다.
     """,
-    baseURL: jsonPlaceholderURL,
-    path: "/albums",
-    method: .get,
-    tags: ["Albums"],
-    testScenarios: [.success, .clientError, .serverError, .timeout],
+    tags: ["Albums"]
+)
+@APITestable(
+    scenarios: [.success, .clientError, .serverError, .timeout],
     errorExamples: [
         "400": """
         {
@@ -57,19 +61,30 @@ struct PhotoNotFoundError: Codable, Sendable, Error {
           "message": "Failed to fetch albums"
         }
         """
-    ],
-    includeRetryTests: true,
-    includePerformanceTests: true
+    ]
 )
 struct GetAlbumsForUserRequest {
     @QueryParameter var userId: Int?
     @QueryParameter(key: "_limit") var limit: Int?
+    
+    init(userId: Int? = nil, limit: Int? = nil) {
+        self.userId = userId
+        self.limit = limit
+    }
 }
 
 // MARK: - Get Album by ID
 
 @APIRequest(
     response: AlbumDTO.self,
+    baseURL: jsonPlaceholderURL,
+    path: "/albums/{id}",
+    method: .get,
+    errorResponses: [
+        404: AlbumNotFoundError.self
+    ]
+)
+@APIDocument(
     title: "Get an album by ID",
     description: """
     특정 ID를 가진 앨범을 가져옵니다.
@@ -80,14 +95,10 @@ struct GetAlbumsForUserRequest {
     에러 처리:
     • 404: 앨범을 찾을 수 없음
     """,
-    baseURL: jsonPlaceholderURL,
-    path: "/albums/{id}",
-    method: .get,
-    tags: ["Albums"],
-    errorResponses: [
-        404: AlbumNotFoundError.self
-    ],
-    testScenarios: [.success, .notFound],
+    tags: ["Albums"]
+)
+@APITestable(
+    scenarios: [.success, .notFound],
     errorExamples: [
         "404": """
         {
@@ -95,17 +106,25 @@ struct GetAlbumsForUserRequest {
           "code": "ALBUM_NOT_FOUND"
         }
         """
-    ],
-    includeRetryTests: true
+    ]
 )
 struct GetAlbumByIdRequest {
     @PathParameter var id: Int
+    
+    init(id: Int) {
+        self.id = id
+    }
 }
 
 // MARK: - Get Photos for Album
 
 @APIRequest(
     response: [PhotoDTO].self,
+    baseURL: jsonPlaceholderURL,
+    path: "/photos",
+    method: .get
+)
+@APIDocument(
     title: "Get photos for an album",
     description: """
     특정 앨범의 모든 사진을 가져옵니다.
@@ -121,11 +140,10 @@ struct GetAlbumByIdRequest {
     응답 형식:
     Photo 객체의 배열을 반환합니다. 각 객체는 원본 이미지 URL과 썸네일 URL을 포함합니다.
     """,
-    baseURL: jsonPlaceholderURL,
-    path: "/photos",
-    method: .get,
-    tags: ["Photos"],
-    testScenarios: [.success, .clientError, .serverError, .timeout],
+    tags: ["Photos"]
+)
+@APITestable(
+    scenarios: [.success, .clientError, .serverError, .timeout],
     errorExamples: [
         "400": """
         {
@@ -139,19 +157,30 @@ struct GetAlbumByIdRequest {
           "message": "Failed to fetch photos"
         }
         """
-    ],
-    includeRetryTests: true,
-    includePerformanceTests: true
+    ]
 )
 struct GetPhotosForAlbumRequest {
     @QueryParameter(key: "albumId") var albumId: Int?
     @QueryParameter(key: "_limit") var limit: Int?
+    
+    init(albumId: Int? = nil, limit: Int? = nil) {
+        self.albumId = albumId
+        self.limit = limit
+    }
 }
 
 // MARK: - Get Photo by ID
 
 @APIRequest(
     response: PhotoDTO.self,
+    baseURL: jsonPlaceholderURL,
+    path: "/photos/{id}",
+    method: .get,
+    errorResponses: [
+        404: PhotoNotFoundError.self
+    ]
+)
+@APIDocument(
     title: "Get a photo by ID",
     description: """
     특정 ID를 가진 사진을 가져옵니다.
@@ -165,14 +194,10 @@ struct GetPhotosForAlbumRequest {
     에러 처리:
     • 404: 사진을 찾을 수 없음
     """,
-    baseURL: jsonPlaceholderURL,
-    path: "/photos/{id}",
-    method: .get,
-    tags: ["Photos"],
-    errorResponses: [
-        404: PhotoNotFoundError.self
-    ],
-    testScenarios: [.success, .notFound],
+    tags: ["Photos"]
+)
+@APITestable(
+    scenarios: [.success, .notFound],
     errorExamples: [
         "404": """
         {
@@ -180,9 +205,12 @@ struct GetPhotosForAlbumRequest {
           "code": "PHOTO_NOT_FOUND"
         }
         """
-    ],
-    includeRetryTests: true
+    ]
 )
 struct GetPhotoByIdRequest {
     @PathParameter var id: Int
+    
+    init(id: Int) {
+        self.id = id
+    }
 }

@@ -3,13 +3,13 @@
 //  AsyncNetworkSampleApp
 //
 //  Created by jimmy on 2026/01/06.
+//  Updated: 2026/01/12 - Migrated to separated macros
 //
 
 import AsyncNetwork
-import AsyncNetworkMacros
 import Foundation
 
-let jsonPlaceholderURL = "https://jsonplaceholder.typicode.com"
+let jsonPlaceholderURL: String = "https://jsonplaceholder.typicode.com"
 
 // MARK: - Error Response Models
 
@@ -27,6 +27,11 @@ struct BadRequestError: Codable, Sendable, Error {
 
 @APIRequest(
     response: [PostDTO].self,
+    baseURL: jsonPlaceholderURL,
+    path: "/posts",
+    method: .get
+)
+@APIDocument(
     title: "Get all posts",
     description: """
     JSONPlaceholder에서 모든 포스트를 가져옵니다.
@@ -38,11 +43,10 @@ struct BadRequestError: Codable, Sendable, Error {
     응답 형식:
     Post 객체의 배열을 반환합니다.
     """,
-    baseURL: jsonPlaceholderURL,
-    path: "/posts",
-    method: .get,
-    tags: ["Posts"],
-    testScenarios: [.success, .serverError, .networkError, .timeout],
+    tags: ["Posts"]
+)
+@APITestable(
+    scenarios: [.success, .serverError, .networkError, .timeout],
     errorExamples: [
         "500": """
         {
@@ -56,20 +60,32 @@ struct BadRequestError: Codable, Sendable, Error {
           "message": "Database connection failed"
         }
         """
-    ],
-    includeRetryTests: true,
-    includePerformanceTests: true
+    ]
 )
 struct GetAllPostsRequest {
     @QueryParameter var userId: Int?
     @QueryParameter(key: "_limit") var limit: Int?
     @QueryParameter(key: "_page") var page: Int?
+    
+    init(userId: Int? = nil, limit: Int? = nil, page: Int? = nil) {
+        self.userId = userId
+        self.limit = limit
+        self.page = page
+    }
 }
 
 // MARK: - Get Post by ID
 
 @APIRequest(
     response: PostDTO.self,
+    baseURL: jsonPlaceholderURL,
+    path: "/posts/{id}",
+    method: .get,
+    errorResponses: [
+        404: PostNotFoundError.self
+    ]
+)
+@APIDocument(
     title: "Get a post by ID",
     description: """
     특정 ID를 가진 포스트를 가져옵니다.
@@ -81,14 +97,10 @@ struct GetAllPostsRequest {
     • 404: 포스트를 찾을 수 없음
     • 500: 서버 내부 오류
     """,
-    baseURL: jsonPlaceholderURL,
-    path: "/posts/{id}",
-    method: .get,
-    tags: ["Posts"],
-    errorResponses: [
-        404: PostNotFoundError.self
-    ],
-    testScenarios: [.success, .notFound, .serverError, .invalidResponse],
+    tags: ["Posts"]
+)
+@APITestable(
+    scenarios: [.success, .notFound, .serverError],
     errorExamples: [
         "404": """
         {
@@ -102,17 +114,29 @@ struct GetAllPostsRequest {
           "message": "Invalid post ID format"
         }
         """
-    ],
-    includeRetryTests: true
+    ]
 )
 struct GetPostByIdRequest {
     @PathParameter var id: Int
+    
+    init(id: Int) {
+        self.id = id
+    }
 }
 
 // MARK: - Create Post
 
 @APIRequest(
     response: PostDTO.self,
+    baseURL: jsonPlaceholderURL,
+    path: "/posts",
+    method: .post,
+    errorResponses: [
+        400: BadRequestError.self,
+        401: PostNotFoundError.self
+    ]
+)
+@APIDocument(
     title: "Create a new post",
     description: """
     새로운 포스트를 생성합니다.
@@ -127,15 +151,10 @@ struct GetPostByIdRequest {
     • body: 1-5000자
     • userId: 양의 정수
     """,
-    baseURL: jsonPlaceholderURL,
-    path: "/posts",
-    method: .post,
-    tags: ["Posts"],
-    errorResponses: [
-        400: BadRequestError.self,
-        401: PostNotFoundError.self
-    ],
-    testScenarios: [.success, .clientError, .unauthorized, .serverError],
+    tags: ["Posts"]
+)
+@APITestable(
+    scenarios: [.success, .clientError, .unauthorized, .serverError],
     errorExamples: [
         "400": """
         {
@@ -155,19 +174,31 @@ struct GetPostByIdRequest {
           "message": "Title must be between 1-200 characters"
         }
         """
-    ],
-    includeRetryTests: false,
-    includePerformanceTests: false
+    ]
 )
 struct CreatePostRequest {
     @RequestBody var body: PostBodyDTO?
     @HeaderField(key: .contentType) var contentType: String? = "application/json"
+    
+    init(body: PostBodyDTO? = nil, contentType: String? = "application/json") {
+        self.body = body
+        self.contentType = contentType
+    }
 }
 
 // MARK: - Update Post
 
 @APIRequest(
     response: PostDTO.self,
+    baseURL: jsonPlaceholderURL,
+    path: "/posts/{id}",
+    method: .put,
+    errorResponses: [
+        404: PostNotFoundError.self,
+        400: BadRequestError.self
+    ]
+)
+@APIDocument(
     title: "Update a post",
     description: """
     기존 포스트를 업데이트합니다.
@@ -183,15 +214,10 @@ struct CreatePostRequest {
     • 404: 포스트를 찾을 수 없음
     • 400: 잘못된 요청 데이터
     """,
-    baseURL: jsonPlaceholderURL,
-    path: "/posts/{id}",
-    method: .put,
-    tags: ["Posts"],
-    errorResponses: [
-        404: PostNotFoundError.self,
-        400: BadRequestError.self
-    ],
-    testScenarios: [.success, .notFound, .clientError, .serverError],
+    tags: ["Posts"]
+)
+@APITestable(
+    scenarios: [.success, .notFound, .clientError, .serverError],
     errorExamples: [
         "404": """
         {
@@ -205,35 +231,84 @@ struct CreatePostRequest {
           "message": "Invalid request body"
         }
         """
-    ],
-    includeRetryTests: true
+    ]
 )
 struct UpdatePostRequest {
     @PathParameter var id: Int
     @RequestBody var body: PostBodyDTO?
     @HeaderField(key: .contentType) var contentType: String? = "application/json"
+    
+    init(id: Int, body: PostBodyDTO? = nil, contentType: String? = "application/json") {
+        self.id = id
+        self.body = body
+        self.contentType = contentType
+    }
 }
 
 // MARK: - Patch Post
 
 @APIRequest(
     response: PostDTO.self,
-    title: "Partially update a post",
-    description: "PATCH 메서드로 포스트의 일부 필드만 업데이트합니다.",
     baseURL: jsonPlaceholderURL,
     path: "/posts/{id}",
-    method: .patch,
+    method: .patch
+)
+@APIDocument(
+    title: "Partially update a post",
+    description: "PATCH 메서드로 포스트의 일부 필드만 업데이트합니다.",
     tags: ["Posts"]
+)
+@APITestable(
+    scenarios: [
+        .success,
+        .notFound,
+        .clientError,
+        .serverError,
+        .timeout
+    ],
+    errorExamples: [
+        "404": """
+        {
+          "error": "Post not found",
+          "code": "POST_NOT_FOUND"
+        }
+        """,
+        "400": """
+        {
+          "error": "Bad Request",
+          "message": "Invalid update data"
+        }
+        """,
+        "500": """
+        {
+          "error": "Internal Server Error",
+          "message": "Failed to update post"
+        }
+        """
+    ]
 )
 struct PatchPostRequest {
     @PathParameter var id: Int
     @QueryParameter var title: String?
+    
+    init(id: Int, title: String? = nil) {
+        self.id = id
+        self.title = title
+    }
 }
 
 // MARK: - Delete Post
 
 @APIRequest(
     response: EmptyResponse.self,
+    baseURL: jsonPlaceholderURL,
+    path: "/posts/{id}",
+    method: .delete,
+    errorResponses: [
+        404: PostNotFoundError.self
+    ]
+)
+@APIDocument(
     title: "Delete a post",
     description: """
     특정 ID를 가진 포스트를 삭제합니다.
@@ -248,14 +323,10 @@ struct PatchPostRequest {
     • 404: 포스트를 찾을 수 없음
     • 403: 삭제 권한 없음
     """,
-    baseURL: jsonPlaceholderURL,
-    path: "/posts/{id}",
-    method: .delete,
-    tags: ["Posts"],
-    errorResponses: [
-        404: PostNotFoundError.self
-    ],
-    testScenarios: [.success, .notFound, .unauthorized],
+    tags: ["Posts"]
+)
+@APITestable(
+    scenarios: [.success, .notFound, .unauthorized],
     errorExamples: [
         "404": """
         {
@@ -269,11 +340,14 @@ struct PatchPostRequest {
           "message": "You don't have permission to delete this post"
         }
         """
-    ],
-    includeRetryTests: false
+    ]
 )
 struct DeletePostRequest {
     @PathParameter var id: Int
+    
+    init(id: Int) {
+        self.id = id
+    }
 }
 
 // MARK: - Request Body DTO

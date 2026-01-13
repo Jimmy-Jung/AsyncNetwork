@@ -11,7 +11,7 @@ import Foundation
 
 // MARK: - Post Models
 
-@Response(
+@ResponseDocument(
     fixtureJSON: """
     {
       "userId": 1,
@@ -21,6 +21,7 @@ import Foundation
     }
     """
 )
+@ResponseTestable()
 struct Post: Codable, Identifiable, Sendable {
     let userId: Int
     let id: Int
@@ -28,7 +29,7 @@ struct Post: Codable, Identifiable, Sendable {
     let body: String
 }
 
-@Response(
+@ResponseDocument(
     fixtureJSON: """
     {
       "title": "My Post Title",
@@ -37,6 +38,7 @@ struct Post: Codable, Identifiable, Sendable {
     }
     """
 )
+@ResponseTestable()
 struct PostBody: Codable, Sendable {
     let title: String
     let body: String
@@ -45,7 +47,7 @@ struct PostBody: Codable, Sendable {
 
 // MARK: - User Models
 
-@Response(
+@ResponseDocument(
     fixtureJSON: """
     {
       "id": 1,
@@ -72,6 +74,7 @@ struct PostBody: Codable, Sendable {
     }
     """
 )
+@ResponseTestable()
 struct User: Codable, Identifiable, Sendable {
     let id: Int
     let name: String
@@ -83,7 +86,7 @@ struct User: Codable, Identifiable, Sendable {
     let company: Company?
 }
 
-@Response(
+@ResponseDocument(
     fixtureJSON: """
     {
       "street": "Kulas Light",
@@ -97,6 +100,7 @@ struct User: Codable, Identifiable, Sendable {
     }
     """
 )
+@ResponseTestable()
 struct Address: Codable, Sendable {
     let street: String
     let suite: String
@@ -105,7 +109,7 @@ struct Address: Codable, Sendable {
     let geo: Geo
 }
 
-@Response(
+@ResponseDocument(
     fixtureJSON: """
     {
       "lat": "-37.3159",
@@ -113,12 +117,13 @@ struct Address: Codable, Sendable {
     }
     """
 )
+@ResponseTestable()
 struct Geo: Codable, Sendable {
     let lat: String
     let lng: String
 }
 
-@Response(
+@ResponseDocument(
     fixtureJSON: """
     {
       "name": "Romaguera-Crona",
@@ -127,13 +132,14 @@ struct Geo: Codable, Sendable {
     }
     """
 )
+@ResponseTestable()
 struct Company: Codable, Sendable {
     let name: String
     let catchPhrase: String
     let bs: String
 }
 
-@Response(
+@ResponseDocument(
     fixtureJSON: """
     {
       "name": "Leanne Graham",
@@ -142,6 +148,7 @@ struct Company: Codable, Sendable {
     }
     """
 )
+@ResponseTestable()
 struct UserBody: Codable, Sendable {
     let name: String
     let username: String
@@ -150,7 +157,7 @@ struct UserBody: Codable, Sendable {
 
 // MARK: - Comment Models
 
-@Response(
+@ResponseDocument(
     fixtureJSON: """
     {
       "postId": 1,
@@ -161,6 +168,7 @@ struct UserBody: Codable, Sendable {
     }
     """
 )
+@ResponseTestable()
 struct Comment: Codable, Identifiable, Sendable {
     let postId: Int
     let id: Int
@@ -169,7 +177,7 @@ struct Comment: Codable, Identifiable, Sendable {
     let body: String
 }
 
-@Response(
+@ResponseDocument(
     fixtureJSON: """
     {
       "postId": 1,
@@ -179,6 +187,7 @@ struct Comment: Codable, Identifiable, Sendable {
     }
     """
 )
+@ResponseTestable()
 struct CommentBody: Codable, Sendable {
     let postId: Int
     let name: String
@@ -188,7 +197,7 @@ struct CommentBody: Codable, Sendable {
 
 // MARK: - Album Models
 
-@Response(
+@ResponseDocument(
     fixtureJSON: """
     {
       "userId": 1,
@@ -197,13 +206,14 @@ struct CommentBody: Codable, Sendable {
     }
     """
 )
+@ResponseTestable()
 struct Album: Codable, Identifiable, Sendable {
     let userId: Int
     let id: Int
     let title: String
 }
 
-@Response(
+@ResponseDocument(
     fixtureJSON: """
     {
       "albumId": 1,
@@ -214,6 +224,7 @@ struct Album: Codable, Identifiable, Sendable {
     }
     """
 )
+@ResponseTestable()
 struct Photo: Codable, Identifiable, Sendable {
     let albumId: Int
     let id: Int
@@ -224,7 +235,7 @@ struct Photo: Codable, Identifiable, Sendable {
 
 // MARK: - Complex Order Models
 
-@Response(
+@ResponseDocument(
     fixtureJSON: """
     {
       "id": 9001,
@@ -262,6 +273,7 @@ struct Photo: Codable, Identifiable, Sendable {
     }
     """
 )
+@ResponseTestable()
 struct Order: Codable, Identifiable, Sendable {
     let id: Int
     let userId: Int
@@ -275,7 +287,7 @@ struct Order: Codable, Identifiable, Sendable {
     let estimatedDelivery: String?
 }
 
-@Response(
+@ResponseDocument(
     fixtureJSON: """
     {
       "productId": 101,
@@ -287,6 +299,7 @@ struct Order: Codable, Identifiable, Sendable {
     }
     """
 )
+@ResponseTestable()
 struct OrderItem: Codable, Sendable {
     let productId: Int
     let productName: String
@@ -296,7 +309,7 @@ struct OrderItem: Codable, Sendable {
     let options: [String: String]?
 }
 
-@Response(
+@ResponseDocument(
     fixtureJSON: """
     {
       "recipientName": "홍길동",
@@ -310,6 +323,7 @@ struct OrderItem: Codable, Sendable {
     }
     """
 )
+@ResponseTestable()
 struct ShippingAddress: Codable, Sendable {
     let recipientName: String
     let phoneNumber: String
@@ -321,7 +335,7 @@ struct ShippingAddress: Codable, Sendable {
     let instructions: String?
 }
 
-@Response(
+@ResponseDocument(
     fixtureJSON: """
     {
       "type": "card",
@@ -330,13 +344,14 @@ struct ShippingAddress: Codable, Sendable {
     }
     """
 )
+@ResponseTestable()
 struct PaymentMethod: Codable, Sendable {
     let type: String
     let cardLastFour: String?
     let cardBrand: String?
 }
 
-@Response(
+@ResponseDocument(
     fixtureJSON: """
     {
       "items": [
@@ -367,6 +382,7 @@ struct PaymentMethod: Codable, Sendable {
     }
     """
 )
+@ResponseTestable()
 struct CreateOrderBody: Codable, Sendable {
     let items: [OrderItemInput]
     let shippingAddress: ShippingAddress
@@ -376,7 +392,7 @@ struct CreateOrderBody: Codable, Sendable {
     let subscribeNewsletter: Bool
 }
 
-@Response(
+@ResponseDocument(
     fixtureJSON: """
     {
       "productId": 101,
@@ -385,13 +401,14 @@ struct CreateOrderBody: Codable, Sendable {
     }
     """
 )
+@ResponseTestable()
 struct OrderItemInput: Codable, Sendable {
     let productId: Int
     let quantity: Int
     let options: [String: String]?
 }
 
-@Response(
+@ResponseDocument(
     fixtureJSON: """
     {
       "type": "card",
@@ -400,6 +417,7 @@ struct OrderItemInput: Codable, Sendable {
     }
     """
 )
+@ResponseTestable()
 struct PaymentMethodInput: Codable, Sendable {
     let type: String
     let cardToken: String?

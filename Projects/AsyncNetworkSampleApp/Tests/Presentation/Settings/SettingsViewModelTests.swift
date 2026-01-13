@@ -21,86 +21,57 @@ struct SettingsViewModelTests {
     func initialStateHasDefaultValues() async {
         let viewModel = SettingsViewModel(networkMonitor: MockNetworkMonitor())
 
-        #expect(viewModel.state.retryPolicyPreset == .standard)
+        #expect(viewModel.state.retryPolicyPreset == .patient)
         #expect(viewModel.state.loggingLevel == .verbose)
         #expect(viewModel.state.networkStatus == .connected(.wifi))
         #expect(viewModel.state.isExpensive == false)
         #expect(viewModel.state.isConstrained == false)
-        #expect(viewModel.state.cacheCapacityPreset == .medium)
+        #expect(viewModel.state.etagCacheUsage.currentCount == 0)
+        #expect(viewModel.state.etagCacheUsage.capacity == 1000)
     }
 
-    // MARK: - Cache Settings Tests
+    // MARK: - ETag Cache Tests
     
-    @Test("CacheCapacityPreset 변경 시 State가 업데이트된다")
-    func cacheCapacityPresetChangeUpdatesState() async throws {
+    @Test("refreshETagCacheUsage 시 ETag 캐시 사용량이 업데이트된다")
+    func refreshETagCacheUsageUpdatesUsage() async throws {
         let viewModel = SettingsViewModel(networkMonitor: MockNetworkMonitor())
         let store = AsyncTestStore(viewModel: viewModel)
         
-        store.send(.cacheCapacityPresetSelected(.large))
+        store.send(.refreshETagCacheUsageTapped)
+        
+        // waitForEffects()가 Effect가 완료될 때까지 대기
         try await store.waitForEffects()
         
-        #expect(store.state.cacheCapacityPreset == .large)
+        // 추가 대기: Effect가 완료되고 상태 업데이트가 반영될 시간
+        try await Task.sleep(for: .milliseconds(100))
+        
+        // Effect가 완료되면 ETag 캐시 사용량이 로드되고, isRefreshingETagCache가 false로 변경됨
+        #expect(store.state.etagCacheUsage.capacity == 1000)
+        #expect(store.state.isRefreshingETagCache == false)
     }
     
-    @Test("CacheCapacityPreset 변경 시 State만 업데이트된다 (URLCache는 불변)")
-    func cacheCapacityPresetChangeUpdatesStateOnly() async throws {
+    @Test("clearETagCache 시 ETag 캐시가 비워진다")
+    func clearETagCacheRemovesAllCachedETags() async throws {
         let viewModel = SettingsViewModel(networkMonitor: MockNetworkMonitor())
         let store = AsyncTestStore(viewModel: viewModel)
         
-        let preset = CacheCapacityPreset.large
-        store.send(.cacheCapacityPresetSelected(preset))
-        try await store.waitForEffects()
-        
-        #expect(store.state.cacheCapacityPreset == preset)
-        // 주의: URLCache는 런타임에 변경 불가 (read-only)
-        // 실제 용량 변경은 앱 재시작 시 적용
-    }
-    
-    @Test("refreshCacheUsage 시 AppDependency의 URLCache 사용량이 업데이트된다")
-    func refreshCacheUsageUpdatesCurrentUsage() async throws {
-        let viewModel = SettingsViewModel(networkMonitor: MockNetworkMonitor())
-        let store = AsyncTestStore(viewModel: viewModel)
-        
-        store.send(.refreshCacheUsageTapped)
-        try await store.waitForEffects()
-        
-        let appCache = AppDependency.shared.urlCache
-        #expect(store.state.cacheUsage.memoryCapacity == appCache.memoryCapacity)
-        #expect(store.state.cacheUsage.diskCapacity == appCache.diskCapacity)
-        #expect(store.state.cacheUsage.memoryUsage == appCache.currentMemoryUsage)
-        #expect(store.state.cacheUsage.diskUsage == appCache.currentDiskUsage)
-    }
-    
-    @Test("clearCache 시 AppDependency의 URLCache가 비워진다")
-    func clearCacheRemovesAllCachedResponses() async throws {
-        let viewModel = SettingsViewModel(networkMonitor: MockNetworkMonitor())
-        let store = AsyncTestStore(viewModel: viewModel)
-
-        let appCache = AppDependency.shared.urlCache
-        let initialMemoryUsage = appCache.currentMemoryUsage
-        
-        store.send(.clearCacheTapped)
+        store.send(.clearETagCacheTapped)
         try await store.waitForEffects()
 
-        // clearCache 후 사용량이 0이거나 이전보다 작아야 함
-        #expect(store.state.cacheUsage.memoryUsage <= initialMemoryUsage)
+        // clearETagCache 후 사용량이 0으로 초기화되어야 함
+        #expect(store.state.etagCacheUsage.currentCount == 0)
     }
 
-    @Test("모든 CacheCapacityPreset을 순회하며 변경할 수 있다")
-    func canCycleThroughAllCacheCapacityPresets() async throws {
+    @Test("invalidateAllETags 시 모든 ETag가 무효화된다")
+    func invalidateAllETagsInvalidatesCache() async throws {
         let viewModel = SettingsViewModel(networkMonitor: MockNetworkMonitor())
         let store = AsyncTestStore(viewModel: viewModel)
 
-        let presets: [CacheCapacityPreset] = [.small, .medium, .large]
+        store.send(.invalidateAllETagsTapped)
+        try await store.waitForEffects()
 
-        for preset in presets {
-            store.send(.cacheCapacityPresetSelected(preset))
-            try await store.waitForEffects()
-
-            #expect(store.state.cacheCapacityPreset == preset)
-            // 주의: URLCache는 런타임에 변경 불가
-            // State의 preset만 변경됨
-        }
+        // invalidateAllETags 후 사용량이 0으로 초기화되어야 함
+        #expect(store.state.etagCacheUsage.currentCount == 0)
     }
 
     // MARK: - Configuration Preset Change Tests (Removed - ConfigurationPreset no longer exists)
@@ -217,7 +188,7 @@ struct SettingsViewModelTests {
         store.send(.resetToDefaultsTapped)
         try await store.waitForEffects()
 
-        #expect(store.state.retryPolicyPreset == .standard)
+        #expect(store.state.retryPolicyPreset == .patient)
         #expect(store.state.loggingLevel == .verbose)
     }
 }
