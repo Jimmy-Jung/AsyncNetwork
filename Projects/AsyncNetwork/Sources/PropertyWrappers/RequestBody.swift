@@ -12,6 +12,7 @@ import Foundation
 public struct RequestBody<Value: Encodable & Sendable>: RequestParameter {
     public var wrappedValue: Value?
 
+    // Optional 초기화자
     public init(wrappedValue: Value? = nil) {
         self.wrappedValue = wrappedValue
     }

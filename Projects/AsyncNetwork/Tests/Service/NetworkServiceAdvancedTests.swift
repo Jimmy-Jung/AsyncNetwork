@@ -49,7 +49,7 @@ struct NetworkServiceAdvancedTests {
     // MARK: - Decoding Edge Cases
 
     @Test("JSON 디코딩 실패 시 에러 처리")
-    func handleDecodingFailure() async {        // Given
+    func handleDecodingFailure() async { // Given
         let path = "/invalid-json"
         let configuration = URLSessionConfiguration.ephemeral
         configuration.protocolClasses = [MockURLProtocol.self]
@@ -70,7 +70,7 @@ struct NetworkServiceAdvancedTests {
 
         let service = NetworkService(
             httpClient: httpClient,
-            retryPolicy: .none,
+            retryPolicy: RetryPolicy(configuration: RetryConfiguration(maxRetries: 0)),
             responseProcessor: ResponseProcessor()
         )
 
@@ -84,7 +84,7 @@ struct NetworkServiceAdvancedTests {
     }
 
     @Test("옵셔널 필드 디코딩 확인")
-    func decodeOptionalFields() async throws {        // Given
+    func decodeOptionalFields() async throws { // Given
         let path = "/optional-fields"
         let configuration = URLSessionConfiguration.ephemeral
         configuration.protocolClasses = [MockURLProtocol.self]
@@ -111,7 +111,7 @@ struct NetworkServiceAdvancedTests {
 
         let service = NetworkService(
             httpClient: httpClient,
-            retryPolicy: .none,
+            retryPolicy: RetryPolicy(configuration: RetryConfiguration(maxRetries: 0)),
             responseProcessor: ResponseProcessor()
         )
 
@@ -128,7 +128,7 @@ struct NetworkServiceAdvancedTests {
     }
 
     @Test("빈 JSON 객체 디코딩")
-    func decodeEmptyJSONObject() async {        // Given
+    func decodeEmptyJSONObject() async { // Given
         let path = "/empty-object"
         let configuration = URLSessionConfiguration.ephemeral
         configuration.protocolClasses = [MockURLProtocol.self]
@@ -149,7 +149,7 @@ struct NetworkServiceAdvancedTests {
 
         let service = NetworkService(
             httpClient: httpClient,
-            retryPolicy: .none,
+            retryPolicy: RetryPolicy(configuration: RetryConfiguration(maxRetries: 0)),
             responseProcessor: ResponseProcessor()
         )
 
@@ -165,7 +165,7 @@ struct NetworkServiceAdvancedTests {
     // MARK: - Retry Logic Edge Cases
 
     @Test("재시도 가능한 에러와 불가능한 에러 혼합")
-    func mixedRetryableAndNonRetryableErrors() async throws {        // Given
+    func mixedRetryableAndNonRetryableErrors() async throws { // Given
         let path = "/mixed-errors"
         let configuration = URLSessionConfiguration.ephemeral
         configuration.protocolClasses = [MockURLProtocol.self]
@@ -186,13 +186,15 @@ struct NetworkServiceAdvancedTests {
         let responseData = try JSONEncoder().encode(expectedUser)
 
         await MockURLProtocol.register(path: path) { [state] request in
+            let currentAttemptBox = Box(value: 0)
+
             let semaphore = DispatchSemaphore(value: 0)
-            var currentAttempt = 0
             Task {
-                currentAttempt = await state.incrementAndGet()
+                currentAttemptBox.value = await state.incrementAndGet()
                 semaphore.signal()
             }
             semaphore.wait()
+            let currentAttempt = currentAttemptBox.value
 
             // 첫 번째: 재시도 가능한 에러
             if currentAttempt == 1 {
@@ -246,7 +248,7 @@ struct NetworkServiceAdvancedTests {
     }
 
     @Test("재시도 중 성공 - 마지막 시도에서 성공")
-    func retrySuccessOnLastAttempt() async throws {        // Given
+    func retrySuccessOnLastAttempt() async throws { // Given
         let path = "/retry-last-success"
         let configuration = URLSessionConfiguration.ephemeral
         configuration.protocolClasses = [MockURLProtocol.self]
@@ -267,13 +269,15 @@ struct NetworkServiceAdvancedTests {
         let responseData = try JSONEncoder().encode(expectedUser)
 
         await MockURLProtocol.register(path: path) { [state] request in
+            let currentAttemptBox = Box(value: 0)
+
             let semaphore = DispatchSemaphore(value: 0)
-            var currentAttempt = 0
             Task {
-                currentAttempt = await state.incrementAndGet()
+                currentAttemptBox.value = await state.incrementAndGet()
                 semaphore.signal()
             }
             semaphore.wait()
+            let currentAttempt = currentAttemptBox.value
 
             // 처음 2번은 실패, 3번째(마지막)에 성공
             if currentAttempt < 3 {
@@ -316,7 +320,7 @@ struct NetworkServiceAdvancedTests {
     // MARK: - Interceptor Edge Cases
 
     @Test("여러 인터셉터 체인 동작")
-    func multipleInterceptorsChain() async throws {        // Given
+    func multipleInterceptorsChain() async throws { // Given
         let path = "/multiple-interceptors"
         let configuration = URLSessionConfiguration.ephemeral
         configuration.protocolClasses = [MockURLProtocol.self]
@@ -361,7 +365,7 @@ struct NetworkServiceAdvancedTests {
 
         let service = NetworkService(
             httpClient: httpClient,
-            retryPolicy: .none,
+            retryPolicy: RetryPolicy(configuration: RetryConfiguration(maxRetries: 0)),
             responseProcessor: ResponseProcessor(),
             interceptors: [FirstInterceptor(), SecondInterceptor(), ThirdInterceptor()]
         )
@@ -377,7 +381,7 @@ struct NetworkServiceAdvancedTests {
     }
 
     @Test("인터셉터에서 에러 발생 시 처리")
-    func interceptorThrowsError() async {        // Given
+    func interceptorThrowsError() async { // Given
         let path = "/interceptor-error"
         let configuration = URLSessionConfiguration.ephemeral
         configuration.protocolClasses = [MockURLProtocol.self]
@@ -405,7 +409,7 @@ struct NetworkServiceAdvancedTests {
 
         let service = NetworkService(
             httpClient: httpClient,
-            retryPolicy: .none,
+            retryPolicy: RetryPolicy(configuration: RetryConfiguration(maxRetries: 0)),
             responseProcessor: ResponseProcessor(),
             interceptors: [ErrorThrowingInterceptor()]
         )
@@ -422,7 +426,7 @@ struct NetworkServiceAdvancedTests {
     // MARK: - ResponseProcessor Edge Cases
 
     @Test("ResponseProcessor에서 상태 코드 검증 실패")
-    func responseProcessorStatusCodeValidationFailure() async {        // Given
+    func responseProcessorStatusCodeValidationFailure() async { // Given
         let path = "/status-validation"
         let configuration = URLSessionConfiguration.ephemeral
         configuration.protocolClasses = [MockURLProtocol.self]
@@ -441,7 +445,7 @@ struct NetworkServiceAdvancedTests {
 
         let service = NetworkService(
             httpClient: httpClient,
-            retryPolicy: .none,
+            retryPolicy: RetryPolicy(configuration: RetryConfiguration(maxRetries: 0)),
             responseProcessor: ResponseProcessor()
         )
 
@@ -457,7 +461,7 @@ struct NetworkServiceAdvancedTests {
     // MARK: - Timeout & Performance
 
     @Test("매우 느린 응답 시뮬레이션")
-    func handleSlowResponse() async throws {        // Given
+    func handleSlowResponse() async throws { // Given
         let path = "/slow"
         let configuration = URLSessionConfiguration.ephemeral
         configuration.protocolClasses = [MockURLProtocol.self]
@@ -482,7 +486,7 @@ struct NetworkServiceAdvancedTests {
 
         let service = NetworkService(
             httpClient: httpClient,
-            retryPolicy: .none,
+            retryPolicy: RetryPolicy(configuration: RetryConfiguration(maxRetries: 0)),
             responseProcessor: ResponseProcessor()
         )
 
@@ -521,7 +525,7 @@ struct NetworkServiceAdvancedTests {
 
         let service = NetworkService(
             httpClient: httpClient,
-            retryPolicy: .none,
+            retryPolicy: RetryPolicy(configuration: RetryConfiguration(maxRetries: 0)),
             responseProcessor: ResponseProcessor()
         )
 
@@ -559,7 +563,7 @@ struct NetworkServiceAdvancedTests {
 
         let service = NetworkService(
             httpClient: httpClient,
-            retryPolicy: .none,
+            retryPolicy: RetryPolicy(configuration: RetryConfiguration(maxRetries: 0)),
             responseProcessor: ResponseProcessor()
         )
 

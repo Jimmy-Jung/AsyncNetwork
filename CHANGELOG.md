@@ -315,6 +315,86 @@ AsyncNetwork 1.0.0 정식 출시! 순수 Foundation 기반의 현대적인 Swift
 
 ---
 
+## [1.2.0] - 2026-01-13
+
+### ✨ Added
+
+#### Macro Architecture Redesign
+- **Clean Architecture 기반 매크로 시스템 재설계**
+  - Domain Layer: 비즈니스 로직 (Models, Parsers, Validators, Generators)
+  - Facade Layer: 단일 진입점 (APIRequestMacroFacade)
+  - Infrastructure Layer: SwiftSyntax 기반 기술 (DiagnosticBuilder, ExpressionParser, SyntaxExtensions)
+
+#### Domain Layer Components
+- **Models**
+  - `MacroArguments`: 매크로 인자 표현
+  - `MacroContext`: 매크로 실행 컨텍스트
+  - `MacroError`: 매크로 에러 정의
+  - `PropertyInfo`: 프로퍼티 메타데이터
+  - `PropertyWrapperSuggestion`: Property Wrapper 제안
+
+- **Parsers**
+  - `APIRequestArgumentParser`: 매크로 인자 파싱
+  - `PathParser`: URL 경로 파싱 및 검증
+
+- **Validators**
+  - `MacroValidator`: 매크로 전체 검증
+  - `PropertyWrapperValidator`: Property Wrapper 검증 및 제안
+
+- **Generators**
+  - `CodeGenerator`: Swift 코드 생성
+  - `MetadataGenerator`: OpenAPI 메타데이터 생성
+  - `PathGenerator`: HTTP 경로 생성
+  - `PropertyGenerator`: 프로퍼티 코드 생성
+  - `TestGenerator`: 테스트 코드 생성
+
+#### Infrastructure Components
+- `DiagnosticBuilder`: SwiftSyntax 진단 메시지 생성
+- `ExpressionParser`: Swift 표현식 파싱
+- `SyntaxExtensions`: SwiftSyntax 확장 유틸리티
+
+### 🧪 Tests
+
+#### Domain Tests (7개 파일, 454+ 테스트)
+- `APIRequestArgumentParserTests`: 매크로 인자 파싱 검증
+- `ExpressionParserTests`: 표현식 파싱 테스트
+- `MetadataGeneratorTests`: 메타데이터 생성 검증
+- `PathGeneratorTests`: 경로 생성 로직 테스트
+- `PathParserTests`: 경로 파싱 및 검증
+- `PropertyGeneratorTests`: 프로퍼티 생성 테스트
+- `PropertyWrapperValidatorTests`: Property Wrapper 검증
+
+#### Integration Tests (3개 파일)
+- `E2ETests`: 엔드투엔드 시나리오 테스트
+- `APIRequestMacroIntegrationTests`: 매크로 통합 동작 검증
+- `ErrorHandlingIntegrationTests`: 에러 처리 시나리오
+
+#### NetworkService Tests
+- `NetworkServiceTests`: 비동기 작업 테스트 개선
+- `NetworkServiceAdvancedTests`: 재시도, 인터셉터, 복잡한 시나리오
+- `TestHelpers`: 테스트 환경 설정 유틸리티
+
+### 🔧 Changed
+
+- 매크로 구현체를 레거시 코드에서 Clean Architecture로 전환
+- 코드 스타일 개선 (SwiftFormat, SwiftLint 적용)
+- 테스트 커버리지 대폭 강화
+
+### 📝 Documentation
+
+- README.md: 1.2.0 버전 업데이트
+- 매크로 아키텍처 섹션 추가
+- Clean Architecture 설계 원칙 문서화
+
+### 🎯 Design Principles
+
+- **단일 책임 원칙**: 각 컴포넌트는 하나의 책임만
+- **의존성 역전**: 도메인은 인프라에 의존하지 않음
+- **테스트 용이성**: 각 레이어 독립 테스트 가능
+
+---
+
+[1.2.0]: https://github.com/Jimmy-Jung/AsyncNetwork/releases/tag/1.2.0
 [1.1.0]: https://github.com/Jimmy-Jung/AsyncNetwork/releases/tag/1.1.0
 [1.0.5]: https://github.com/Jimmy-Jung/AsyncNetwork/releases/tag/1.0.5
 [1.0.4]: https://github.com/Jimmy-Jung/AsyncNetwork/releases/tag/1.0.4

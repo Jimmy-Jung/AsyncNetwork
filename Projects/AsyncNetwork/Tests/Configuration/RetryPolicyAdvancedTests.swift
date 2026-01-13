@@ -37,7 +37,7 @@ struct RetryPolicyAdvancedTests {
             (1, 0.5),
             (3, 1.0),
             (5, 2.0),
-            (10, 0.1)
+            (10, 0.1),
         ]
 
         // Then
@@ -51,7 +51,7 @@ struct RetryPolicyAdvancedTests {
     @Test("RetryConfiguration - 기본 값 확인")
     func defaultConfiguration() {
         // Given & When
-        let config = RetryConfiguration.default
+        let config = RetryConfiguration.standard
 
         // Then
         #expect(config.maxRetries == 3)
@@ -62,7 +62,7 @@ struct RetryPolicyAdvancedTests {
     @Test("RetryConfiguration - Aggressive 설정")
     func aggressiveConfiguration() {
         // Given & When
-        let config = RetryConfiguration.aggressive
+        let config = RetryConfiguration.quick
 
         // Then
         #expect(config.maxRetries == 5)
@@ -72,7 +72,7 @@ struct RetryPolicyAdvancedTests {
     @Test("RetryConfiguration - Conservative 설정")
     func conservativeConfiguration() {
         // Given & When
-        let config = RetryConfiguration.conservative
+        let config = RetryConfiguration.patient
 
         // Then
         #expect(config.maxRetries == 1)

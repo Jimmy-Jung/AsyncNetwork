@@ -93,6 +93,17 @@ public struct ConsoleLoggingInterceptor: RequestInterceptor {
         log.append("📍 URL: \(url)\n")
         log.append("📊 Status: \(statusCode)\n")
 
+        // Response Headers
+        if let httpResponse = response.response,
+           let headers = httpResponse.allHeaderFields as? [String: String],
+           !headers.isEmpty
+        {
+            log.append("\n📋 Response Headers:\n")
+            for (key, value) in headers.sorted(by: { $0.key < $1.key }) {
+                log.append("   \(key): \(filterSensitive(value, key: key))\n")
+            }
+        }
+
         if !response.data.isEmpty {
             log.append("\n📦 Response Body (\(response.data.count) bytes):\n")
             if let jsonString = formatJSON(data: response.data) {
@@ -120,7 +131,7 @@ public struct ConsoleLoggingInterceptor: RequestInterceptor {
         for key in sensitiveKeys {
             let patterns = [
                 "\"\(key)\"\\s*:\\s*\"[^\"]*\"",
-                "\(key)=([^&\\s]*)"
+                "\(key)=([^&\\s]*)",
             ]
 
             for pattern in patterns {

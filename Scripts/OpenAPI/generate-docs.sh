@@ -3,20 +3,19 @@
 #  generate-docs.sh
 #  AsyncNetwork
 #
-#  OpenAPI 스펙 생성 및 문서화 자동화
+#  OpenAPI 스펙 생성 자동화
 #
 
 set -e
 
 echo "╔═══════════════════════════════════════════════════════════════╗"
-echo "║          AsyncNetwork API 문서 자동 생성                        ║"
+echo "║          AsyncNetwork OpenAPI 스펙 생성                         ║"
 echo "╚═══════════════════════════════════════════════════════════════╝"
 echo ""
 
 # 기본값 설정
 DEFAULT_OUTPUT_DIR="./docs"
 API_REQUEST_PATH=""
-DOCUMENT_TYPE_PATH=""
 OUTPUT_PATH=""
 
 # 인자 파싱
@@ -24,10 +23,6 @@ while [[ $# -gt 0 ]]; do
     case $1 in
         --api-request-path|-a)
             API_REQUEST_PATH="$2"
-            shift 2
-            ;;
-        --document-type-path|-d)
-            DOCUMENT_TYPE_PATH="$2"
             shift 2
             ;;
         --output|-o)
@@ -39,7 +34,6 @@ while [[ $# -gt 0 ]]; do
             echo ""
             echo "옵션:"
             echo "  --api-request-path, -a <path>    @APIRequest 파일이 있는 경로 (필수)"
-            echo "  --document-type-path, -d <path>   @DocumentedType 파일이 있는 경로 (선택)"
             echo "  --output, -o <path>               출력 폴더 경로 (기본값: ./docs)"
             echo "  --help, -h                        도움말 표시"
             echo ""
@@ -49,8 +43,7 @@ while [[ $# -gt 0 ]]; do
             echo ""
             echo "  # 명령줄 모드"
             echo "  ./Scripts/OpenAPI/generate-docs.sh \\"
-            echo "    --api-request-path Projects/AsyncNetworkDocKitExample/AsyncNetworkDocKitExample/Sources \\"
-            echo "    --document-type-path Projects/AsyncNetworkDocKitExample/AsyncNetworkDocKitExample/Sources \\"
+            echo "    --api-request-path Projects/YourApp/Sources \\"
             echo "    --output ./docs"
             exit 0
             ;;
@@ -86,30 +79,6 @@ if [ ! -d "$API_REQUEST_PATH" ]; then
     exit 1
 fi
 
-# 대화형 모드: DocumentType 경로 입력 (선택사항)
-if [ -z "$DOCUMENT_TYPE_PATH" ]; then
-    echo "📁 @DocumentedType 파일이 있는 경로를 입력하세요 (선택사항)."
-    echo "   (Enter를 누르면 건너뜁니다)"
-    read -p "   경로: " user_input
-    
-    if [ -n "$user_input" ]; then
-        # 작은따옴표와 큰따옴표 제거
-        user_input="${user_input//\'/}"
-        user_input="${user_input//\"/}"
-        DOCUMENT_TYPE_PATH="$user_input"
-        echo "   → DocumentType 경로: $DOCUMENT_TYPE_PATH"
-    else
-        echo "   → DocumentType 경로 건너뜀"
-    fi
-    echo ""
-fi
-
-# DocumentType 경로 존재 확인
-if [ -n "$DOCUMENT_TYPE_PATH" ] && [ ! -d "$DOCUMENT_TYPE_PATH" ]; then
-    echo "❌ DocumentType 경로를 찾을 수 없습니다: $DOCUMENT_TYPE_PATH"
-    exit 1
-fi
-
 # 대화형 모드: Output 경로 입력
 if [ -z "$OUTPUT_PATH" ]; then
     echo "📁 출력 폴더 경로를 입력하세요."
@@ -136,43 +105,56 @@ echo ""
 # OpenAPI JSON 경로
 OPENAPI_JSON="$OUTPUT_PATH/openapi.json"
 
-# 1. OpenAPI 스펙 생성
-echo "📊 1/4 OpenAPI 스펙 생성 중..."
+# OpenAPI 스펙 생성
+echo "📊 OpenAPI 스펙 생성 중..."
 EXPORT_ARGS="--project \"$API_REQUEST_PATH\" --output \"$OPENAPI_JSON\" --format json --title \"AsyncNetwork API Documentation\" --version \"1.0.0\" --description \"Swift Concurrency 기반 네트워크 라이브러리 API 문서\""
-
-if [ -n "$DOCUMENT_TYPE_PATH" ]; then
-    EXPORT_ARGS="$EXPORT_ARGS --document-type-path \"$DOCUMENT_TYPE_PATH\""
-fi
 
 eval "swift Scripts/OpenAPI/ExportOpenAPI.swift $EXPORT_ARGS"
 
 echo ""
-echo "📄 2/4 Redoc HTML 생성 중..."
-swift Scripts/OpenAPI/GenerateAPIDocs.swift "$OPENAPI_JSON" "$OUTPUT_PATH/api-docs-redoc.html"
+echo "✅ OpenAPI 스펙 생성 완료!"
+
+# HTML 생성
+echo ""
+echo "📄 HTML 문서 생성 중..."
+
+# Swagger UI HTML 생성
+if [ -f "Scripts/OpenAPI/GenerateSwaggerUI.swift" ]; then
+    echo "   • Swagger UI 생성 중..."
+    swift Scripts/OpenAPI/GenerateSwaggerUI.swift "$OPENAPI_JSON" "$OUTPUT_PATH/api-docs-swagger.html"
+else
+    echo "   ⚠️  GenerateSwaggerUI.swift를 찾을 수 없습니다."
+fi
+
+# Stoplight Elements HTML 생성
+if [ -f "Scripts/OpenAPI/GenerateStoplightElements.swift" ]; then
+    echo "   • Stoplight Elements 생성 중..."
+    swift Scripts/OpenAPI/GenerateStoplightElements.swift "$OPENAPI_JSON" "$OUTPUT_PATH/api-docs-elements.html"
+else
+    echo "   ⚠️  GenerateStoplightElements.swift를 찾을 수 없습니다."
+fi
 
 echo ""
-echo "📄 3/4 Swagger UI HTML 생성 중..."
-swift Scripts/OpenAPI/GenerateSwaggerUI.swift "$OPENAPI_JSON" "$OUTPUT_PATH/api-docs-swagger.html"
-
+echo "✅ 문서 생성 완료!"
 echo ""
-echo "📄 4/4 Stoplight Elements HTML 생성 중..."
-swift Scripts/OpenAPI/GenerateStoplightElements.swift "$OPENAPI_JSON" "$OUTPUT_PATH/api-docs-elements.html"
-
+echo "📄 생성된 파일:"
+echo "   • $OPENAPI_JSON"
+if [ -f "$OUTPUT_PATH/api-docs-swagger.html" ]; then
+    echo "   • $OUTPUT_PATH/api-docs-swagger.html"
+fi
+if [ -f "$OUTPUT_PATH/api-docs-elements.html" ]; then
+    echo "   • $OUTPUT_PATH/api-docs-elements.html"
+fi
 echo ""
-echo "╔═══════════════════════════════════════════════════════════════╗"
-echo "║                      ✅ 완료!                                  ║"
-echo "╚═══════════════════════════════════════════════════════════════╝"
+echo "🌐 브라우저에서 열기:"
+if [ -f "$OUTPUT_PATH/api-docs-swagger.html" ]; then
+    echo "   • open $OUTPUT_PATH/api-docs-swagger.html"
+fi
+if [ -f "$OUTPUT_PATH/api-docs-elements.html" ]; then
+    echo "   • open $OUTPUT_PATH/api-docs-elements.html"
+fi
 echo ""
-echo "생성된 파일:"
-echo "  📁 $OUTPUT_PATH/"
-echo "    📊 openapi.json              - OpenAPI 3.0 스펙"
-echo "    📄 api-docs-redoc.html       - Redoc (읽기 전용, 아름다운 디자인)"
-echo "    📄 api-docs-swagger.html     - Swagger UI (API 테스트 가능)"
-echo "    📄 api-docs-elements.html    - Stoplight Elements (최고급 UI)"
-echo ""
-echo "🎯 다음 단계:"
-echo "  1. 공개 문서:      open \"$OUTPUT_PATH/api-docs-elements.html\"   # 🌟 추천!"
-echo "  2. 읽기 전용:      open \"$OUTPUT_PATH/api-docs-redoc.html\""
-echo "  3. 테스트용:       open \"$OUTPUT_PATH/api-docs-swagger.html\""
-echo "  4. 라이브 프리뷰:  npx @redocly/cli preview-docs \"$OPENAPI_JSON\""
+echo "📖 온라인 도구로 시각화:"
+echo "   • Swagger Editor: https://editor.swagger.io/"
+echo "   • Redoc: https://redocly.github.io/redoc/"
 echo ""

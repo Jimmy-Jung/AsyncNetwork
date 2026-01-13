@@ -18,8 +18,10 @@ struct NetworkServiceOfflineTests {
         let mockMonitor = MockNetworkMonitor(isConnected: false)
 
         let service = NetworkService(
-            httpClient: HTTPClient(configuration: .test),
-            retryPolicy: RetryPolicy.default,
+            httpClient: HTTPClient(
+                configuration: .init(timeoutForRequest: 5)
+            ),
+            retryPolicy: RetryPolicy(),
             responseProcessor: ResponseProcessor(),
             networkMonitor: mockMonitor,
             checkNetworkBeforeRequest: true
@@ -41,8 +43,10 @@ struct NetworkServiceOfflineTests {
         let mockMonitor = MockNetworkMonitor(isConnected: false)
 
         let service = NetworkService(
-            httpClient: HTTPClient(configuration: .test),
-            retryPolicy: RetryPolicy.default,
+            httpClient: HTTPClient(
+                configuration: .init(timeoutForRequest: 5)
+            ),
+            retryPolicy: RetryPolicy(),
             responseProcessor: ResponseProcessor(),
             networkMonitor: mockMonitor,
             checkNetworkBeforeRequest: false // ✅ 체크 비활성화
@@ -59,15 +63,15 @@ struct NetworkServiceOfflineTests {
         let offlineMonitor = MockNetworkMonitor(isConnected: false)
 
         let onlineService = NetworkService(
-            httpClient: HTTPClient(configuration: .test),
-            retryPolicy: RetryPolicy.default,
+            httpClient: HTTPClient(configuration: .init(timeoutForRequest: 5)),
+            retryPolicy: RetryPolicy(),
             responseProcessor: ResponseProcessor(),
             networkMonitor: onlineMonitor
         )
 
         let offlineService = NetworkService(
-            httpClient: HTTPClient(configuration: .test),
-            retryPolicy: RetryPolicy.default,
+            httpClient: HTTPClient(configuration: .init(timeoutForRequest: 5)),
+            retryPolicy: RetryPolicy(),
             responseProcessor: ResponseProcessor(),
             networkMonitor: offlineMonitor
         )
@@ -82,15 +86,15 @@ struct NetworkServiceOfflineTests {
         let cellularMonitor = MockNetworkMonitor(isConnected: true, connectionType: .cellular)
 
         let wifiService = NetworkService(
-            httpClient: HTTPClient(configuration: .test),
-            retryPolicy: RetryPolicy.default,
+            httpClient: HTTPClient(configuration: .init(timeoutForRequest: 5)),
+            retryPolicy: RetryPolicy(),
             responseProcessor: ResponseProcessor(),
             networkMonitor: wifiMonitor
         )
 
         let cellularService = NetworkService(
-            httpClient: HTTPClient(configuration: .test),
-            retryPolicy: RetryPolicy.default,
+            httpClient: HTTPClient(configuration: .init(timeoutForRequest: 5)),
+            retryPolicy: RetryPolicy(),
             responseProcessor: ResponseProcessor(),
             networkMonitor: cellularMonitor
         )

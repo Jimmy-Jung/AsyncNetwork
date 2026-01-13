@@ -65,34 +65,6 @@
                     var method: HTTPMethod {
                         .post
                     }
-                    static var metadata: EndpointMetadata {
-                        EndpointMetadata(
-                            id: "CreatePostRequest",
-                            title: "Create a new post",
-                            description: "Creates a new blog post with the provided content",
-                            method: "post",
-                            path: "/posts",
-                            baseURLString: "https://jsonplaceholder.typicode.com",
-                            headers: [
-                                "Content-Type": "contentType",
-                                "Authorization": "authorization",
-                                "X-Request-ID": "requestId"
-                            ],
-                            tags: ["Posts", "Write", "CRUD"],
-                            parameters: [
-                                ParameterInfo(
-                                    id: "body",
-                                    name: "body",
-                                    type: "CreatePostBody",
-                                    location: .body,
-                                    isRequired: true
-                                )
-                            ],
-                            requestBodyExample: "{\\"title\\": \\"foo\\", \\"body\\": \\"bar\\", \\"userId\\": 1}",
-                            responseExample: "{\\"id\\": 101, \\"title\\": \\"foo\\", \\"body\\": \\"bar\\", \\"userId\\": 1}",
-                            responseTypeName: "PostResponse"
-                        )
-                    }
                 }
 
                 extension CreatePostRequest: APIRequest {
@@ -145,53 +117,6 @@
                     var method: HTTPMethod {
                         .get
                     }
-                    static var metadata: EndpointMetadata {
-                        EndpointMetadata(
-                            id: "GetPostsRequest",
-                            title: "Get paginated posts",
-                            description: "Retrieves a paginated list of blog posts",
-                            method: "get",
-                            path: "/posts",
-                            baseURLString: "https://jsonplaceholder.typicode.com",
-                            headers: [
-                                "Authorization": "authorization"
-                            ],
-                            tags: ["Posts", "Read", "Pagination"],
-                            parameters: [
-                                ParameterInfo(
-                                    id: "page",
-                                    name: "page",
-                                    type: "Int",
-                                    location: .query,
-                                    isRequired: true
-                                ),
-                                ParameterInfo(
-                                    id: "limit",
-                                    name: "limit",
-                                    type: "Int",
-                                    location: .query,
-                                    isRequired: true
-                                ),
-                                ParameterInfo(
-                                    id: "sort",
-                                    name: "sort",
-                                    type: "String?",
-                                    location: .query,
-                                    isRequired: false
-                                ),
-                                ParameterInfo(
-                                    id: "filter",
-                                    name: "filter",
-                                    type: "String?",
-                                    location: .query,
-                                    isRequired: false
-                                )
-                            ],
-                            requestBodyExample: nil,
-                            responseExample: "{\\"data\\": [], \\"page\\": 1, \\"total\\": 100}",
-                            responseTypeName: "PaginatedPostsResponse"
-                        )
-                    }
                 }
 
                 extension GetPostsRequest: APIRequest {
@@ -243,40 +168,6 @@
                     var method: HTTPMethod {
                         .put
                     }
-                    static var metadata: EndpointMetadata {
-                        EndpointMetadata(
-                            id: "UpdatePostRequest",
-                            title: "Update a post",
-                            description: "Updates an existing blog post",
-                            method: "put",
-                            path: "/posts/{id}",
-                            baseURLString: "https://jsonplaceholder.typicode.com",
-                            headers: [
-                                "Content-Type": "contentType",
-                                "Authorization": "authorization"
-                            ],
-                            tags: ["Posts", "Write", "CRUD"],
-                            parameters: [
-                                ParameterInfo(
-                                    id: "id",
-                                    name: "id",
-                                    type: "Int",
-                                    location: .path,
-                                    isRequired: true
-                                ),
-                                ParameterInfo(
-                                    id: "body",
-                                    name: "body",
-                                    type: "UpdatePostBody",
-                                    location: .body,
-                                    isRequired: true
-                                )
-                            ],
-                            requestBodyExample: "{\\"title\\": \\"updated\\", \\"body\\": \\"updated content\\"}",
-                            responseExample: "{\\"id\\": 1, \\"title\\": \\"updated\\", \\"body\\": \\"updated content\\"}",
-                            responseTypeName: "PostResponse"
-                        )
-                    }
                 }
 
                 extension UpdatePostRequest: APIRequest {
@@ -321,32 +212,6 @@
 
                     var method: HTTPMethod {
                         .delete
-                    }
-                    static var metadata: EndpointMetadata {
-                        EndpointMetadata(
-                            id: "DeletePostRequest",
-                            title: "Delete a post",
-                            description: "Deletes a blog post by ID",
-                            method: "delete",
-                            path: "/posts/{id}",
-                            baseURLString: "https://jsonplaceholder.typicode.com",
-                            headers: [
-                                "Authorization": "authorization"
-                            ],
-                            tags: ["Posts", "Write", "CRUD"],
-                            parameters: [
-                                ParameterInfo(
-                                    id: "id",
-                                    name: "id",
-                                    type: "Int",
-                                    location: .path,
-                                    isRequired: true
-                                )
-                            ],
-                            requestBodyExample: nil,
-                            responseExample: nil,
-                            responseTypeName: "EmptyResponse"
-                        )
                     }
                 }
 
@@ -394,44 +259,6 @@
 
                     var method: HTTPMethod {
                         .get
-                    }
-                    static var metadata: EndpointMetadata {
-                        EndpointMetadata(
-                            id: "GetPostCommentsRequest",
-                            title: "Get post comments",
-                            description: "Retrieves all comments for a specific post",
-                            method: "get",
-                            path: "/posts/{postId}/comments",
-                            baseURLString: "https://jsonplaceholder.typicode.com",
-                            headers: nil,
-                            tags: ["Posts", "Comments", "Read", "Nested"],
-                            parameters: [
-                                ParameterInfo(
-                                    id: "postId",
-                                    name: "postId",
-                                    type: "Int",
-                                    location: .path,
-                                    isRequired: true
-                                ),
-                                ParameterInfo(
-                                    id: "page",
-                                    name: "page",
-                                    type: "Int?",
-                                    location: .query,
-                                    isRequired: false
-                                ),
-                                ParameterInfo(
-                                    id: "limit",
-                                    name: "limit",
-                                    type: "Int?",
-                                    location: .query,
-                                    isRequired: false
-                                )
-                            ],
-                            requestBodyExample: nil,
-                            responseExample: nil,
-                            responseTypeName: "[CommentResponse]"
-                        )
                     }
                 }
 
@@ -489,79 +316,6 @@
 
                     var method: HTTPMethod {
                         .get
-                    }
-                    static var metadata: EndpointMetadata {
-                        EndpointMetadata(
-                            id: "SearchPostsRequest",
-                            title: "Search posts",
-                            description: "Searches for posts matching the query",
-                            method: "get",
-                            path: "/search/posts",
-                            baseURLString: "https://jsonplaceholder.typicode.com",
-                            headers: nil,
-                            tags: ["Search", "Posts", "Read"],
-                            parameters: [
-                                ParameterInfo(
-                                    id: "q",
-                                    name: "q",
-                                    type: "String",
-                                    location: .query,
-                                    isRequired: true
-                                ),
-                                ParameterInfo(
-                                    id: "category",
-                                    name: "category",
-                                    type: "String?",
-                                    location: .query,
-                                    isRequired: false
-                                ),
-                                ParameterInfo(
-                                    id: "tags",
-                                    name: "tags",
-                                    type: "String?",
-                                    location: .query,
-                                    isRequired: false
-                                ),
-                                ParameterInfo(
-                                    id: "author",
-                                    name: "author",
-                                    type: "String?",
-                                    location: .query,
-                                    isRequired: false
-                                ),
-                                ParameterInfo(
-                                    id: "sort",
-                                    name: "sort",
-                                    type: "String?",
-                                    location: .query,
-                                    isRequired: false
-                                ),
-                                ParameterInfo(
-                                    id: "order",
-                                    name: "order",
-                                    type: "String?",
-                                    location: .query,
-                                    isRequired: false
-                                ),
-                                ParameterInfo(
-                                    id: "page",
-                                    name: "page",
-                                    type: "Int?",
-                                    location: .query,
-                                    isRequired: false
-                                ),
-                                ParameterInfo(
-                                    id: "limit",
-                                    name: "limit",
-                                    type: "Int?",
-                                    location: .query,
-                                    isRequired: false
-                                )
-                            ],
-                            requestBodyExample: nil,
-                            responseExample: nil,
-                            responseTypeName: "SearchResultResponse"
-                        )
                     }
                 }
 

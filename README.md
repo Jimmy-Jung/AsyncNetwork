@@ -57,13 +57,13 @@ AsyncNetwork은 순수 Foundation만을 사용하여 구축된 현대적인 Swif
 ```
 https://github.com/Jimmy-Jung/AsyncNetwork.git
 ```
-3. Version: `1.1.0` 이상 선택
+3. Version: `1.2.0` 이상 선택
 
 #### Package.swift에 추가
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/Jimmy-Jung/AsyncNetwork.git", from: "1.1.0")
+    .package(url: "https://github.com/Jimmy-Jung/AsyncNetwork.git", from: "1.2.0")
 ]
 ```
 
@@ -73,9 +73,7 @@ dependencies: [
 .target(
     name: "YourTarget",
     dependencies: [
-        .product(name: "AsyncNetwork", package: "AsyncNetwork"),
-        // 또는 API 문서 앱을 만들고 싶다면
-        .product(name: "AsyncNetworkDocKit", package: "AsyncNetwork")
+        .product(name: "AsyncNetwork", package: "AsyncNetwork")
     ]
 )
 ```
@@ -94,11 +92,10 @@ let service = NetworkService()
 
 // 커스텀 설정으로 초기화
 let service = NetworkService(
-    configuration: NetworkConfiguration(
-        timeout: 60.0,
-        enableLogging: true,
+    httpClient: HTTPClient(timeout: 60),
+    retryPolicy: .aggressive,
         checkNetworkBeforeRequest: true
-    ),
+)
     plugins: [
         ConsoleLoggingInterceptor(minimumLevel: .info)
     ]
@@ -273,10 +270,34 @@ AsyncNetwork은 책임별로 명확하게 분리된 모듈 구조를 가지고 �
 AsyncNetwork은 세 가지 주요 모듈로 구성됩니다:
 
 1. **AsyncNetworkCore**: 핵심 네트워크 기능 (HTTPClient, NetworkService, Property Wrappers 등)
-2. **AsyncNetworkMacros**: `@APIRequest` 매크로 구현
+2. **AsyncNetworkMacros**: `@APIRequest` 매크로 구현 (Clean Architecture 기반)
 3. **AsyncNetwork**: Core + Macros를 통합한 Umbrella 모듈 (권장)
 
 대부분의 경우 `import AsyncNetwork`만으로 모든 기능을 사용할 수 있습니다.
+
+#### 매크로 아키텍처 (v1.2.0+)
+
+`@APIRequest` 매크로는 Clean Architecture 원칙에 따라 설계되었습니다:
+
+```
+AsyncNetworkMacros/
+├── Domain/              # 비즈니스 로직 (순수 Swift)
+│   ├── Models/          # MacroArguments, MacroContext, PropertyInfo
+│   ├── Parsers/         # APIRequestArgumentParser, PathParser
+│   ├── Validators/      # MacroValidator, PropertyWrapperValidator
+│   └── Generators/      # CodeGenerator, MetadataGenerator, TestGenerator
+├── Facade/              # 단일 진입점
+│   └── APIRequestMacroFacade.swift
+└── Infrastructure/      # SwiftSyntax 기반 기술
+    ├── DiagnosticBuilder.swift
+    ├── ExpressionParser.swift
+    └── SyntaxExtensions.swift
+```
+
+설계 원칙:
+- 단일 책임 원칙: 각 컴포넌트는 하나의 책임만
+- 의존성 역전: 도메인은 인프라에 의존하지 않음
+- 테스트 용이성: 각 레이어 독립 테스트 가능
 
 ### 소스 코드 구조
 
@@ -284,7 +305,7 @@ AsyncNetwork은 세 가지 주요 모듈로 구성됩니다:
 AsyncNetwork/
 ├── Models/              # 도메인 모델 (HTTPMethod, HTTPResponse 등)
 ├── Protocols/           # 프로토콜 정의 (APIRequest, RequestInterceptor 등)
-├── Configuration/       # 설정 및 정책 (NetworkConfiguration, RetryPolicy)
+├── Configuration/       # 설정 및 정책 (RetryPolicy)
 ├── Client/              # HTTP 클라이언트 (HTTPClient, HTTPHeaders)
 ├── Interceptors/        # 인터셉터 (LoggingInterceptor 등)
 ├── Processing/          # 응답 처리 (ResponseProcessor, StatusCodeValidator)
@@ -551,7 +572,7 @@ let customProcessor = ResponseProcessor(
 // 3. 서비스에 적용
 let service = NetworkService(
     httpClient: HTTPClient(),
-    retryPolicy: RetryPolicy.default,
+    retryPolicy: RetryPolicy(),
     responseProcessor: customProcessor
 )
 ```
@@ -797,9 +818,7 @@ default:
 
 // 오프라인 체크 비활성화 (테스트 환경 등)
 let service = NetworkService(
-    configuration: NetworkConfiguration(
         checkNetworkBeforeRequest: false
-    )
 )
 ```
 
@@ -844,251 +863,6 @@ NotificationCenter.default.addObserver(
     }
 }
 ```
-
----
-
-## 📱 API 문서 자동 생성 (AsyncNetworkDocKit)
-
-`@APIRequest` 매크로로 정의한 API를 **Redoc 스타일의 인터랙티브 문서 앱**으로 자동 생성할 수 있습니다!
-
-### 🎯 자동 샘플 앱 생성
-
-프로젝트에 AsyncNetwork를 추가하면, 단 한 줄의 명령어로 API 문서 샘플 앱을 생성할 수 있습니다:
-
-```bash
-# 1. 사용자 프로젝트 루트로 이동
-cd /path/to/YourProject
-
-# 2. AsyncNetwork 다운로드 (Package.swift에 의존성 추가 후)
-swift package resolve
-
-# 3. 샘플 앱 자동 생성 (대화형 모드)
-swift .build/checkouts/AsyncNetwork/Scripts/CreateDocKitExample.swift
-```
-
-> 💡 **실행 위치**: `swift package resolve`는 **사용자 프로젝트 루트**에서 실행합니다!
-> AsyncNetwork 저장소를 직접 클론한 경우: `swift Scripts/CreateDocKitExample.swift`
-
-**입력 예시** (사용자 프로젝트 기준):
-```
-📱 앱 이름: MyAPIDocumentation
-
-📁 @DocumentedType 경로: Sources/Domain
-   💡 사용자 프로젝트의 Domain 폴더 경로
-
-📡 @APIRequest 경로: Sources/Network
-   💡 사용자 프로젝트의 Network 폴더 경로
-
-📂 출력 경로: DocKitExample
-   💡 샘플 앱이 생성될 위치 (사용자 프로젝트 기준)
-
-🎯 생성하시겠습니까? y
-```
-
-**결과**:
-```
-DocKitExample/
-├── Project.swift (Tuist)
-└── MyAPIDocumentation/
-    └── Sources/
-        ├── MyAPIDocumentationApp.swift
-        ├── TypeRegistration+Generated.swift  # 빌드 시 자동 생성
-        └── Endpoints+Generated.swift         # 빌드 시 자동 생성
-```
-
-**실행**:
-```bash
-cd DocKitExample
-tuist generate
-open *.xcworkspace
-# Cmd + R로 실행!
-```
-
-### AsyncNetworkDocKit이란?
-
-AsyncNetworkDocKit은 `@APIRequest` 매크로의 메타데이터를 활용하여 3열 레이아웃의 전문적인 API 문서 앱을 생성하는 SwiftUI 프레임워크입니다.
-
-### 주요 기능
-
-- ✅ **3열 레이아웃**: API 리스트 / 상세 설명 / 실시간 테스터
-- ✅ **실시간 API 테스트**: 파라미터 입력 후 즉시 요청 가능
-- ✅ **카테고리 분류**: API를 그룹별로 정리
-- ✅ **자동 문서화**: `@APIRequest` 매크로에서 자동으로 메타데이터 추출
-- ✅ **검색 기능**: API 경로 및 타이틀 검색
-- ✅ **다크모드 지원**: 자동 라이트/다크 테마 전환
-
-### 수동 설정 (선택사항)
-
-자동 생성 스크립트 대신 직접 설정하고 싶다면:
-
-#### 1. Package.swift에 추가
-
-```swift
-dependencies: [
-    .package(url: "https://github.com/Jimmy-Jung/AsyncNetwork.git", from: "1.1.0")
-],
-targets: [
-    .target(
-        name: "YourApp",
-        dependencies: [
-            .product(name: "AsyncNetworkDocKit", package: "AsyncNetwork")
-        ]
-    )
-]
-```
-
-#### 2. API 요청 정의
-
-```swift
-import AsyncNetworkDocKit
-
-@APIRequest(
-    response: [Post].self,
-    title: "Get all posts",
-    description: "모든 포스트를 조회합니다",
-    baseURL: "https://api.example.com",
-    path: "/posts",
-    method: .get,
-    tags: ["Posts", "Read"],
-    responseExample: """
-    [
-      {"id": 1, "title": "Hello", "body": "World"}
-    ]
-    """
-)
-struct GetPostsRequest {
-    @QueryParameter var userId: Int?
-    @QueryParameter var page: Int = 1
-}
-
-@APIRequest(
-    response: Post.self,
-    title: "Create a post",
-    description: "새 포스트를 생성합니다",
-    baseURL: "https://api.example.com",
-    path: "/posts",
-    method: .post,
-    tags: ["Posts", "Write"]
-)
-struct CreatePostRequest {
-    @RequestBody var body: PostBody
-}
-```
-
-#### 3. 문서 앱 생성
-
-```swift
-import SwiftUI
-import AsyncNetworkDocKit
-
-@main
-struct MyAPIDocApp: App {
-    let networkService = NetworkService()
-    
-    var body: some Scene {
-        DocKitFactory.createDocApp(
-            endpoints: [
-                "Posts": [
-                    GetPostsRequest.metadata,
-                    CreatePostRequest.metadata
-                ],
-                "Users": [
-                    GetUsersRequest.metadata,
-                    UpdateUserRequest.metadata
-                ],
-                "Comments": [
-                    GetCommentsRequest.metadata
-                ]
-            ],
-            networkService: networkService,
-            appTitle: "My API Documentation"
-        )
-    }
-}
-```
-
-### UI 구조
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│                     My API Documentation                     │
-├──────────────┬──────────────────────┬─────────────────────────┤
-│  1열: 리스트  │   2열: API 상세      │   3열: 실시간 테스터    │
-├──────────────┼──────────────────────┼─────────────────────────┤
-│ 🔍 Search   │                      │   🎯 Try It Out         │
-│             │  📄 GET /posts        │                         │
-│ 📁 Posts    │  Get all posts        │   ⚙️ Parameters        │
-│   GET /posts│                      │   userId: [    ]        │
-│   POST...   │  📝 Description:      │   page:   [ 1  ]        │
-│             │  모든 포스트를 조회... │                         │
-│ 📁 Users    │                      │   📤 Send Request       │
-│   GET /users│  📋 Parameters:       │                         │
-│   PUT /{id} │  • userId (optional)  │   ✅ Response           │
-│             │  • page (default: 1)  │   Status: 200           │
-│ 📁 Comments │                      │   [                     │
-│   GET...    │  📥 Response: [Post]  │     {                   │
-│             │  [                    │       "id": 1,          │
-│             │    {                  │       "title": "..."    │
-│             │      "id": 1,         │     }                   │
-│             │      ...              │   ]                     │
-└──────────────┴──────────────────────┴─────────────────────────┘
-```
-
-### 📚 더 알아보기
-
-- **자동 생성 스크립트**: 위의 "자동 샘플 앱 생성" 섹션 참고
-- **스크립트 상세 문서**: [Scripts/README.md](Scripts/README.md)
-- **실제 예제**: [AsyncNetworkDocKitExample](Projects/AsyncNetworkDocKitExample) 프로젝트 참고
-
-```bash
-# 저장소 클론 후 예제 앱 실행
-git clone https://github.com/Jimmy-Jung/AsyncNetwork.git
-cd AsyncNetwork
-tuist generate
-open AsyncNetwork.xcworkspace
-# AsyncNetworkDocKitExample 스킴 선택 후 실행
-```
-
-예제 앱은 JSONPlaceholder API의 16개 엔드포인트를 문서화하고 실시간으로 테스트할 수 있습니다.
-
-### 고급 사용법
-
-#### 카테고리 설명 추가
-
-```swift
-let categories = [
-    EndpointCategory(
-        name: "Authentication",
-        description: "사용자 인증 관련 API",
-        endpoints: [
-            LoginRequest.metadata,
-            LogoutRequest.metadata
-        ]
-    ),
-    EndpointCategory(
-        name: "Profile",
-        description: "사용자 프로필 관리",
-        endpoints: [
-            GetProfileRequest.metadata,
-            UpdateProfileRequest.metadata
-        ]
-    )
-]
-
-DocKitFactory.createDocApp(
-    categories: categories,
-    networkService: networkService,
-    appTitle: "My API Docs"
-)
-```
-
-### 요구사항
-
-- iOS 17.0+
-- SwiftUI
-- AsyncNetwork 1.1.0+
-
----
 
 ## 🧪 테스트
 

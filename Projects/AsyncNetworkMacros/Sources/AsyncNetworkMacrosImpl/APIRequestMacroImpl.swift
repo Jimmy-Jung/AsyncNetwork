@@ -46,28 +46,6 @@ public enum APIRequestMacroError: CustomStringConvertible, Error, DiagnosticMess
     }
 }
 
-// MARK: - PropertyWrapperSuggestion
-
-/// PropertyWrapper 제안 진단 메시지
-public struct PropertyWrapperSuggestion: DiagnosticMessage {
-    let propertyName: String
-    let propertyType: String
-    let suggestedWrapper: String
-    let reason: String
-
-    public var message: String {
-        "Consider using '\(suggestedWrapper)' for '\(propertyName)': \(reason)"
-    }
-
-    public var diagnosticID: MessageID {
-        MessageID(domain: "AsyncNetworkMacros", id: "PropertyWrapperSuggestion")
-    }
-
-    public var severity: DiagnosticSeverity {
-        .warning
-    }
-}
-
 // MARK: - APIRequestMacroImpl
 
 /// @APIRequest 매크로 구현
@@ -78,7 +56,8 @@ public struct PropertyWrapperSuggestion: DiagnosticMessage {
 /// - var path: String
 /// - var method: HTTPMethod
 /// - var task: HTTPTask
-/// - static var metadata: EndpointMetadata
+///
+/// 사용 예시:
 public struct APIRequestMacroImpl: MemberMacro, ExtensionMacro {
     // MARK: - MemberMacro Implementation
 
@@ -88,23 +67,11 @@ public struct APIRequestMacroImpl: MemberMacro, ExtensionMacro {
         conformingTo _: [TypeSyntax],
         in context: some MacroExpansionContext
     ) throws -> [DeclSyntax] {
-        // 1. 구조체 검증
-        let structDecl = try validateStructDeclaration(declaration, node: node, context: context)
-
-        // 2. 매크로 인자 파싱
-        let args = try parseMacroArguments(from: node, context: context)
-
-        // 3. 기존 프로퍼티 수집
-        let existingProperties = collectExistingProperties(from: structDecl)
-
-        // 4. PropertyWrapper 제안 진단
-        emitPropertyWrapperSuggestions(for: structDecl, args: args, context: context)
-
-        // 5. 멤버 선언 생성
-        return assembleMemberDeclarations(
-            for: structDecl,
-            args: args,
-            existingProperties: existingProperties
+        let facade = APIRequestMacroFacade()
+        return try facade.expand(
+            node: node,
+            declaration: declaration,
+            context: context
         )
     }
 
@@ -139,8 +106,6 @@ public struct APIRequestMacroImpl: MemberMacro, ExtensionMacro {
 
         return [extensionDeclSyntax]
     }
-
-    // MARK: - Helper Methods
 
     // MARK: Validation
 
@@ -193,7 +158,8 @@ public struct APIRequestMacroImpl: MemberMacro, ExtensionMacro {
     private static func assembleMemberDeclarations(
         for structDecl: StructDeclSyntax,
         args: MacroArguments,
-        existingProperties: Set<String>
+        existingProperties: Set<String>,
+        hasAPIDocument: Bool = false
     ) -> [DeclSyntax] {
         var members: [DeclSyntax] = []
 
@@ -217,9 +183,26 @@ public struct APIRequestMacroImpl: MemberMacro, ExtensionMacro {
             members.append(method)
         }
 
-        // metadata 생성
-        let metadata = generateMetadata(for: structDecl, args: args)
-        members.append(metadata)
+        // ⚠️ Backward Compatibility: @APIDocument가 없는 경우에만 metadata 생성
+        // @APIDocument가 있으면 해당 매크로가 metadata를 생성
+        // 이렇게 하면 기존 코드(title, description, tags를 @APIRequest에 전달)가 여전히 작동
+        if !hasAPIDocument, !existingProperties.contains("metadata") {
+            let properties = scanPropertyWrappers(from: structDecl)
+            members.append(generateMetadata(
+                typeName: structDecl.name.text,
+                args: args,
+                properties: properties
+            ))
+        }
+
+        // ❌ 제거: MockScenario 생성 (@APITestable 매크로로 이동)
+        // ❌ 제거: mockResponse() 생성 (@APITestable 매크로로 이동)
+
+        // ❌ 제거: memberwise initializer 생성
+        // Swift 6의 매크로 시스템에서 init은 명시적으로 선언되어야 하며,
+        // MemberMacro로 생성하면 "not covered by macro" 에러가 발생합니다.
+        // 대신 각 Request 구조체에서 직접 init을 정의하거나,
+        // Swift의 기본 memberwise initializer를 사용합니다.
 
         return members
     }
@@ -275,17 +258,20 @@ public struct APIRequestMacroImpl: MemberMacro, ExtensionMacro {
             return nil
         }
 
-        // 선택적 경로 파라미터가 없으면 정적 경로
-        if args.optionalPathParameters.isEmpty {
+        // 경로에 플레이스홀더가 있는지 확인 (동적 경로 필요)
+        let hasPlaceholders = args.path.contains("{") && args.path.contains("}")
+
+        if hasPlaceholders {
+            // 플레이스홀더가 있으면 동적 경로 생성
+            return generateDynamicPath(args: args)
+        } else {
+            // 플레이스홀더가 없으면 정적 경로
             return """
             var path: String {
                 "\(raw: args.path)"
             }
             """
         }
-
-        // 선택적 경로 파라미터가 있으면 동적 경로 생성
-        return generateDynamicPath(args: args)
     }
 
     /// 선택적 PathParameter를 포함한 동적 경로를 생성합니다.
@@ -293,8 +279,8 @@ public struct APIRequestMacroImpl: MemberMacro, ExtensionMacro {
         let normalizedPath = normalizePath(args.path)
         let optionalParams = args.optionalPathParameters
 
-        // 경로를 세그먼트로 분리
-        let segments = normalizedPath.split(separator: "/").map(String.init)
+        // 경로를 세그먼트로 분리 (빈 문자열 제거)
+        let segments = normalizedPath.split(separator: "/").map(String.init).filter { !$0.isEmpty }
         var pathBuildLogic = "var result = \"\""
 
         for segment in segments {
@@ -354,314 +340,6 @@ public struct APIRequestMacroImpl: MemberMacro, ExtensionMacro {
         """
     }
 
-    // MARK: Metadata Generation
-
-    /// metadata 프로퍼티를 생성합니다.
-    private static func generateMetadata(
-        for structDecl: StructDeclSyntax,
-        args: MacroArguments
-    ) -> DeclSyntax {
-        let structName = structDecl.name.text
-        let parameters = scanPropertyWrappers(from: structDecl)
-        let parametersArray = generateParametersArray(parameters)
-
-        // Property wrapper에서 헤더 정보 추출 (HeaderField, CustomHeader만)
-        let allHeaders = collectHeadersFromPropertyWrappers(from: parameters)
-        let headersCode = generateHeadersCode(allHeaders)
-
-        // RequestBody 처리
-        let requestBodyCodes = processRequestBody(from: parameters, args: args)
-
-        // Response 처리
-        let responseCodes = processResponse(args: args)
-
-        // baseURLString 처리
-        let baseURLStringCode = processBaseURLString(args: args)
-
-        // Response 타입 자동 등록을 위한 코드 생성
-        let responseRegistration = generateTypeRegistration(for: args.responseType)
-
-        // RequestBody 타입 자동 등록을 위한 코드 생성
-        let requestBodyParameter = parameters.first { $0.wrapperType == "RequestBody" }
-        let requestBodyRegistration: String
-        if let requestBodyParam = requestBodyParameter {
-            let requestBodyType = extractGenericType(from: requestBodyParam.type) ?? requestBodyParam.type
-            let cleanType = requestBodyType.replacingOccurrences(of: "?", with: "")
-            requestBodyRegistration = generateTypeRegistration(for: cleanType)
-        } else {
-            requestBodyRegistration = ""
-        }
-
-        // 등록 코드가 있는 경우에만 포함
-        let registrationCode: String
-        if responseRegistration.isEmpty && requestBodyRegistration.isEmpty {
-            registrationCode = ""
-        } else {
-            var lines: [String] = []
-            if !responseRegistration.isEmpty {
-                lines.append("// Response 타입 자동 등록")
-                lines.append(responseRegistration)
-            }
-            if !requestBodyRegistration.isEmpty {
-                lines.append("// RequestBody 타입 자동 등록")
-                lines.append(requestBodyRegistration)
-            }
-            registrationCode = lines.joined(separator: "\n            ") + "\n            "
-        }
-
-        return """
-        static var metadata: EndpointMetadata {
-            \(raw: registrationCode)return EndpointMetadata(
-                id: "\(raw: structName)",
-                title: "\(raw: args.title)",
-                description: "\(raw: args.description)",
-                method: "\(raw: args.method)",
-                path: "\(raw: args.path)",
-                baseURLString: \(raw: baseURLStringCode),
-                headers: \(raw: headersCode),
-                tags: [\(raw: args.tags.map { "\"\($0)\"" }.joined(separator: ", "))],
-                parameters: \(raw: parametersArray),
-                requestBodyExample: \(raw: requestBodyCodes.example),
-                requestBodyStructure: \(raw: requestBodyCodes.structure),
-                requestBodyRelatedTypes: \(raw: requestBodyCodes.relatedTypes),
-                responseStructure: \(raw: responseCodes.structure),
-                responseExample: \(raw: responseCodes.example),
-                responseTypeName: "\(raw: args.responseType)",
-                relatedTypes: \(raw: responseCodes.relatedTypes)
-            )
-        }
-        """
-    }
-
-    /// 타입 등록 코드를 생성합니다 (배열 및 옵셔널 타입 안전하게 처리).
-    /// 중첩 타입들도 자동으로 등록하는 코드를 생성합니다.
-    private static func generateTypeRegistration(for typeString: String) -> String {
-        // 배열 타입 체크: [Post].self -> Post.self
-        let cleanType = extractElementType(from: typeString)
-
-        // EmptyResponse 같은 특수 타입은 스킵
-        if cleanType == "EmptyResponse" || cleanType == "Void" {
-            return ""
-        }
-
-        // 프리미티브 타입은 스킵
-        if isPrimitiveResponseType(cleanType) {
-            return ""
-        }
-
-        // 메인 타입 등록
-        // typeStructure에 접근하면 _register가 실행되어 타입이 등록됩니다.
-        // relatedTypeNames에 접근하면 중첩 타입 이름 목록을 얻을 수 있지만,
-        // 타입 이름만으로는 타입을 찾을 수 없으므로 collectRelatedTypes에서 처리합니다.
-        return "_ = \(cleanType).typeStructure"
-    }
-
-    /// 배열이나 옵셔널 타입에서 요소 타입을 추출합니다.
-    /// 예: [Post].self -> Post, Post?.self -> Post, [Post]?.self -> Post
-    private static func extractElementType(from typeString: String) -> String {
-        var result = typeString
-
-        // .self 제거
-        result = result.replacingOccurrences(of: ".self", with: "")
-
-        // 옵셔널 제거
-        result = result.replacingOccurrences(of: "?", with: "")
-
-        // 배열 체크: [Post] -> Post
-        if result.hasPrefix("["), result.hasSuffix("]") {
-            result = String(result.dropFirst().dropLast())
-        }
-
-        return result.trimmingCharacters(in: .whitespaces)
-    }
-
-    /// Response 타입으로 사용되는 프리미티브 타입인지 확인
-    private static func isPrimitiveResponseType(_ type: String) -> Bool {
-        let primitives = [
-            "Int", "String", "Double", "Bool", "Float",
-            "Int64", "Int32", "UInt", "Date", "Data", "URL",
-            "Void", "EmptyResponse",
-        ]
-        return primitives.contains(type)
-    }
-
-    // MARK: Header Processing
-
-    /// Property wrapper에서 헤더 정보를 수집합니다 (HeaderField, CustomHeader만).
-    private static func collectHeadersFromPropertyWrappers(
-        from parameters: [PropertyWrapperInfo]
-    ) -> [String: String] {
-        var allHeaders: [String: String] = [:]
-
-        let headerParameters = parameters.filter {
-            ["HeaderField", "CustomHeader"].contains($0.wrapperType)
-        }
-
-        for headerParam in headerParameters {
-            guard let headerKey = headerParam.headerKey,
-                  let defaultValue = headerParam.defaultValue
-            else {
-                continue
-            }
-
-            // 기본값이 있는 헤더만 메타데이터에 포함 (런타임 함수 호출 제외)
-            if !defaultValue.contains("("), !defaultValue.contains(")") {
-                allHeaders[headerKey] = defaultValue
-            }
-        }
-
-        return allHeaders
-    }
-
-    /// 헤더 딕셔너리를 코드 문자열로 변환합니다.
-    private static func generateHeadersCode(_ headers: [String: String]) -> String {
-        guard !headers.isEmpty else {
-            return "nil"
-        }
-
-        return "[\(headers.map { "\"\($0.key)\": \"\($0.value)\"" }.joined(separator: ", "))]"
-    }
-
-    // MARK: RequestBody Processing
-
-    /// RequestBody 처리 결과
-    private struct RequestBodyCodes {
-        let example: String
-        let structure: String
-        let relatedTypes: String
-    }
-
-    /// RequestBody를 처리합니다.
-    private static func processRequestBody(
-        from parameters: [PropertyWrapperInfo],
-        args: MacroArguments
-    ) -> RequestBodyCodes {
-        let requestBodyParameter = parameters.first { $0.wrapperType == "RequestBody" }
-
-        if let requestBodyParam = requestBodyParameter {
-            return processRequestBodyFromWrapper(requestBodyParam, args: args)
-        } else if let example = args.requestBodyExample {
-            return processRequestBodyFromExample(example)
-        } else {
-            return RequestBodyCodes(
-                example: "nil",
-                structure: "nil",
-                relatedTypes: "nil"
-            )
-        }
-    }
-
-    /// Property wrapper에서 RequestBody를 처리합니다.
-    private static func processRequestBodyFromWrapper(
-        _ requestBodyParam: PropertyWrapperInfo,
-        args: MacroArguments
-    ) -> RequestBodyCodes {
-        // 제네릭 타입 추출 (예: RequestBody<PostBody> -> PostBody)
-        let requestBodyType = extractGenericType(from: requestBodyParam.type) ?? requestBodyParam.type
-
-        // 옵셔널 제거 (예: PostBody? -> PostBody)
-        let cleanType = requestBodyType.replacingOccurrences(of: "?", with: "")
-
-        let structure = "resolveTypeStructure(for: \(cleanType).self)"
-
-        // collectRelatedTypes를 두 번 호출:
-        // 1. 첫 번째 호출: 모든 중첩 타입을 등록하기 위해 typeStructure 접근 트리거
-        // 2. 두 번째 호출: 등록된 타입들의 구조를 수집
-        let relatedTypes = """
-        ({
-            // 먼저 모든 중첩 타입을 등록하기 위해 collectRelatedTypes를 한 번 호출
-            _ = collectRelatedTypes(for: \(cleanType).self)
-            // 이제 등록된 타입들의 구조를 수집
-            return collectRelatedTypes(for: \(cleanType).self)
-        })()
-        """
-
-        let example: String
-        if let exampleString = args.requestBodyExample {
-            example = escapeJSONString(exampleString)
-        } else {
-            example = "nil"
-        }
-
-        return RequestBodyCodes(
-            example: example,
-            structure: structure,
-            relatedTypes: relatedTypes
-        )
-    }
-
-    /// 예제 JSON에서 RequestBody를 처리합니다 (레거시).
-    private static func processRequestBodyFromExample(_ example: String) -> RequestBodyCodes {
-        let escaped = escapeJSONString(example)
-
-        return RequestBodyCodes(
-            example: escaped,
-            structure: "generateStructureFromJSON(\(escaped))",
-            relatedTypes: "[:]"
-        )
-    }
-
-    // MARK: Response Processing
-
-    /// Response 처리 결과
-    private struct ResponseCodes {
-        let structure: String
-        let example: String
-        let relatedTypes: String
-    }
-
-    /// Response를 처리합니다.
-    private static func processResponse(args: MacroArguments) -> ResponseCodes {
-        let structure = "resolveTypeStructure(for: \(args.responseType).self)"
-
-        // collectRelatedTypes를 두 번 호출:
-        // 1. 첫 번째 호출: 모든 중첩 타입을 등록하기 위해 typeStructure 접근 트리거
-        // 2. 두 번째 호출: 등록된 타입들의 구조를 수집
-        let relatedTypes = """
-        ({
-            // 먼저 모든 중첩 타입을 등록하기 위해 collectRelatedTypes를 한 번 호출
-            _ = collectRelatedTypes(for: \(args.responseType).self)
-            // 이제 등록된 타입들의 구조를 수집
-            return collectRelatedTypes(for: \(args.responseType).self)
-        })()
-        """
-
-        let example: String
-        if let exampleString = args.responseExample {
-            example = escapeJSONString(exampleString)
-        } else {
-            example = "nil"
-        }
-
-        return ResponseCodes(
-            structure: structure,
-            example: example,
-            relatedTypes: relatedTypes
-        )
-    }
-
-    // MARK: BaseURL Processing
-
-    /// baseURLString을 처리합니다.
-    private static func processBaseURLString(args: MacroArguments) -> String {
-        if args.isBaseURLLiteral {
-            return "\"\(args.baseURL)\""
-        } else {
-            return args.baseURL
-        }
-    }
-
-    // MARK: Utility
-
-    /// JSON 문자열을 이스케이프합니다.
-    private static func escapeJSONString(_ string: String) -> String {
-        let escaped = string
-            .replacingOccurrences(of: "\\", with: "\\\\")
-            .replacingOccurrences(of: "\"", with: "\\\"")
-            .replacingOccurrences(of: "\n", with: "\\n")
-        return "\"\(escaped)\""
-    }
-
     /// 구조체에서 이미 선언된 프로퍼티/타입 이름을 수집합니다.
     private static func collectExistingProperties(
         from structDecl: StructDeclSyntax
@@ -682,9 +360,143 @@ public struct APIRequestMacroImpl: MemberMacro, ExtensionMacro {
             if let typealiasDecl = member.decl.as(TypeAliasDeclSyntax.self) {
                 properties.insert(typealiasDecl.name.text)
             }
+
+            // initializer 확인
+            if member.decl.is(InitializerDeclSyntax.self) {
+                properties.insert("init")
+            }
         }
 
         return properties
+    }
+
+    /// Memberwise initializer를 생성합니다.
+    private static func generateMemberwiseInitializer(
+        for structDecl: StructDeclSyntax,
+        existingProperties: Set<String>
+    ) -> DeclSyntax? {
+        // 이미 init이 있으면 생성하지 않음
+        if existingProperties.contains("init") {
+            return nil
+        }
+
+        // 프로퍼티 정보 수집
+        var propertyInfos: [(name: String, type: String, wrapperInfo: (type: String, key: String?)?, defaultValue: String?)] = []
+
+        for member in structDecl.memberBlock.members {
+            guard let variableDecl = member.decl.as(VariableDeclSyntax.self) else {
+                continue
+            }
+
+            // Property wrapper 확인 및 타입, 키 추출
+            var wrapperInfo: (type: String, key: String?)?
+            for attribute in variableDecl.attributes {
+                guard let customAttribute = attribute.as(AttributeSyntax.self) else {
+                    continue
+                }
+                let wrapperType = customAttribute.attributeName.trimmedDescription
+                if ["QueryParameter", "PathParameter", "HeaderField", "CustomHeader", "RequestBody", "FormData"].contains(wrapperType) {
+                    // key 파라미터 추출
+                    var customKey: String?
+                    if let arguments = customAttribute.arguments?.as(LabeledExprListSyntax.self) {
+                        for argument in arguments {
+                            if argument.label?.text == "key" {
+                                customKey = argument.expression.trimmedDescription
+                                break
+                            }
+                        }
+                    }
+                    wrapperInfo = (type: wrapperType, key: customKey)
+                    break
+                }
+            }
+
+            for binding in variableDecl.bindings {
+                guard let pattern = binding.pattern.as(IdentifierPatternSyntax.self),
+                      let typeAnnotation = binding.typeAnnotation
+                else {
+                    continue
+                }
+
+                let propertyName = pattern.identifier.text
+                let propertyType = typeAnnotation.type.trimmedDescription
+
+                // 생성된 프로퍼티는 제외
+                if ["baseURLString", "path", "method", "Response"].contains(propertyName) {
+                    continue
+                }
+
+                // 기본값 추출
+                var defaultValue: String?
+                if let initializer = binding.initializer {
+                    defaultValue = initializer.value.trimmedDescription
+                }
+
+                propertyInfos.append((
+                    name: propertyName,
+                    type: propertyType,
+                    wrapperInfo: wrapperInfo,
+                    defaultValue: defaultValue
+                ))
+            }
+        }
+
+        // 프로퍼티가 없으면 기본 init 생성
+        if propertyInfos.isEmpty {
+            return """
+            public init() {}
+            """
+        }
+
+        // 파라미터 생성
+        let parameters = propertyInfos.map { info -> String in
+            if let defaultValue = info.defaultValue {
+                // 명시적 기본값이 있는 경우
+                return "\(info.name): \(info.type) = \(defaultValue)"
+            } else if info.type.hasSuffix("?") {
+                // 옵셔널 타입인 경우 기본값을 nil로 설정
+                return "\(info.name): \(info.type) = nil"
+            } else {
+                // 필수 파라미터
+                return "\(info.name): \(info.type)"
+            }
+        }.joined(separator: ", ")
+
+        // 본문 생성
+        let assignments = propertyInfos.map { info -> String in
+            if let wrapper = info.wrapperInfo {
+                // Property wrapper의 initializer를 직접 호출
+                if let customKey = wrapper.key {
+                    // 커스텀 키가 있는 경우
+                    if wrapper.type == "QueryParameter" {
+                        // QueryParameter는 non-optional과 optional 모두 지원
+                        // 타입 캐스팅 없이 그대로 전달 (초기화자 오버로딩으로 처리)
+                        return "self._\(info.name) = \(wrapper.type)(wrappedValue: \(info.name), key: \(customKey))"
+                    } else {
+                        // PathParameter 등 다른 wrapper는 그대로 전달
+                        return "self._\(info.name) = \(wrapper.type)(wrappedValue: \(info.name), key: \(customKey))"
+                    }
+                } else {
+                    // 키가 없는 경우
+                    if wrapper.type == "QueryParameter" {
+                        // QueryParameter는 non-optional과 optional 모두 지원
+                        // 타입 캐스팅 없이 그대로 전달 (초기화자 오버로딩으로 처리)
+                        return "self._\(info.name) = \(wrapper.type)(wrappedValue: \(info.name))"
+                    } else {
+                        return "self._\(info.name) = \(wrapper.type)(wrappedValue: \(info.name))"
+                    }
+                }
+            } else {
+                // 일반 프로퍼티
+                return "self.\(info.name) = \(info.name)"
+            }
+        }.joined(separator: "\n        ")
+
+        return """
+        public init(\(raw: parameters)) {
+            \(raw: assignments)
+        }
+        """
     }
 
     /// 제네릭 타입에서 내부 타입을 추출합니다.
@@ -759,10 +571,7 @@ public struct APIRequestMacroImpl: MemberMacro, ExtensionMacro {
                         path: args.path,
                         optionalPathParameters: args.optionalPathParameters
                     ) {
-                        let diagnostic = Diagnostic(
-                            node: variableDecl,
-                            message: validation
-                        )
+                        let diagnostic = validation.toDiagnostic(node: variableDecl)
                         context.diagnose(diagnostic)
                     }
                 } else {
@@ -773,10 +582,7 @@ public struct APIRequestMacroImpl: MemberMacro, ExtensionMacro {
                         httpMethod: args.method,
                         path: args.path
                     ) {
-                        let diagnostic = Diagnostic(
-                            node: variableDecl,
-                            message: suggestion
-                        )
+                        let diagnostic = suggestion.toDiagnostic(node: variableDecl)
                         context.diagnose(diagnostic)
                     }
                 }
@@ -807,6 +613,7 @@ public struct APIRequestMacroImpl: MemberMacro, ExtensionMacro {
             return validateQueryParameter(
                 propertyName: propertyName,
                 typeString: typeString,
+                isOptional: isOptional,
                 httpMethod: httpMethod
             )
         case "RequestBody":
@@ -836,7 +643,6 @@ public struct APIRequestMacroImpl: MemberMacro, ExtensionMacro {
         if isOptional, !optionalPathParameters.contains(propertyName) {
             return PropertyWrapperSuggestion(
                 propertyName: propertyName,
-                propertyType: typeString,
                 suggestedWrapper: "@PathParameter",
                 reason: "PathParameter는 필수값이어야 합니다. 타입을 '\(typeString.replacingOccurrences(of: "?", with: ""))'로 변경하거나 경로를 '/.../{{\(propertyName)?}'로 변경하세요"
             )
@@ -848,14 +654,12 @@ public struct APIRequestMacroImpl: MemberMacro, ExtensionMacro {
             if let matchedPlaceholder = placeholders.first(where: { isSimilarName(propertyName, $0) }) {
                 return PropertyWrapperSuggestion(
                     propertyName: propertyName,
-                    propertyType: typeString,
                     suggestedWrapper: "@PathParameter(key: \"\(matchedPlaceholder)\")",
                     reason: "경로에 {\(matchedPlaceholder)}가 있습니다. @PathParameter(key: \"\(matchedPlaceholder)\")를 사용하거나 프로퍼티 이름을 '\(matchedPlaceholder)'로 변경하세요"
                 )
             } else if !placeholders.isEmpty {
                 return PropertyWrapperSuggestion(
                     propertyName: propertyName,
-                    propertyType: typeString,
                     suggestedWrapper: "@PathParameter",
                     reason: "경로의 플레이스홀더[\(placeholders.joined(separator: ", "))]와 프로퍼티 이름이 일치하지 않습니다"
                 )
@@ -868,7 +672,8 @@ public struct APIRequestMacroImpl: MemberMacro, ExtensionMacro {
     /// QueryParameter 사용의 유효성을 검증합니다.
     private static func validateQueryParameter(
         propertyName: String,
-        typeString: String,
+        typeString _: String,
+        isOptional _: Bool,
         httpMethod: String
     ) -> PropertyWrapperSuggestion? {
         // POST/PUT/PATCH의 바디 키워드가 있는 프로퍼티는 QueryParameter가 아닐 가능성
@@ -877,7 +682,6 @@ public struct APIRequestMacroImpl: MemberMacro, ExtensionMacro {
             if bodyKeywords.contains(where: { propertyName.lowercased().contains($0) }) {
                 return PropertyWrapperSuggestion(
                     propertyName: propertyName,
-                    propertyType: typeString,
                     suggestedWrapper: "@RequestBody",
                     reason: "'\(propertyName)'는 요청 바디로 보입니다. @RequestBody 사용을 고려하세요"
                 )
@@ -889,14 +693,13 @@ public struct APIRequestMacroImpl: MemberMacro, ExtensionMacro {
 
     /// RequestBody 사용의 유효성을 검증합니다.
     private static func validateRequestBody(
-        typeString: String,
+        typeString _: String,
         httpMethod: String
     ) -> PropertyWrapperSuggestion? {
         // GET/DELETE 메서드에서는 RequestBody를 사용하면 안 됨
         if ["get", "delete"].contains(httpMethod.lowercased()) {
             return PropertyWrapperSuggestion(
                 propertyName: "body",
-                propertyType: typeString,
                 suggestedWrapper: "@QueryParameter",
                 reason: "\(httpMethod.uppercased()) 메서드에서는 RequestBody를 사용할 수 없습니다"
             )
@@ -919,7 +722,6 @@ public struct APIRequestMacroImpl: MemberMacro, ExtensionMacro {
         if isHeaderRelated(propertyName: lowercasedName) {
             return PropertyWrapperSuggestion(
                 propertyName: propertyName,
-                propertyType: typeString,
                 suggestedWrapper: "@HeaderField(key: .\(lowercasedName)) or @CustomHeader(\"\(propertyName)\")",
                 reason: "HTTP 헤더는 @HeaderField 또는 @CustomHeader를 사용하세요"
             )
@@ -937,7 +739,6 @@ public struct APIRequestMacroImpl: MemberMacro, ExtensionMacro {
 
             return PropertyWrapperSuggestion(
                 propertyName: propertyName,
-                propertyType: typeString,
                 suggestedWrapper: suggestion,
                 reason: reason
             )
@@ -947,27 +748,26 @@ public struct APIRequestMacroImpl: MemberMacro, ExtensionMacro {
         if isBodyRelated(propertyName: lowercasedName, httpMethod: httpMethod) {
             return PropertyWrapperSuggestion(
                 propertyName: propertyName,
-                propertyType: typeString,
                 suggestedWrapper: "@RequestBody",
                 reason: "요청 바디는 @RequestBody를 사용하세요"
             )
         }
 
         // 4. QueryParameter 제안 (기본값: GET 메서드의 일반 프로퍼티)
-        if httpMethod.lowercased() == "get", isOptional {
-            return PropertyWrapperSuggestion(
-                propertyName: propertyName,
-                propertyType: typeString,
-                suggestedWrapper: "@QueryParameter",
-                reason: "GET 메서드의 옵셔널 파라미터는 @QueryParameter를 사용하세요"
-            )
+        if httpMethod.lowercased() == "get" {
+            if isOptional {
+                return PropertyWrapperSuggestion(
+                    propertyName: propertyName,
+                    suggestedWrapper: "@QueryParameter",
+                    reason: "GET 메서드의 파라미터는 @QueryParameter를 사용하세요 (optional이면 nil일 때 생략됨)"
+                )
+            }
         }
 
         // 5. 일반 프로퍼티에 대한 제안
         if isOptional {
             return PropertyWrapperSuggestion(
                 propertyName: propertyName,
-                propertyType: typeString,
                 suggestedWrapper: "@QueryParameter",
                 reason: "URL 쿼리 파라미터로 사용하려면 @QueryParameter를 추가하세요"
             )
@@ -1097,7 +897,7 @@ public struct APIRequestMacroImpl: MemberMacro, ExtensionMacro {
             "accept", "language",
             "cookie", "session",
             "apikey", "key",
-            "bearer", "basic",
+            "bearer", "basic"
         ]
 
         return headerKeywords.contains { propertyName.contains($0) }
@@ -1113,6 +913,311 @@ public struct APIRequestMacroImpl: MemberMacro, ExtensionMacro {
 
         return hasBodyKeyword || (isBodyMethod && propertyName.count > 3)
     }
+
+    // MARK: - Test Scenario Generation
+
+    /// MockScenario enum 생성
+    private static func generateMockScenarioEnum(
+        scenarios: [String],
+        errorExamples: [String: String]
+    ) -> DeclSyntax {
+        // errorExamples 기반으로 필요한 케이스 결정
+        var requiredScenarios: Set<String> = ["success"]
+
+        // errorExamples에서 시나리오 추출
+        for statusCode in errorExamples.keys {
+            let caseName = getCaseNameForStatusCode(statusCode)
+            requiredScenarios.insert(caseName)
+        }
+
+        // 사용자 정의 시나리오 추가
+        for scenario in scenarios {
+            requiredScenarios.insert(scenario)
+        }
+
+        // 기본 시나리오 추가 (사용자가 명시한 경우)
+        let commonScenarios = ["networkError", "timeout", "notFound", "serverError", "unauthorized", "clientError"]
+        for scenario in scenarios {
+            if commonScenarios.contains(scenario) {
+                requiredScenarios.insert(scenario)
+            }
+        }
+
+        let sortedScenarios = requiredScenarios.sorted()
+        let cases = sortedScenarios.map { "case \($0)" }.joined(separator: "\n    ")
+
+        return """
+        /// Mock 테스트 시나리오
+        enum MockScenario {
+            \(raw: cases)
+        }
+        """
+    }
+
+    /// mockResponse() 메서드 생성
+    private static func generateMockResponseMethod(
+        typeName _: String,
+        responseType: String,
+        scenarios: [String],
+        errorExamples: [String: String]
+    ) -> DeclSyntax {
+        // 배열 타입이거나 EmptyResponse인지 확인
+        let isArrayType = responseType.hasPrefix("[") && responseType.hasSuffix("]")
+        let isEmptyResponse = responseType == "EmptyResponse"
+
+        let fixtureCall: String
+        if isEmptyResponse {
+            // EmptyResponse는 초기화자 사용
+            fixtureCall = "let response = EmptyResponse()"
+        } else if isArrayType {
+            // 배열 타입의 경우 빈 배열 반환
+            fixtureCall = "let response = \(responseType)()"
+        } else {
+            // 일반 타입의 경우 fixture() 메서드 호출
+            fixtureCall = "let response = \(responseType).fixture()"
+        }
+
+        var cases = """
+        switch scenario {
+            case .success:
+                \(fixtureCall)
+                let data = try? JSONEncoder().encode(response)
+                let httpResponse = HTTPURLResponse(
+                    url: url,
+                    statusCode: 200,
+                    httpVersion: nil,
+                    headerFields: ["Content-Type": "application/json"]
+                )
+                return (data, httpResponse, nil)
+        """
+
+        // 생성할 케이스 추적 (중복 방지)
+        var generatedCases: Set<String> = ["success"]
+
+        // errorExamples 기반 에러 케이스 생성
+        for (statusCode, json) in errorExamples.sorted(by: { $0.key < $1.key }) {
+            let code = Int(statusCode) ?? 500
+            let escaped = escapeJSON(json)
+            let caseName = getCaseNameForStatusCode(statusCode)
+
+            if generatedCases.contains(caseName) {
+                continue // 이미 생성된 케이스는 스킵
+            }
+            generatedCases.insert(caseName)
+
+            cases += """
+
+            case .\(caseName):
+                let errorData = Data(\"\(escaped)\".utf8)
+                let httpResponse = HTTPURLResponse(
+                    url: url,
+                    statusCode: \(code),
+                    httpVersion: nil,
+                    headerFields: ["Content-Type": "application/json"]
+                )
+                return (errorData, httpResponse, nil)
+            """
+        }
+
+        // 사용자 정의 시나리오에 대한 기본 케이스 생성
+        for scenario in scenarios {
+            if generatedCases.contains(scenario) {
+                continue
+            }
+            generatedCases.insert(scenario)
+
+            switch scenario {
+            case "networkError":
+                cases += """
+
+                case .networkError:
+                    return (nil, nil, URLError(.notConnectedToInternet))
+                """
+            case "timeout":
+                cases += """
+
+                case .timeout:
+                    return (nil, nil, URLError(.timedOut))
+                """
+            case "notFound":
+                cases += """
+
+                case .notFound:
+                    let errorData = Data(\"\"\"
+                    {
+                        "error": "Not found",
+                        "code": "NOT_FOUND"
+                    }
+                    \"\"\".utf8)
+                    let httpResponse = HTTPURLResponse(
+                        url: url,
+                        statusCode: 404,
+                        httpVersion: nil,
+                        headerFields: ["Content-Type": "application/json"]
+                    )
+                    return (errorData, httpResponse, nil)
+                """
+            case "serverError":
+                cases += """
+
+                case .serverError:
+                    let httpResponse = HTTPURLResponse(
+                        url: url,
+                        statusCode: 500,
+                        httpVersion: nil,
+                        headerFields: nil
+                    )
+                    return (nil, httpResponse, nil)
+                """
+            case "unauthorized":
+                cases += """
+
+                case .unauthorized:
+                    let errorData = Data(\"\"\"
+                    {
+                        "error": "Unauthorized",
+                        "code": "UNAUTHORIZED"
+                    }
+                    \"\"\".utf8)
+                    let httpResponse = HTTPURLResponse(
+                        url: url,
+                        statusCode: 401,
+                        httpVersion: nil,
+                        headerFields: ["Content-Type": "application/json"]
+                    )
+                    return (errorData, httpResponse, nil)
+                """
+            case "clientError":
+                cases += """
+
+                case .clientError:
+                    let errorData = Data(\"\"\"
+                    {
+                        "error": "Bad Request",
+                        "code": "BAD_REQUEST"
+                    }
+                    \"\"\".utf8)
+                    let httpResponse = HTTPURLResponse(
+                        url: url,
+                        statusCode: 400,
+                        httpVersion: nil,
+                        headerFields: ["Content-Type": "application/json"]
+                    )
+                    return (errorData, httpResponse, nil)
+                """
+            default:
+                // 알 수 없는 시나리오는 기본 에러 반환
+                cases += """
+
+                case .\(scenario):
+                    let httpResponse = HTTPURLResponse(
+                        url: url,
+                        statusCode: 500,
+                        httpVersion: nil,
+                        headerFields: nil
+                    )
+                    return (nil, httpResponse, nil)
+                """
+            }
+        }
+
+        cases += """
+
+            }
+        """
+
+        return """
+        /// Mock 응답 제공자
+        static func mockResponse(for scenario: MockScenario) -> (Data?, URLResponse?, Error?) {
+            let url = URL(string: "https://api.example.com")!
+
+            \(raw: cases)
+        }
+        """
+    }
+
+    /// 상태 코드에 해당하는 케이스 이름 반환
+    private static func getCaseNameForStatusCode(_ statusCode: String) -> String {
+        switch statusCode {
+        case "404": return "notFound"
+        case "500": return "serverError"
+        case "401": return "unauthorized"
+        case "400": return "clientError"
+        default: return "serverError"
+        }
+    }
+
+    /// JSON escape 처리
+    private static func escapeJSON(_ json: String) -> String {
+        return json
+            .replacingOccurrences(of: "\\", with: "\\\\")
+            .replacingOccurrences(of: "\"", with: "\\\"")
+            .replacingOccurrences(of: "\n", with: "\\n")
+            .replacingOccurrences(of: "\r", with: "\\r")
+            .replacingOccurrences(of: "\t", with: "\\t")
+    }
+
+    // MARK: - Metadata Generation
+
+    /// EndpointMetadata 생성 (헤더 기본값 포함)
+    private static func generateMetadata(
+        typeName: String,
+        args: MacroArguments,
+        properties: [PropertyWrapperInfo]
+    ) -> DeclSyntax {
+        // tags 배열을 문자열로 변환
+        let tagsString = args.tags.map { "\"\($0)\"" }.joined(separator: ", ")
+
+        // description escape 처리
+        let escapedDescription = args.description
+            .replacingOccurrences(of: "\\", with: "\\\\")
+            .replacingOccurrences(of: "\"", with: "\\\"")
+            .replacingOccurrences(of: "\n", with: "\\n")
+
+        let escapedTitle = args.title
+            .replacingOccurrences(of: "\\", with: "\\\\")
+            .replacingOccurrences(of: "\"", with: "\\\"")
+
+        // @HeaderField 및 @CustomHeader의 기본값을 headers 딕셔너리로 변환
+        var headerEntries: [String] = []
+        for prop in properties {
+            if prop.wrapperType == "HeaderField" || prop.wrapperType == "CustomHeader",
+               let headerKey = prop.headerKey,
+               let defaultValue = prop.defaultValue
+            {
+                // 기본값을 escape 처리
+                let escapedValue = defaultValue
+                    .replacingOccurrences(of: "\\", with: "\\\\")
+                    .replacingOccurrences(of: "\"", with: "\\\"")
+                headerEntries.append("\"\(headerKey)\": \"\(escapedValue)\"")
+            }
+        }
+        let headersString = headerEntries.isEmpty ? "[:]" : "[\(headerEntries.joined(separator: ", "))]"
+
+        // @PathParameter, @QueryParameter 이름을 parameters 배열로 변환
+        let parameterNames = properties
+            .filter { ["PathParameter", "QueryParameter"].contains($0.wrapperType) }
+            .map { "\"\($0.name)\"" }
+        let parametersString = parameterNames.isEmpty ? "[]" : "[\(parameterNames.joined(separator: ", "))]"
+
+        return """
+        /// 엔드포인트 메타데이터
+        public static var metadata: EndpointMetadata {
+            EndpointMetadata(
+                id: "\(raw: typeName)",
+                title: "\(raw: escapedTitle)",
+                description: "\(raw: escapedDescription)",
+                method: "\(raw: args.method)",
+                path: "\(raw: args.path)",
+                baseURLString: \(raw: args.baseURL),
+                headers: \(raw: headersString),
+                tags: [\(raw: tagsString)],
+                parameters: \(raw: parametersString),
+                responseTypeName: "\(raw: args.responseType)"
+            )
+        }
+        """
+    }
 }
 
 // MARK: - Plugin Registration
@@ -1121,6 +1226,9 @@ public struct APIRequestMacroImpl: MemberMacro, ExtensionMacro {
 struct AsyncNetworkMacrosPlugin: CompilerPlugin {
     let providingMacros: [Macro.Type] = [
         APIRequestMacroImpl.self,
-        DocumentedTypeMacroImpl.self,
+        APIDocumentMacroImpl.self,
+        APITestableMacroImpl.self,
+        ResponseDocumentMacroImpl.self,
+        ResponseTestableMacroImpl.self
     ]
 }

@@ -15,9 +15,8 @@ struct NetworkServiceFactoryTests {
     @Test("NetworkService 기본 생성")
     func createNetworkServiceWithDefaults() {
         // Given & When
-        // CI 환경에서 NetworkMonitor로 인한 멈춤 방지
         let service = NetworkService(
-            plugins: [ConsoleLoggingInterceptor(minimumLevel: .error)]
+            interceptors: [ConsoleLoggingInterceptor(minimumLevel: .error)]
         )
 
         // Then - NetworkService가 성공적으로 생성됨
@@ -28,10 +27,10 @@ struct NetworkServiceFactoryTests {
     func createNetworkServiceWithCustomInterceptors() {
         // Given
         struct CustomInterceptor: RequestInterceptor {}
-        let plugins: [any RequestInterceptor] = [CustomInterceptor()]
+        let interceptors: [any RequestInterceptor] = [CustomInterceptor()]
 
         // When
-        let service = NetworkService(plugins: plugins)
+        let service = NetworkService(interceptors: interceptors)
 
         // Then - NetworkService가 성공적으로 생성됨
         _ = service
@@ -40,28 +39,19 @@ struct NetworkServiceFactoryTests {
     @Test("NetworkService 빈 interceptors")
     func createNetworkServiceWithEmptyInterceptors() {
         // Given & When
-        let service = NetworkService(plugins: [])
+        let service = NetworkService(interceptors: [])
 
         // Then - NetworkService가 성공적으로 생성됨
         _ = service
     }
 
-    @Test("NetworkService 커스텀 configuration")
-    func createNetworkServiceWithCustomConfiguration() {
-        // Given
-        let configuration = NetworkConfiguration(
-            maxRetries: 5,
-            retryDelay: 2.0,
-            timeout: 60.0,
-            enableLogging: false
-        )
-
-        // When
-        // CI 환경에서 NetworkMonitor로 인한 멈춤 방지
+    @Test("NetworkService 커스텀 timeout")
+    func createNetworkServiceWithCustomTimeout() {
+        // Given & When
         let service = NetworkService(
-            httpClient: HTTPClient(configuration: configuration),
-            retryPolicy: .default,
-            responseProcessor: ResponseProcessor(),
+            httpClient: HTTPClient(
+                configuration: .init(timeoutForRequest: 60)
+            ),
             networkMonitor: nil,
             checkNetworkBeforeRequest: false
         )
@@ -70,20 +60,16 @@ struct NetworkServiceFactoryTests {
         _ = service
     }
 
-    @Test("NetworkService 다양한 configuration", arguments: [
-        NetworkConfiguration.default,
-        NetworkConfiguration.development,
-        NetworkConfiguration.test,
-        NetworkConfiguration.stable,
-        NetworkConfiguration.fast
+    @Test("NetworkService 다양한 retry policy", arguments: [
+        RetryPolicy(),
+        RetryPolicy(configuration: .quick),
+        RetryPolicy(configuration: .patient),
+        RetryPolicy(configuration: .init(maxRetries: 0))
     ])
-    func createNetworkServiceWithVariousConfigurations(configuration: NetworkConfiguration) {
+    func createNetworkServiceWithVariousRetryPolicies(retryPolicy: RetryPolicy) {
         // Given & When
-        // CI 환경에서 NetworkMonitor로 인한 멈춤 방지
         let service = NetworkService(
-            httpClient: HTTPClient(configuration: configuration),
-            retryPolicy: .default,
-            responseProcessor: ResponseProcessor(),
+            retryPolicy: retryPolicy,
             networkMonitor: nil,
             checkNetworkBeforeRequest: false
         )
@@ -95,14 +81,15 @@ struct NetworkServiceFactoryTests {
     @Test("NetworkService 완전한 커스텀 초기화")
     func createNetworkServiceWithFullCustomization() {
         // Given
-        let httpClient = HTTPClient(session: .shared)
-        let retryPolicy = RetryPolicy.aggressive
+        let httpClient = HTTPClient(
+            configuration: .init(timeoutForRequest: 60)
+        )
+        let retryPolicy = RetryPolicy(configuration: .quick)
         let responseProcessor = ResponseProcessor()
         struct TestInterceptor: RequestInterceptor {}
         let interceptors: [any RequestInterceptor] = [TestInterceptor()]
 
         // When
-        // CI 환경에서 NetworkMonitor로 인한 멈춤 방지
         let service = NetworkService(
             httpClient: httpClient,
             retryPolicy: retryPolicy,

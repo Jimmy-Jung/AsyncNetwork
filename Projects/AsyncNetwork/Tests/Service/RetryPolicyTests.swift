@@ -15,16 +15,16 @@ struct RetryPolicyTests {
     // MARK: - Properties
 
     private let defaultPolicy = RetryPolicy()
-    private let aggressivePolicy = RetryPolicy.aggressive
-    private let conservativePolicy = RetryPolicy.conservative
-    private let noRetryPolicy = RetryPolicy.none
+    private let quickPolicy = RetryPolicy(configuration: .quick)
+    private let patientPolicy = RetryPolicy(configuration: .patient)
+    private let noRetryPolicy = RetryPolicy(configuration: .init(maxRetries: 0))
 
     // MARK: - Retry Configuration Tests
 
-    @Test("기본 재시도 설정 생성")
-    func validateDefaultRetryConfiguration() {
+    @Test("표준 재시도 설정 생성")
+    func validateStandardRetryConfiguration() {
         // Given & When
-        let config = RetryConfiguration.default
+        let config = RetryConfiguration.standard
 
         // Then
         #expect(config.maxRetries == 3)
@@ -34,21 +34,21 @@ struct RetryPolicyTests {
         #expect(config.jitterRange.upperBound == 0.3)
     }
 
-    @Test("적극적 재시도 설정 생성")
-    func validateAggressiveRetryConfiguration() {
+    @Test("빠른 재시도 설정 생성")
+    func validateQuickRetryConfiguration() {
         // Given & When
-        let config = RetryConfiguration.aggressive
+        let config = RetryConfiguration.quick
 
         // Then
         #expect(config.maxRetries == 5)
         #expect(config.baseDelay == 0.5)
-        #expect(config.maxDelay == 30.0)
+        #expect(config.maxDelay == 15.0)
     }
 
-    @Test("보수적 재시도 설정 생성")
-    func validateConservativeRetryConfiguration() {
+    @Test("느린 재시도 설정 생성")
+    func validatePatientRetryConfiguration() {
         // Given & When
-        let config = RetryConfiguration.conservative
+        let config = RetryConfiguration.patient
 
         // Then
         #expect(config.maxRetries == 1)
@@ -235,37 +235,40 @@ struct RetryPolicyTests {
 
     // MARK: - Policy Preset Tests
 
-    @Test("기본 재시도 정책")
-    func validateDefaultRetryPolicy() {
+    @Test("표준 재시도 정책")
+    func validateStandardRetryPolicy() {
         // Given & When
-        let policy = RetryPolicy.default
+        let policy = RetryPolicy()
 
         // Then
-        _ = policy // 사용되었음을 표시
+        #expect(policy.configuration.maxRetries == 3)
+        #expect(policy.configuration.baseDelay == 1.0)
     }
 
-    @Test("적극적 재시도 정책")
-    func validateAggressiveRetryPolicy() {
+    @Test("빠른 재시도 정책")
+    func validateQuickRetryPolicy() {
         // Given & When
-        let policy = RetryPolicy.aggressive
+        let policy = RetryPolicy(configuration: .quick)
 
         // Then
-        _ = policy // 사용되었음을 표시
+        #expect(policy.configuration.maxRetries == 5)
+        #expect(policy.configuration.baseDelay == 0.5)
     }
 
-    @Test("보수적 재시도 정책")
-    func validateConservativeRetryPolicy() {
+    @Test("느린 재시도 정책")
+    func validatePatientRetryPolicy() {
         // Given & When
-        let policy = RetryPolicy.conservative
+        let policy = RetryPolicy(configuration: .patient)
 
         // Then
-        _ = policy // 사용되었음을 표시
+        #expect(policy.configuration.maxRetries == 1)
+        #expect(policy.configuration.baseDelay == 2.0)
     }
 
     @Test("재시도 없음 정책")
     func validateNoRetryPolicy() {
         // Given & When
-        let policy = RetryPolicy.none
+        let policy = RetryPolicy(configuration: RetryConfiguration(maxRetries: 0))
 
         // Then
         _ = policy // 사용되었음을 표시

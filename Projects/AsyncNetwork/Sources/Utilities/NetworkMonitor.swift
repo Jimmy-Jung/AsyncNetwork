@@ -9,6 +9,39 @@ import Combine
 import Foundation
 import Network
 
+// MARK: - NetworkStatus
+
+/// 네트워크 상태
+public enum NetworkStatus: Equatable, Sendable {
+    case connected(NetworkMonitor.ConnectionType)
+    case disconnected
+
+    public var displayName: String {
+        switch self {
+        case .connected: return "Connected"
+        case .disconnected: return "Disconnected"
+        }
+    }
+
+    public var connectionTypeDescription: String {
+        switch self {
+        case let .connected(type):
+            return type.description
+        case .disconnected:
+            return "None"
+        }
+    }
+
+    public var isConnected: Bool {
+        switch self {
+        case .connected: return true
+        case .disconnected: return false
+        }
+    }
+}
+
+// MARK: - NetworkMonitoring Protocol
+
 public protocol NetworkMonitoring: AnyObject, Sendable {
     var isConnected: Bool { get }
     var connectionType: NetworkMonitor.ConnectionType { get }
@@ -48,6 +81,9 @@ public final class NetworkMonitor: ObservableObject, NetworkMonitoring, @uncheck
     @Published public private(set) var isConnected: Bool = true
     @Published public private(set) var connectionType: ConnectionType = .unknown
     @Published public private(set) var currentPath: NWPath?
+
+    /// 네트워크 상태 (구독 가능)
+    @Published public private(set) var status: NetworkStatus = .connected(.unknown)
 
     public var isExpensive: Bool {
         currentPath?.isExpensive ?? false
@@ -89,6 +125,11 @@ public final class NetworkMonitor: ObservableObject, NetworkMonitoring, @uncheck
             self.isConnected = newIsConnected
             self.connectionType = self.determineConnectionType(from: path)
 
+            // NetworkStatus 업데이트
+            self.status = newIsConnected
+                ? .connected(self.connectionType)
+                : .disconnected
+
             // 네트워크 상태 변경 알림
             if wasConnected != newIsConnected {
                 NotificationCenter.default.post(
@@ -96,7 +137,7 @@ public final class NetworkMonitor: ObservableObject, NetworkMonitoring, @uncheck
                     object: nil,
                     userInfo: [
                         "isConnected": newIsConnected,
-                        "connectionType": self.connectionType
+                        "connectionType": self.connectionType,
                     ]
                 )
             }

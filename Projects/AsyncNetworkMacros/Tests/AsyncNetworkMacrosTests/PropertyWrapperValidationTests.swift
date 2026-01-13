@@ -55,30 +55,6 @@
                     var method: HTTPMethod {
                         .delete
                     }
-                    static var metadata: EndpointMetadata {
-                        EndpointMetadata(
-                            id: "DeletePostRequest",
-                            title: "Delete a post",
-                            description: "",
-                            method: "delete",
-                            path: "/posts/{id}",
-                            baseURLString: "https://api.example.com",
-                            headers: nil,
-                            tags: [],
-                            parameters: [
-                                ParameterInfo(
-                                    id: "id",
-                                    name: "id",
-                                    type: "Int?",
-                                    location: .path,
-                                    isRequired: false
-                                )
-                            ],
-                            requestBodyExample: nil,
-                            responseExample: nil,
-                            responseTypeName: "EmptyResponse"
-                        )
-                    }
                 }
 
                 extension DeletePostRequest: APIRequest {
@@ -127,30 +103,6 @@
 
                     var method: HTTPMethod {
                         .delete
-                    }
-                    static var metadata: EndpointMetadata {
-                        EndpointMetadata(
-                            id: "DeletePostRequest",
-                            title: "Delete a post",
-                            description: "",
-                            method: "delete",
-                            path: "/posts/{id}",
-                            baseURLString: "https://api.example.com",
-                            headers: nil,
-                            tags: [],
-                            parameters: [
-                                ParameterInfo(
-                                    id: "ids",
-                                    name: "ids",
-                                    type: "Int",
-                                    location: .path,
-                                    isRequired: true
-                                )
-                            ],
-                            requestBodyExample: nil,
-                            responseExample: nil,
-                            responseTypeName: "EmptyResponse"
-                        )
                     }
                 }
 
@@ -203,30 +155,6 @@
                     var method: HTTPMethod {
                         .delete
                     }
-                    static var metadata: EndpointMetadata {
-                        EndpointMetadata(
-                            id: "DeletePostRequest",
-                            title: "Delete a post",
-                            description: "포스트를 삭제합니다.",
-                            method: "delete",
-                            path: "/posts/{id}",
-                            baseURLString: "https://api.example.com",
-                            headers: nil,
-                            tags: ["Posts", "Write"],
-                            parameters: [
-                                ParameterInfo(
-                                    id: "ids",
-                                    name: "ids",
-                                    type: "Int?",
-                                    location: .path,
-                                    isRequired: false
-                                )
-                            ],
-                            requestBodyExample: nil,
-                            responseExample: nil,
-                            responseTypeName: "EmptyResponse"
-                        )
-                    }
                 }
 
                 extension DeletePostRequest: APIRequest {
@@ -275,30 +203,6 @@
 
                     var method: HTTPMethod {
                         .get
-                    }
-                    static var metadata: EndpointMetadata {
-                        EndpointMetadata(
-                            id: "GetPostRequest",
-                            title: "Get post",
-                            description: "",
-                            method: "get",
-                            path: "/posts/{postId}",
-                            baseURLString: "https://api.example.com",
-                            headers: nil,
-                            tags: [],
-                            parameters: [
-                                ParameterInfo(
-                                    id: "userId",
-                                    name: "userId",
-                                    type: "Int",
-                                    location: .path,
-                                    isRequired: true
-                                )
-                            ],
-                            requestBodyExample: nil,
-                            responseExample: nil,
-                            responseTypeName: "Post"
-                        )
                     }
                 }
 
@@ -349,26 +253,6 @@
                     var method: HTTPMethod {
                         .get
                     }
-                    static var metadata: EndpointMetadata {
-                        EndpointMetadata(
-                            id: "GetPostsRequest",
-                            title: "Get posts",
-                            description: "",
-                            method: "get",
-                            path: "/posts",
-                            baseURLString: "https://api.example.com",
-                            headers: nil,
-                            tags: [],
-                            parameters: [],
-                            requestBodyExample: nil,
-                            requestBodyStructure: resolveTypeStructure(for: SearchCriteria.self),
-                            requestBodyRelatedTypes: collectRelatedTypes(for: SearchCriteria.self),
-                            responseExample: nil,
-                            responseStructure: resolveTypeStructure(for: [Post].self),
-                            responseTypeName: "[Post]",
-                            relatedTypes: collectRelatedTypes(for: [Post].self)
-                        )
-                    }
                 }
 
                 extension GetPostsRequest: APIRequest {
@@ -418,30 +302,6 @@
                     var method: HTTPMethod {
                         .post
                     }
-                    static var metadata: EndpointMetadata {
-                        EndpointMetadata(
-                            id: "CreatePostRequest",
-                            title: "Create post",
-                            description: "",
-                            method: "post",
-                            path: "/posts",
-                            baseURLString: "https://api.example.com",
-                            headers: nil,
-                            tags: [],
-                            parameters: [
-                                ParameterInfo(
-                                    id: "bodyData",
-                                    name: "bodyData",
-                                    type: "PostBody?",
-                                    location: .query,
-                                    isRequired: false
-                                )
-                            ],
-                            requestBodyExample: nil,
-                            responseExample: nil,
-                            responseTypeName: "Post"
-                        )
-                    }
                 }
 
                 extension CreatePostRequest: APIRequest {
@@ -490,30 +350,6 @@
 
                     var method: HTTPMethod {
                         .get
-                    }
-                    static var metadata: EndpointMetadata {
-                        EndpointMetadata(
-                            id: "GetPostRequest",
-                            title: "Get post",
-                            description: "",
-                            method: "get",
-                            path: "/posts/{id}",
-                            baseURLString: "https://api.example.com",
-                            headers: nil,
-                            tags: [],
-                            parameters: [
-                                ParameterInfo(
-                                    id: "id",
-                                    name: "id",
-                                    type: "Int",
-                                    location: .path,
-                                    isRequired: true
-                                )
-                            ],
-                            requestBodyExample: nil,
-                            responseExample: nil,
-                            responseTypeName: "Post"
-                        )
                     }
                 }
 
