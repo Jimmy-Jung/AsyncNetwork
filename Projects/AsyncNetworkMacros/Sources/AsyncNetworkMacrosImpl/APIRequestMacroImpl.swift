@@ -46,28 +46,6 @@ public enum APIRequestMacroError: CustomStringConvertible, Error, DiagnosticMess
     }
 }
 
-// MARK: - PropertyWrapperSuggestion
-
-/// PropertyWrapper 제안 진단 메시지
-public struct PropertyWrapperSuggestion: DiagnosticMessage {
-    let propertyName: String
-    let propertyType: String
-    let suggestedWrapper: String
-    let reason: String
-
-    public var message: String {
-        "Consider using '\(suggestedWrapper)' for '\(propertyName)': \(reason)"
-    }
-
-    public var diagnosticID: MessageID {
-        MessageID(domain: "AsyncNetworkMacros", id: "PropertyWrapperSuggestion")
-    }
-
-    public var severity: DiagnosticSeverity {
-        .warning
-    }
-}
-
 // MARK: - APIRequestMacroImpl
 
 /// @APIRequest 매크로 구현
@@ -89,31 +67,11 @@ public struct APIRequestMacroImpl: MemberMacro, ExtensionMacro {
         conformingTo _: [TypeSyntax],
         in context: some MacroExpansionContext
     ) throws -> [DeclSyntax] {
-        // 1. 구조체 검증
-        let structDecl = try validateStructDeclaration(declaration, node: node, context: context)
-
-        // 2. 매크로 인자 파싱
-        let args = try parseMacroArguments(from: node, context: context)
-
-        // 3. 기존 프로퍼티 수집
-        let existingProperties = collectExistingProperties(from: structDecl)
-
-        // 4. @APIDocument 매크로 존재 여부 확인
-        let hasAPIDocument = declaration.attributes.contains { attribute in
-            guard let customAttribute = attribute.as(AttributeSyntax.self) else { return false }
-            let attributeName = customAttribute.attributeName.as(IdentifierTypeSyntax.self)?.name.text
-            return attributeName == "APIDocument"
-        }
-
-        // 5. PropertyWrapper 제안 진단
-        emitPropertyWrapperSuggestions(for: structDecl, args: args, context: context)
-
-        // 6. 멤버 선언 생성
-        return assembleMemberDeclarations(
-            for: structDecl,
-            args: args,
-            existingProperties: existingProperties,
-            hasAPIDocument: hasAPIDocument
+        let facade = APIRequestMacroFacade()
+        return try facade.expand(
+            node: node,
+            declaration: declaration,
+            context: context
         )
     }
 
@@ -148,8 +106,6 @@ public struct APIRequestMacroImpl: MemberMacro, ExtensionMacro {
 
         return [extensionDeclSyntax]
     }
-
-    // MARK: - Helper Methods
 
     // MARK: Validation
 
@@ -509,8 +465,6 @@ public struct APIRequestMacroImpl: MemberMacro, ExtensionMacro {
         // 본문 생성
         let assignments = propertyInfos.map { info -> String in
             if let wrapper = info.wrapperInfo {
-                let isOptional = info.type.hasSuffix("?")
-
                 // Property wrapper의 initializer를 직접 호출
                 if let customKey = wrapper.key {
                     // 커스텀 키가 있는 경우
@@ -617,10 +571,7 @@ public struct APIRequestMacroImpl: MemberMacro, ExtensionMacro {
                         path: args.path,
                         optionalPathParameters: args.optionalPathParameters
                     ) {
-                        let diagnostic = Diagnostic(
-                            node: variableDecl,
-                            message: validation
-                        )
+                        let diagnostic = validation.toDiagnostic(node: variableDecl)
                         context.diagnose(diagnostic)
                     }
                 } else {
@@ -631,10 +582,7 @@ public struct APIRequestMacroImpl: MemberMacro, ExtensionMacro {
                         httpMethod: args.method,
                         path: args.path
                     ) {
-                        let diagnostic = Diagnostic(
-                            node: variableDecl,
-                            message: suggestion
-                        )
+                        let diagnostic = suggestion.toDiagnostic(node: variableDecl)
                         context.diagnose(diagnostic)
                     }
                 }
@@ -695,7 +643,6 @@ public struct APIRequestMacroImpl: MemberMacro, ExtensionMacro {
         if isOptional, !optionalPathParameters.contains(propertyName) {
             return PropertyWrapperSuggestion(
                 propertyName: propertyName,
-                propertyType: typeString,
                 suggestedWrapper: "@PathParameter",
                 reason: "PathParameter는 필수값이어야 합니다. 타입을 '\(typeString.replacingOccurrences(of: "?", with: ""))'로 변경하거나 경로를 '/.../{{\(propertyName)?}'로 변경하세요"
             )
@@ -707,14 +654,12 @@ public struct APIRequestMacroImpl: MemberMacro, ExtensionMacro {
             if let matchedPlaceholder = placeholders.first(where: { isSimilarName(propertyName, $0) }) {
                 return PropertyWrapperSuggestion(
                     propertyName: propertyName,
-                    propertyType: typeString,
                     suggestedWrapper: "@PathParameter(key: \"\(matchedPlaceholder)\")",
                     reason: "경로에 {\(matchedPlaceholder)}가 있습니다. @PathParameter(key: \"\(matchedPlaceholder)\")를 사용하거나 프로퍼티 이름을 '\(matchedPlaceholder)'로 변경하세요"
                 )
             } else if !placeholders.isEmpty {
                 return PropertyWrapperSuggestion(
                     propertyName: propertyName,
-                    propertyType: typeString,
                     suggestedWrapper: "@PathParameter",
                     reason: "경로의 플레이스홀더[\(placeholders.joined(separator: ", "))]와 프로퍼티 이름이 일치하지 않습니다"
                 )
@@ -727,7 +672,7 @@ public struct APIRequestMacroImpl: MemberMacro, ExtensionMacro {
     /// QueryParameter 사용의 유효성을 검증합니다.
     private static func validateQueryParameter(
         propertyName: String,
-        typeString: String,
+        typeString _: String,
         isOptional _: Bool,
         httpMethod: String
     ) -> PropertyWrapperSuggestion? {
@@ -737,7 +682,6 @@ public struct APIRequestMacroImpl: MemberMacro, ExtensionMacro {
             if bodyKeywords.contains(where: { propertyName.lowercased().contains($0) }) {
                 return PropertyWrapperSuggestion(
                     propertyName: propertyName,
-                    propertyType: typeString,
                     suggestedWrapper: "@RequestBody",
                     reason: "'\(propertyName)'는 요청 바디로 보입니다. @RequestBody 사용을 고려하세요"
                 )
@@ -749,14 +693,13 @@ public struct APIRequestMacroImpl: MemberMacro, ExtensionMacro {
 
     /// RequestBody 사용의 유효성을 검증합니다.
     private static func validateRequestBody(
-        typeString: String,
+        typeString _: String,
         httpMethod: String
     ) -> PropertyWrapperSuggestion? {
         // GET/DELETE 메서드에서는 RequestBody를 사용하면 안 됨
         if ["get", "delete"].contains(httpMethod.lowercased()) {
             return PropertyWrapperSuggestion(
                 propertyName: "body",
-                propertyType: typeString,
                 suggestedWrapper: "@QueryParameter",
                 reason: "\(httpMethod.uppercased()) 메서드에서는 RequestBody를 사용할 수 없습니다"
             )
@@ -779,7 +722,6 @@ public struct APIRequestMacroImpl: MemberMacro, ExtensionMacro {
         if isHeaderRelated(propertyName: lowercasedName) {
             return PropertyWrapperSuggestion(
                 propertyName: propertyName,
-                propertyType: typeString,
                 suggestedWrapper: "@HeaderField(key: .\(lowercasedName)) or @CustomHeader(\"\(propertyName)\")",
                 reason: "HTTP 헤더는 @HeaderField 또는 @CustomHeader를 사용하세요"
             )
@@ -797,7 +739,6 @@ public struct APIRequestMacroImpl: MemberMacro, ExtensionMacro {
 
             return PropertyWrapperSuggestion(
                 propertyName: propertyName,
-                propertyType: typeString,
                 suggestedWrapper: suggestion,
                 reason: reason
             )
@@ -807,7 +748,6 @@ public struct APIRequestMacroImpl: MemberMacro, ExtensionMacro {
         if isBodyRelated(propertyName: lowercasedName, httpMethod: httpMethod) {
             return PropertyWrapperSuggestion(
                 propertyName: propertyName,
-                propertyType: typeString,
                 suggestedWrapper: "@RequestBody",
                 reason: "요청 바디는 @RequestBody를 사용하세요"
             )
@@ -818,7 +758,6 @@ public struct APIRequestMacroImpl: MemberMacro, ExtensionMacro {
             if isOptional {
                 return PropertyWrapperSuggestion(
                     propertyName: propertyName,
-                    propertyType: typeString,
                     suggestedWrapper: "@QueryParameter",
                     reason: "GET 메서드의 파라미터는 @QueryParameter를 사용하세요 (optional이면 nil일 때 생략됨)"
                 )
@@ -829,7 +768,6 @@ public struct APIRequestMacroImpl: MemberMacro, ExtensionMacro {
         if isOptional {
             return PropertyWrapperSuggestion(
                 propertyName: propertyName,
-                propertyType: typeString,
                 suggestedWrapper: "@QueryParameter",
                 reason: "URL 쿼리 파라미터로 사용하려면 @QueryParameter를 추가하세요"
             )
@@ -959,7 +897,7 @@ public struct APIRequestMacroImpl: MemberMacro, ExtensionMacro {
             "accept", "language",
             "cookie", "session",
             "apikey", "key",
-            "bearer", "basic",
+            "bearer", "basic"
         ]
 
         return headerKeywords.contains { propertyName.contains($0) }
@@ -1291,6 +1229,6 @@ struct AsyncNetworkMacrosPlugin: CompilerPlugin {
         APIDocumentMacroImpl.self,
         APITestableMacroImpl.self,
         ResponseDocumentMacroImpl.self,
-        ResponseTestableMacroImpl.self,
+        ResponseTestableMacroImpl.self
     ]
 }

@@ -8,24 +8,9 @@
 import Foundation
 import SwiftSyntax
 
-// MARK: - Helper Types
+// MARK: - Helper Types (deprecated - use Domain/Models/)
 
-struct MacroArguments {
-    let responseType: String
-    let title: String
-    let description: String
-    let baseURL: String
-    let isBaseURLLiteral: Bool // baseURL이 문자열 리터럴인지 여부
-    let path: String
-    let method: String
-    let tags: [String]
-    let optionalPathParameters: Set<String> // {id?} 형태의 선택적 경로 파라미터
-    // 테스트 관련 필드
-    let testScenarios: [String]
-    let errorExamples: [String: String]
-    let includeRetryTests: Bool
-    let includePerformanceTests: Bool
-}
+// MacroArguments는 Domain/Models/MacroArguments.swift 사용
 
 struct PropertyWrapperInfo {
     let name: String

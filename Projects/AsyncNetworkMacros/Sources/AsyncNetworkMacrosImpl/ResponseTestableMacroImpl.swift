@@ -247,9 +247,9 @@ public struct ResponseTestableMacroImpl: MemberMacro, ExtensionMacro {
         /// - 예측 가능한 고정값으로 안정적인 테스트 작성
         public struct \(raw: typeName)Builder {
             \(raw: propertiesCode)
-            
+
             \(raw: methodsCode)
-            
+
             /// Builder로 설정된 값들로 인스턴스 생성
             public func build() -> \(raw: typeName) {
                 \(raw: typeName)(
@@ -347,7 +347,7 @@ public struct ResponseTestableMacroImpl: MemberMacro, ExtensionMacro {
 
     /// 검증 로직 생성
     private static func generateValidation(for prop: PropertyInfo) -> String? {
-        let cleanType = prop.type.replacingOccurrences(of: "?", with: "").trimmingCharacters(in: .whitespaces)
+        let cleanType = prop.type.replacingOccurrences(of: "?", with: "").trimmingCharacters(in: CharacterSet.whitespaces)
 
         switch cleanType {
         case "Int", "Int8", "Int16", "Int32", "Int64":
@@ -415,12 +415,6 @@ struct TestableDTOArguments {
     let fixtureJSON: String?
     let includeBuilder: Bool
     let defaultArrayCount: Int
-}
-
-struct PropertyInfo {
-    let name: String
-    let type: String
-    let isOptional: Bool
 }
 
 // MARK: - Argument Parsing
