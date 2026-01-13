@@ -57,13 +57,13 @@ AsyncNetwork은 순수 Foundation만을 사용하여 구축된 현대적인 Swif
 ```
 https://github.com/Jimmy-Jung/AsyncNetwork.git
 ```
-3. Version: `1.1.0` 이상 선택
+3. Version: `1.2.0` 이상 선택
 
 #### Package.swift에 추가
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/Jimmy-Jung/AsyncNetwork.git", from: "1.1.0")
+    .package(url: "https://github.com/Jimmy-Jung/AsyncNetwork.git", from: "1.2.0")
 ]
 ```
 
@@ -270,10 +270,34 @@ AsyncNetwork은 책임별로 명확하게 분리된 모듈 구조를 가지고 �
 AsyncNetwork은 세 가지 주요 모듈로 구성됩니다:
 
 1. **AsyncNetworkCore**: 핵심 네트워크 기능 (HTTPClient, NetworkService, Property Wrappers 등)
-2. **AsyncNetworkMacros**: `@APIRequest` 매크로 구현
+2. **AsyncNetworkMacros**: `@APIRequest` 매크로 구현 (Clean Architecture 기반)
 3. **AsyncNetwork**: Core + Macros를 통합한 Umbrella 모듈 (권장)
 
 대부분의 경우 `import AsyncNetwork`만으로 모든 기능을 사용할 수 있습니다.
+
+#### 매크로 아키텍처 (v1.2.0+)
+
+`@APIRequest` 매크로는 Clean Architecture 원칙에 따라 설계되었습니다:
+
+```
+AsyncNetworkMacros/
+├── Domain/              # 비즈니스 로직 (순수 Swift)
+│   ├── Models/          # MacroArguments, MacroContext, PropertyInfo
+│   ├── Parsers/         # APIRequestArgumentParser, PathParser
+│   ├── Validators/      # MacroValidator, PropertyWrapperValidator
+│   └── Generators/      # CodeGenerator, MetadataGenerator, TestGenerator
+├── Facade/              # 단일 진입점
+│   └── APIRequestMacroFacade.swift
+└── Infrastructure/      # SwiftSyntax 기반 기술
+    ├── DiagnosticBuilder.swift
+    ├── ExpressionParser.swift
+    └── SyntaxExtensions.swift
+```
+
+설계 원칙:
+- 단일 책임 원칙: 각 컴포넌트는 하나의 책임만
+- 의존성 역전: 도메인은 인프라에 의존하지 않음
+- 테스트 용이성: 각 레이어 독립 테스트 가능
 
 ### 소스 코드 구조
 
