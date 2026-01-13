@@ -21,26 +21,29 @@
             assertMacroExpansion(
                 """
                 @APIRequest(
-                    response: Post.self
-                    baseURL: "https://api.com"
-                    path: "/posts"
-                    method: .get
+                    response: Post.self,
+                    baseURL: "https://api.com",
+                    path: "/posts",
+                    method: .get,
                 )
                 class GetPostsRequest {
                 }
                 """
+                ,
                 expandedSource: """
                 class GetPostsRequest {
                 }
                 """
+                ,
                 diagnostics: [
                     DiagnosticSpec(
-                        message: "@APIRequest can only be applied to a struct"
-                        line: 1
-                        column: 1
+                        message: "@APIRequest can only be applied to a struct",
+                        line: 1,
+                        column: 1,
                         severity: .error
                     )
                 ]
+                ,
                 macros: ["APIRequest": APIRequestMacroImpl.self]
             )
         }
@@ -50,25 +53,28 @@
             assertMacroExpansion(
                 """
                 @APIRequest(
-                    baseURL: "https://api.com"
-                    path: "/posts"
-                    method: .get
+                    baseURL: "https://api.com",
+                    path: "/posts",
+                    method: .get,
                 )
                 struct GetPostsRequest {
                 }
                 """
+                ,
                 expandedSource: """
                 struct GetPostsRequest {
                 }
                 """
+                ,
                 diagnostics: [
                     DiagnosticSpec(
-                        message: "Missing required argument: 'response'."
-                        line: 1
-                        column: 1
+                        message: "Missing required argument: 'response'.",
+                        line: 1,
+                        column: 1,
                         severity: .error
                     )
                 ]
+                ,
                 macros: ["APIRequest": APIRequestMacroImpl.self]
             )
         }
@@ -78,25 +84,28 @@
             assertMacroExpansion(
                 """
                 @APIRequest(
-                    response: Post.self
-                    path: "/posts"
-                    method: .get
+                    response: Post.self,
+                    path: "/posts",
+                    method: .get,
                 )
                 struct GetPostsRequest {
                 }
                 """
+                ,
                 expandedSource: """
                 struct GetPostsRequest {
                 }
                 """
+                ,
                 diagnostics: [
                     DiagnosticSpec(
-                        message: "Missing required argument: 'baseURL'."
-                        line: 1
-                        column: 1
+                        message: "Missing required argument: 'baseURL'.",
+                        line: 1,
+                        column: 1,
                         severity: .error
                     )
                 ]
+                ,
                 macros: ["APIRequest": APIRequestMacroImpl.self]
             )
         }
@@ -106,25 +115,28 @@
             assertMacroExpansion(
                 """
                 @APIRequest(
-                    response: Post.self
-                    baseURL: "https://api.com"
-                    method: .get
+                    response: Post.self,
+                    baseURL: "https://api.com",
+                    method: .get,
                 )
                 struct GetPostsRequest {
                 }
                 """
+                ,
                 expandedSource: """
                 struct GetPostsRequest {
                 }
                 """
+                ,
                 diagnostics: [
                     DiagnosticSpec(
-                        message: "Missing required argument: 'path'."
-                        line: 1
-                        column: 1
+                        message: "Missing required argument: 'path'.",
+                        line: 1,
+                        column: 1,
                         severity: .error
                     )
                 ]
+                ,
                 macros: ["APIRequest": APIRequestMacroImpl.self]
             )
         }
@@ -134,25 +146,28 @@
             assertMacroExpansion(
                 """
                 @APIRequest(
-                    response: Post.self
-                    baseURL: "https://api.com"
-                    path: "/posts"
+                    response: Post.self,
+                    baseURL: "https://api.com",
+                    path: "/posts",
                 )
                 struct GetPostsRequest {
                 }
                 """
+                ,
                 expandedSource: """
                 struct GetPostsRequest {
                 }
                 """
+                ,
                 diagnostics: [
                     DiagnosticSpec(
-                        message: "Missing required argument: 'method'."
-                        line: 1
-                        column: 1
+                        message: "Missing required argument: 'method'.",
+                        line: 1,
+                        column: 1,
                         severity: .error
                     )
                 ]
+                ,
                 macros: ["APIRequest": APIRequestMacroImpl.self]
             )
         }
@@ -162,15 +177,16 @@
             assertMacroExpansion(
                 """
                 @APIRequest(
-                    response: Post.self
-                    baseURL: "https://api.com"
-                    path: "/posts"
-                    method: .get
+                    response: Post.self,
+                    baseURL: "https://api.com",
+                    path: "/posts",
+                    method: .get,
                 )
                 struct GetPostsRequest {
                     @PathParameter var id: Int
                 }
                 """
+                ,
                 expandedSource: """
                 struct GetPostsRequest {
                     @PathParameter var id: Int
@@ -181,21 +197,21 @@
                         "https://api.com"
                     }
 
-                    public var method: HTTPMethod {
+                    public var method: HTTPMethod {,
                         .get
                     }
 
-                    public var path: String {
+                    public var path: String {,
                         "/posts"
                     }
 
                     public var metadata: EndpointMetadata {
                         EndpointMetadata(
-                            title: ""
-                            description: ""
-                            method: "GET"
-                            path: "/posts"
-                            tags: []
+                            title: "",
+                            description: "",
+                            method: "GET",
+                            path: "/posts",
+                            tags: [],
                             parameters: [
                                 .path(name: "id", type: "Int", required: true)
                             ]
@@ -206,14 +222,16 @@
                 extension GetPostsRequest: APIRequest {
                 }
                 """
+                ,
                 diagnostics: [
                     DiagnosticSpec(
-                        message: "Consider using '@PathParameter' for 'id': 경로의 플레이스홀더[]와 프로퍼티 이름이 일치하지 않습니다"
-                        line: 8
-                        column: 5
+                        message: "Consider using '@PathParameter' for 'id': 경로의 플레이스홀더[]와 프로퍼티 이름이 일치하지 않습니다",
+                        line: 8,
+                        column: 5,
                         severity: .warning
                     )
                 ]
+                ,
                 macros: ["APIRequest": APIRequestMacroImpl.self]
             )
         }
@@ -223,15 +241,16 @@
             assertMacroExpansion(
                 """
                 @APIRequest(
-                    response: Post.self
-                    baseURL: "https://api.com"
-                    path: "/posts/{postId}"
-                    method: .get
+                    response: Post.self,
+                    baseURL: "https://api.com",
+                    path: "/posts/{postId}",
+                    method: .get,
                 )
                 struct GetPostRequest {
                     @PathParameter var PostId: Int
                 }
                 """
+                ,
                 expandedSource: """
                 struct GetPostRequest {
                     @PathParameter var PostId: Int
@@ -242,21 +261,21 @@
                         "https://api.com"
                     }
 
-                    public var method: HTTPMethod {
+                    public var method: HTTPMethod {,
                         .get
                     }
 
-                    public var path: String {
+                    public var path: String {,
                         "/posts/\\(PostId)"
                     }
 
                     public var metadata: EndpointMetadata {
                         EndpointMetadata(
-                            title: ""
-                            description: ""
-                            method: "GET"
-                            path: "/posts/{postId}"
-                            tags: []
+                            title: "",
+                            description: "",
+                            method: "GET",
+                            path: "/posts/{postId}",
+                            tags: [],
                             parameters: [
                                 .path(name: "PostId", type: "Int", required: true)
                             ]
@@ -267,14 +286,16 @@
                 extension GetPostRequest: APIRequest {
                 }
                 """
+                ,
                 diagnostics: [
                     DiagnosticSpec(
-                        message: "Consider using '@PathParameter(key: \"postId\")' for 'PostId': 경로에 {postId}가 있습니다. @PathParameter(key: \"postId\")를 사용하거나 프로퍼티 이름을 'postId'로 변경하세요"
-                        line: 8
-                        column: 5
+                        message: "Consider using '@PathParameter(key: \"postId\")' for 'PostId': 경로에 {postId}가 있습니다. @PathParameter(key: \"postId\")를 사용하거나 프로퍼티 이름을 'postId'로 변경하세요",
+                        line: 8,
+                        column: 5,
                         severity: .warning
                     )
                 ]
+                ,
                 macros: ["APIRequest": APIRequestMacroImpl.self]
             )
         }
@@ -284,15 +305,16 @@
             assertMacroExpansion(
                 """
                 @APIRequest(
-                    response: Post.self
-                    baseURL: "https://api.com"
-                    path: "/posts"
-                    method: .get
+                    response: Post.self,
+                    baseURL: "https://api.com",
+                    path: "/posts",
+                    method: .get,
                 )
                 struct GetPostsRequest {
                     @RequestBody var filter: FilterBody
                 }
                 """
+                ,
                 expandedSource: """
                 struct GetPostsRequest {
                     @RequestBody var filter: FilterBody
@@ -303,21 +325,21 @@
                         "https://api.com"
                     }
 
-                    public var method: HTTPMethod {
+                    public var method: HTTPMethod {,
                         .get
                     }
 
-                    public var path: String {
+                    public var path: String {,
                         "/posts"
                     }
 
                     public var metadata: EndpointMetadata {
                         EndpointMetadata(
-                            title: ""
-                            description: ""
-                            method: "GET"
-                            path: "/posts"
-                            tags: []
+                            title: "",
+                            description: "",
+                            method: "GET",
+                            path: "/posts",
+                            tags: [],
                             parameters: [
                                 .body(type: "FilterBody")
                             ]
@@ -328,14 +350,16 @@
                 extension GetPostsRequest: APIRequest {
                 }
                 """
+                ,
                 diagnostics: [
                     DiagnosticSpec(
-                        message: "Consider using '@QueryParameter' for 'filter': GET 메서드에서는 RequestBody를 사용할 수 없습니다"
-                        line: 8
-                        column: 5
+                        message: "Consider using '@QueryParameter' for 'filter': GET 메서드에서는 RequestBody를 사용할 수 없습니다",
+                        line: 8,
+                        column: 5,
                         severity: .warning
                     )
                 ]
+                ,
                 macros: ["APIRequest": APIRequestMacroImpl.self]
             )
         }

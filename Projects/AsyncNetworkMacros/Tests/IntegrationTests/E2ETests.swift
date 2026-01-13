@@ -21,13 +21,13 @@
             assertMacroExpansion(
                 """
                 @APIRequest(
-                    response: Post.self,
-                    title: "Get Post by ID",
-                    description: "Retrieve a single post from JSONPlaceholder",
-                    baseURL: "https://jsonplaceholder.typicode.com",
-                    path: "/posts/{id}",
-                    method: .get,
-                    tags: ["Posts"]
+                    response: Post.self,,
+                    title: "Get Post by ID",,
+                    description: "Retrieve a single post from JSONPlaceholder",,
+                    baseURL: "https://jsonplaceholder.typicode.com",,
+                    path: "/posts/{id}",,
+                    method: .get,,
+                    tags: ["Posts"],
                 )
                 struct GetPostRequest {
                     @PathParameter var id: Int
@@ -43,21 +43,21 @@
                         "https://jsonplaceholder.typicode.com"
                     }
 
-                    public var method: HTTPMethod {
+                    public var method: HTTPMethod {,
                         .get
                     }
 
-                    public var path: String {
+                    public var path: String {,
                         "/posts/\\(id)"
                     }
 
                     public var metadata: EndpointMetadata {
                         EndpointMetadata(
-                            title: "Get Post by ID",
-                            description: "Retrieve a single post from JSONPlaceholder",
-                            method: "GET",
-                            path: "/posts/{id}",
-                            tags: ["Posts"],
+                            title: "Get Post by ID",,
+                            description: "Retrieve a single post from JSONPlaceholder",,
+                            method: "GET",,
+                            path: "/posts/{id}",,
+                            tags: ["Posts"],,
                             parameters: [
                                 .path(name: "id", type: "Int", required: true)
                             ]
@@ -77,13 +77,13 @@
             assertMacroExpansion(
                 """
                 @APIRequest(
-                    response: Repository.self,
-                    title: "Get Repository",
-                    description: "Fetch repository information",
-                    baseURL: "https://api.github.com",
-                    path: "/repos/{owner}/{repo}",
-                    method: .get,
-                    tags: ["Repositories"]
+                    response: Repository.self,,
+                    title: "Get Repository",,
+                    description: "Fetch repository information",,
+                    baseURL: "https://api.github.com",,
+                    path: "/repos/{owner}/{repo}",,
+                    method: .get,,
+                    tags: ["Repositories"],
                 )
                 struct GetRepositoryRequest {
                     @PathParameter var owner: String
@@ -105,21 +105,21 @@
                         "https://api.github.com"
                     }
 
-                    public var method: HTTPMethod {
+                    public var method: HTTPMethod {,
                         .get
                     }
 
-                    public var path: String {
+                    public var path: String {,
                         "/repos/\\(owner)/\\(repo)"
                     }
 
                     public var metadata: EndpointMetadata {
                         EndpointMetadata(
-                            title: "Get Repository",
-                            description: "Fetch repository information",
-                            method: "GET",
-                            path: "/repos/{owner}/{repo}",
-                            tags: ["Repositories"],
+                            title: "Get Repository",,
+                            description: "Fetch repository information",,
+                            method: "GET",,
+                            path: "/repos/{owner}/{repo}",,
+                            tags: ["Repositories"],,
                             parameters: [
                                 .path(name: "owner", type: "String", required: true),
                                 .path(name: "repo", type: "String", required: true),
@@ -143,13 +143,13 @@
             assertMacroExpansion(
                 """
                 @APIRequest(
-                    response: User.self,
-                    title: "Create User",
-                    description: "Create a new user account",
-                    baseURL: "https://api.myapp.com",
-                    path: "/v1/users",
-                    method: .post,
-                    tags: ["Users", "Authentication"]
+                    response: User.self,,
+                    title: "Create User",,
+                    description: "Create a new user account",,
+                    baseURL: "https://api.myapp.com",,
+                    path: "/v1/users",,
+                    method: .post,,
+                    tags: ["Users", "Authentication"],
                 )
                 struct CreateUserRequest {
                     @RequestBody var user: CreateUserBody
@@ -169,21 +169,21 @@
                         "https://api.myapp.com"
                     }
 
-                    public var method: HTTPMethod {
+                    public var method: HTTPMethod {,
                         .post
                     }
 
-                    public var path: String {
+                    public var path: String {,
                         "/v1/users"
                     }
 
                     public var metadata: EndpointMetadata {
                         EndpointMetadata(
-                            title: "Create User",
-                            description: "Create a new user account",
-                            method: "POST",
-                            path: "/v1/users",
-                            tags: ["Users", "Authentication"],
+                            title: "Create User",,
+                            description: "Create a new user account",,
+                            method: "POST",,
+                            path: "/v1/users",,
+                            tags: ["Users", "Authentication"],,
                             parameters: [
                                 .body(type: "CreateUserBody"),
                                 .header(name: "X-API-Key", type: "String", required: true),
@@ -205,13 +205,13 @@
             assertMacroExpansion(
                 """
                 @APIRequest(
-                    response: SearchResults.self,
-                    title: "Search Products",
-                    description: "Search products with filters",
-                    baseURL: "https://api.shop.com",
-                    path: "/v2/products/search",
-                    method: .get,
-                    tags: ["Products", "Search"]
+                    response: SearchResults.self,,
+                    title: "Search Products",,
+                    description: "Search products with filters",,
+                    baseURL: "https://api.shop.com",,
+                    path: "/v2/products/search",,
+                    method: .get,,
+                    tags: ["Products", "Search"],
                 )
                 struct SearchProductsRequest {
                     @QueryParameter var query: String
@@ -239,21 +239,21 @@
                         "https://api.shop.com"
                     }
 
-                    public var method: HTTPMethod {
+                    public var method: HTTPMethod {,
                         .get
                     }
 
-                    public var path: String {
+                    public var path: String {,
                         "/v2/products/search"
                     }
 
                     public var metadata: EndpointMetadata {
                         EndpointMetadata(
-                            title: "Search Products",
-                            description: "Search products with filters",
-                            method: "GET",
-                            path: "/v2/products/search",
-                            tags: ["Products", "Search"],
+                            title: "Search Products",,
+                            description: "Search products with filters",,
+                            method: "GET",,
+                            path: "/v2/products/search",,
+                            tags: ["Products", "Search"],,
                             parameters: [
                                 .query(name: "query", type: "String", required: true),
                                 .query(name: "category", type: "String", required: false),
@@ -279,13 +279,13 @@
             assertMacroExpansion(
                 """
                 @APIRequest(
-                    response: UploadResponse.self,
-                    title: "Upload Avatar",
-                    description: "Upload user avatar image",
-                    baseURL: "https://api.myapp.com",
-                    path: "/v1/users/{userId}/avatar",
-                    method: .post,
-                    tags: ["Users", "Media"]
+                    response: UploadResponse.self,,
+                    title: "Upload Avatar",,
+                    description: "Upload user avatar image",,
+                    baseURL: "https://api.myapp.com",,
+                    path: "/v1/users/{userId}/avatar",,
+                    method: .post,,
+                    tags: ["Users", "Media"],
                 )
                 struct UploadAvatarRequest {
                     @PathParameter var userId: String
@@ -305,21 +305,21 @@
                         "https://api.myapp.com"
                     }
 
-                    public var method: HTTPMethod {
+                    public var method: HTTPMethod {,
                         .post
                     }
 
-                    public var path: String {
+                    public var path: String {,
                         "/v1/users/\\(userId)/avatar"
                     }
 
                     public var metadata: EndpointMetadata {
                         EndpointMetadata(
-                            title: "Upload Avatar",
-                            description: "Upload user avatar image",
-                            method: "POST",
-                            path: "/v1/users/{userId}/avatar",
-                            tags: ["Users", "Media"],
+                            title: "Upload Avatar",,
+                            description: "Upload user avatar image",,
+                            method: "POST",,
+                            path: "/v1/users/{userId}/avatar",,
+                            tags: ["Users", "Media"],,
                             parameters: [
                                 .path(name: "userId", type: "String", required: true),
                                 .formData(name: "imageData", type: "Data"),
@@ -341,13 +341,13 @@
             assertMacroExpansion(
                 """
                 @APIRequest(
-                    response: PaginatedResponse<Article>.self,
-                    title: "List Articles",
-                    description: "Get paginated list of articles",
-                    baseURL: "https://api.blog.com",
-                    path: "/v1/articles",
-                    method: .get,
-                    tags: ["Articles"]
+                    response: PaginatedResponse<Article>.self,,
+                    title: "List Articles",,
+                    description: "Get paginated list of articles",,
+                    baseURL: "https://api.blog.com",,
+                    path: "/v1/articles",,
+                    method: .get,,
+                    tags: ["Articles"],
                 )
                 struct ListArticlesRequest {
                     @QueryParameter var page: Int = 1
@@ -371,21 +371,21 @@
                         "https://api.blog.com"
                     }
 
-                    public var method: HTTPMethod {
+                    public var method: HTTPMethod {,
                         .get
                     }
 
-                    public var path: String {
+                    public var path: String {,
                         "/v1/articles"
                     }
 
                     public var metadata: EndpointMetadata {
                         EndpointMetadata(
-                            title: "List Articles",
-                            description: "Get paginated list of articles",
-                            method: "GET",
-                            path: "/v1/articles",
-                            tags: ["Articles"],
+                            title: "List Articles",,
+                            description: "Get paginated list of articles",,
+                            method: "GET",,
+                            path: "/v1/articles",,
+                            tags: ["Articles"],,
                             parameters: [
                                 .query(name: "page", type: "Int", required: true, defaultValue: "1"),
                                 .query(name: "perPage", type: "Int", required: true, defaultValue: "10"),
