@@ -13,7 +13,7 @@ updates:
     commit-message:
       prefix: "chore(deps)"
 
-  # NetworkKit Swift 패키지 업데이트
+  # AsyncNetwork Swift 패키지 업데이트
   - package-ecosystem: "swift"
     directory: "/"
     schedule:
@@ -22,20 +22,6 @@ updates:
     labels:
       - "dependencies"
       - "swift"
-    commit-message:
-      prefix: "chore(deps)"
-    open-pull-requests-limit: 5
-
-  # AsyncNetworkSampleApp Tuist 프로젝트 업데이트
-  - package-ecosystem: "swift"
-    directory: "/Projects/AsyncNetworkSampleApp"
-    schedule:
-      interval: "weekly"
-      day: "monday"
-    labels:
-      - "dependencies"
-      - "swift"
-      - "sample-app"
     commit-message:
       prefix: "chore(deps)"
     open-pull-requests-limit: 5
