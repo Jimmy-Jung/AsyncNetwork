@@ -103,24 +103,29 @@ struct NetworkServiceTests {
         let expectedUser = TestUser(id: 1, name: "Retry User")
         let responseData = try JSONEncoder().encode(expectedUser)
 
-        // ✅ Sendable한 상태 관리
         actor RetryState {
             private(set) var attemptCount = 0
             func incrementAndGet() -> Int {
                 attemptCount += 1
                 return attemptCount
             }
+
+            func getCount() -> Int {
+                return attemptCount
+            }
         }
         let state = RetryState()
 
         await MockURLProtocol.register(path: path) { [state] request in
+            let currentAttemptBox = Box(value: 0)
+
             let semaphore = DispatchSemaphore(value: 0)
-            var currentAttempt = 0
             Task {
-                currentAttempt = await state.incrementAndGet()
+                currentAttemptBox.value = await state.incrementAndGet()
                 semaphore.signal()
             }
             semaphore.wait()
+            let currentAttempt = currentAttemptBox.value
 
             if currentAttempt == 1 {
                 throw URLError(.timedOut)

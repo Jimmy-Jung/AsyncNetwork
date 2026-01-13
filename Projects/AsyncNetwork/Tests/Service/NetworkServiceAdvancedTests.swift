@@ -186,13 +186,15 @@ struct NetworkServiceAdvancedTests {
         let responseData = try JSONEncoder().encode(expectedUser)
 
         await MockURLProtocol.register(path: path) { [state] request in
+            let currentAttemptBox = Box(value: 0)
+
             let semaphore = DispatchSemaphore(value: 0)
-            var currentAttempt = 0
             Task {
-                currentAttempt = await state.incrementAndGet()
+                currentAttemptBox.value = await state.incrementAndGet()
                 semaphore.signal()
             }
             semaphore.wait()
+            let currentAttempt = currentAttemptBox.value
 
             // 첫 번째: 재시도 가능한 에러
             if currentAttempt == 1 {
@@ -267,13 +269,15 @@ struct NetworkServiceAdvancedTests {
         let responseData = try JSONEncoder().encode(expectedUser)
 
         await MockURLProtocol.register(path: path) { [state] request in
+            let currentAttemptBox = Box(value: 0)
+
             let semaphore = DispatchSemaphore(value: 0)
-            var currentAttempt = 0
             Task {
-                currentAttempt = await state.incrementAndGet()
+                currentAttemptBox.value = await state.incrementAndGet()
                 semaphore.signal()
             }
             semaphore.wait()
+            let currentAttempt = currentAttemptBox.value
 
             // 처음 2번은 실패, 3번째(마지막)에 성공
             if currentAttempt < 3 {
@@ -543,7 +547,7 @@ struct NetworkServiceAdvancedTests {
 
         let responseHeaders = [
             "Content-Type": "application/octet-stream",
-            "X-Custom": "value",
+            "X-Custom": "value"
         ]
         let responseData = Data("raw".utf8)
 
