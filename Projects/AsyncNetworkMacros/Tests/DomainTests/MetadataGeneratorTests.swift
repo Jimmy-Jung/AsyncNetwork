@@ -16,17 +16,17 @@
         @Test("기본 메타데이터 생성")
         func generateBasicMetadata() {
             let args = MacroArguments(
-                responseType: "Post"
-                title: "Get Posts"
-                description: "Retrieve all posts"
-                baseURL: "https://api.com"
-                path: "/posts"
-                method: "get"
+                responseType: "Post",
+                title: "Get Posts",
+                description: "Retrieve all posts",
+                baseURL: "https://api.com",
+                path: "/posts",
+                method: "get",
                 tags: ["Posts", "Read"]
             )
 
             let generator = MetadataGenerator(
-                args: args
+                args: args,
                 properties: []
             )
 
@@ -46,23 +46,23 @@
         @Test("PathParameter 포함 메타데이터")
         func generateMetadataWithPathParameter() {
             let args = MacroArguments(
-                responseType: "Post"
-                baseURL: "https://api.com"
-                path: "/posts/{id}"
+                responseType: "Post",
+                baseURL: "https://api.com",
+                path: "/posts/{id}",
                 method: "get"
             )
 
             let properties = [
                 PropertyInfo(
-                    name: "id"
-                    type: "Int"
-                    wrapperType: "PathParameter"
+                    name: "id",
+                    type: "Int",
+                    wrapperType: "PathParameter",
                     isRequired: true
                 )
             ]
 
             let generator = MetadataGenerator(
-                args: args
+                args: args,
                 properties: properties
             )
 
@@ -75,29 +75,29 @@
         @Test("QueryParameter 포함 메타데이터")
         func generateMetadataWithQueryParameter() {
             let args = MacroArguments(
-                responseType: "[Post]"
-                baseURL: "https://api.com"
-                path: "/posts"
+                responseType: "[Post]",
+                baseURL: "https://api.com",
+                path: "/posts",
                 method: "get"
             )
 
             let properties = [
                 PropertyInfo(
-                    name: "page"
-                    type: "Int?"
-                    wrapperType: "QueryParameter"
+                    name: "page",
+                    type: "Int?",
+                    wrapperType: "QueryParameter",
                     isRequired: false
-                )
+                ),
                 PropertyInfo(
-                    name: "limit"
-                    type: "Int?"
-                    wrapperType: "QueryParameter"
+                    name: "limit",
+                    type: "Int?",
+                    wrapperType: "QueryParameter",
                     isRequired: false
                 )
             ]
 
             let generator = MetadataGenerator(
-                args: args
+                args: args,
                 properties: properties
             )
 
@@ -111,23 +111,23 @@
         @Test("RequestBody 포함 메타데이터")
         func generateMetadataWithRequestBody() {
             let args = MacroArguments(
-                responseType: "Post"
-                baseURL: "https://api.com"
-                path: "/posts"
+                responseType: "Post",
+                baseURL: "https://api.com",
+                path: "/posts",
                 method: "post"
             )
 
             let properties = [
                 PropertyInfo(
-                    name: "body"
-                    type: "PostBody"
-                    wrapperType: "RequestBody"
+                    name: "body",
+                    type: "PostBody",
+                    wrapperType: "RequestBody",
                     isRequired: true
                 )
             ]
 
             let generator = MetadataGenerator(
-                args: args
+                args: args,
                 properties: properties
             )
 
@@ -140,24 +140,24 @@
         @Test("HeaderField 포함 메타데이터")
         func generateMetadataWithHeaderField() {
             let args = MacroArguments(
-                responseType: "Post"
-                baseURL: "https://api.com"
-                path: "/posts"
+                responseType: "Post",
+                baseURL: "https://api.com",
+                path: "/posts",
                 method: "get"
             )
 
             let properties = [
                 PropertyInfo(
-                    name: "authorization"
-                    type: "String"
-                    wrapperType: "HeaderField"
-                    isRequired: true
+                    name: "authorization",
+                    type: "String",
+                    wrapperType: "HeaderField",
+                    isRequired: true,
                     headerKey: "Authorization"
                 )
             ]
 
             let generator = MetadataGenerator(
-                args: args
+                args: args,
                 properties: properties
             )
 
@@ -170,42 +170,42 @@
         @Test("모든 파라미터 타입 포함 메타데이터")
         func generateMetadataWithAllParameterTypes() {
             let args = MacroArguments(
-                responseType: "Post"
-                baseURL: "https://api.com"
-                path: "/posts/{id}"
+                responseType: "Post",
+                baseURL: "https://api.com",
+                path: "/posts/{id}",
                 method: "put"
             )
 
             let properties = [
                 PropertyInfo(
-                    name: "id"
-                    type: "Int"
-                    wrapperType: "PathParameter"
+                    name: "id",
+                    type: "Int",
+                    wrapperType: "PathParameter",
                     isRequired: true
-                )
+                ),
                 PropertyInfo(
-                    name: "page"
-                    type: "Int?"
-                    wrapperType: "QueryParameter"
+                    name: "page",
+                    type: "Int?",
+                    wrapperType: "QueryParameter",
                     isRequired: false
-                )
+                ),
                 PropertyInfo(
-                    name: "authorization"
-                    type: "String"
-                    wrapperType: "HeaderField"
-                    isRequired: true
+                    name: "authorization",
+                    type: "String",
+                    wrapperType: "HeaderField",
+                    isRequired: true,
                     headerKey: "Authorization"
-                )
+                ),
                 PropertyInfo(
-                    name: "body"
-                    type: "PostBody"
-                    wrapperType: "RequestBody"
+                    name: "body",
+                    type: "PostBody",
+                    wrapperType: "RequestBody",
                     isRequired: true
                 )
             ]
 
             let generator = MetadataGenerator(
-                args: args
+                args: args,
                 properties: properties
             )
 
