@@ -63,7 +63,7 @@ public final class NetworkService: Sendable {
         networkMonitor?.isConnected ?? true
     }
 
-    public var connectionType: NetworkMonitor.ConnectionType {
+    public var connectionType: ConnectionType {
         networkMonitor?.connectionType ?? .unknown
     }
 
