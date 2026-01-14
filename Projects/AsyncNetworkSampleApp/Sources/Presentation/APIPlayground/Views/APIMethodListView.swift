@@ -15,26 +15,36 @@ struct APIMethodListView: View {
 
     var body: some View {
         List(selection: $selectedRequest) {
-            Section {
-                ForEach(filteredRequests) { request in
-                    NavigationLink(value: request) {
-                        HStack {
-                            HTTPMethodBadge(method: request.method.uppercased())
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text(request.path)
-                                    .font(.system(.body, design: .monospaced))
-                                    .fontWeight(.medium)
-                                if !request.title.isEmpty {
-                                    Text(request.title)
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
+            ForEach(groupedRequests.keys.sorted(), id: \.self) { tag in
+                Section {
+                    ForEach(groupedRequests[tag] ?? []) { request in
+                        NavigationLink(value: request) {
+                            HStack {
+                                HTTPMethodBadge(method: request.method.uppercased())
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text(request.path)
+                                        .font(.system(.body, design: .monospaced))
+                                        .fontWeight(.medium)
+                                    if !request.title.isEmpty {
+                                        Text(request.title)
+                                            .font(.caption)
+                                            .foregroundStyle(.secondary)
+                                    }
                                 }
                             }
                         }
                     }
+                } header: {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Label(tag, systemImage: "folder")
+                        if let firstRequest = groupedRequests[tag]?.first {
+                            Text(firstRequest.baseURLString)
+                                .font(.caption2)
+                                .foregroundStyle(.secondary)
+                                .textSelection(.enabled)
+                        }
+                    }
                 }
-            } header: {
-                Label("API Collection", systemImage: "folder")
             }
         }
         .searchable(text: $searchText, prompt: "Search APIs...")
@@ -47,8 +57,24 @@ struct APIMethodListView: View {
         }
         return APIRequestCatalog.all.filter {
             $0.title.localizedCaseInsensitiveContains(searchText) ||
-                $0.path.localizedCaseInsensitiveContains(searchText)
+                $0.path.localizedCaseInsensitiveContains(searchText) ||
+                $0.tags.contains { $0.localizedCaseInsensitiveContains(searchText) }
         }
+    }
+
+    private var groupedRequests: [String: [EndpointMetadata]] {
+        var grouped: [String: [EndpointMetadata]] = [:]
+        
+        for request in filteredRequests {
+            for tag in request.tags {
+                if grouped[tag] == nil {
+                    grouped[tag] = []
+                }
+                grouped[tag]?.append(request)
+            }
+        }
+        
+        return grouped
     }
 }
 
@@ -57,3 +83,4 @@ struct APIMethodListView: View {
         APIMethodListView(selectedRequest: .constant(nil as EndpointMetadata?))
     }
 }
+

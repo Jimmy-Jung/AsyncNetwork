@@ -311,7 +311,77 @@ AsyncNetwork 1.0.0 정식 출시! 순수 Foundation 기반의 현대적인 Swift
 - [ ] Multipart/Form-Data 업로드
 - [ ] 다운로드 진행률 추적
 - [ ] HTTP/2 Server Push 지원
-- [ ] 네트워크 모니터링 (NWPathMonitor 통합)
+
+---
+
+## [1.2.1] - 2026-01-14
+
+### ✨ Added
+
+#### Network Monitoring
+- **ConnectionType 모델 추가**
+  - 네트워크 연결 타입을 표현하는 독립적인 모델
+  - Wi-Fi, Cellular, Ethernet, Other 타입 정의
+  - NetworkMonitor에서 분리하여 재사용성 향상
+  - Sendable, Equatable 프로토콜 준수
+
+- **NetworkMonitoringService 추가**
+  - UI 레이어에서 네트워크 상태를 관찰할 수 있는 서비스
+  - ObservableObject 기반으로 SwiftUI에서 관찰 가능
+  - NetworkMonitor의 상태를 UI로 브릿지하는 어댑터 역할
+  - AppDependency에 싱글톤으로 등록
+  - MockNetworkMonitoringService 테스트 더블 추가
+
+#### Sample App Features
+- **API Playground 네트워크 상태 표시**
+  - 실시간 네트워크 상태 배너 추가
+  - APIMethodListView에서 baseURL 표시 개선
+  - APIRequestDetailView에 네트워크 상태 정보 추가
+  - APIRequestTesterView에 연결 상태 배지 및 알림
+  - 네트워크 미연결 시 사용자 안내 메시지
+
+### 🔧 Changed
+
+#### NetworkMonitor Improvements
+- **NetworkMonitoring 프로토콜 개선**
+  - onStatusChange 콜백 메서드 추가
+  - ConnectionType을 독립 모델로 분리
+  - Combine 의존성 제거하여 순수 Foundation 사용
+  - 프로토콜 사용 예시 및 설계 철학 문서화
+  - summary 기본 구현 추가
+  - NetworkService에서 NetworkMonitor 사용 방식 개선
+
+### 🧪 Tests
+
+- **NetworkMonitor 통합 테스트 추가**
+  - 네트워크 연결 상태 감지 테스트
+  - 상태 변경 콜백 동작 검증
+  - NetworkService와의 통합 시나리오 테스트
+  - 비용/제한 연결 감지 테스트
+
+### 🐛 Fixed
+
+#### CI/CD
+- **PR 단계에서만 테스트 실행**
+  - merge 후 중복 테스트 실행 방지
+  - CI 워크플로우 효율성 개선
+
+- **Dependabot 설정 수정**
+  - Tuist 프로젝트에서 Dependabot 제거
+  - Package.swift가 없는 프로젝트 제외
+
+### 📝 Documentation
+
+- NetworkMonitoring 프로토콜 문서화 개선
+- NetworkMonitoringService 사용 가이드 추가
+- API Playground 기능 설명 추가
+
+### 🎯 Impact
+
+- 네트워크 상태 모니터링 기능 강화
+- UI 레이어에서 네트워크 상태 관찰 용이성 향상
+- Sample App 사용자 경험 개선
+- CI/CD 효율성 향상
 
 ---
 
@@ -394,6 +464,7 @@ AsyncNetwork 1.0.0 정식 출시! 순수 Foundation 기반의 현대적인 Swift
 
 ---
 
+[1.2.1]: https://github.com/Jimmy-Jung/AsyncNetwork/releases/tag/1.2.1
 [1.2.0]: https://github.com/Jimmy-Jung/AsyncNetwork/releases/tag/1.2.0
 [1.1.0]: https://github.com/Jimmy-Jung/AsyncNetwork/releases/tag/1.1.0
 [1.0.5]: https://github.com/Jimmy-Jung/AsyncNetwork/releases/tag/1.0.5

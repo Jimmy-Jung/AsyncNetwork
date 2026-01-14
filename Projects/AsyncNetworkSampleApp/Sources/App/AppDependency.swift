@@ -22,6 +22,16 @@ final class AppDependency: ObservableObject {
 
     // MARK: - Network
 
+    /// NetworkMonitor (Infrastructure Layer)
+    /// - 순수 네트워크 상태 감지
+    /// - NetworkService에서 네트워크 연결 상태 확인 용도
+    let networkMonitor: NetworkMonitor
+    
+    /// NetworkMonitoringService (Presentation/Services)
+    /// - UI 레이어에서 네트워크 상태 관찰 용도
+    /// - ObservableObject로 SwiftUI와 통합
+    let networkMonitoringService: DefaultNetworkMonitoringService
+    
     /// 일반 API 요청용 NetworkService (ETag 기반 캐시)
     /// - ETag 조건부 요청으로 서버 데이터 변경 감지
     /// - 데이터 변경 없으면 304 Not Modified 응답 (네트워크 절약)
@@ -57,6 +67,12 @@ final class AppDependency: ObservableObject {
     // MARK: - Initialization
 
     private init() {
+        // NetworkMonitor 초기화 (Infrastructure Layer)
+        networkMonitor = NetworkMonitor.shared
+        
+        // NetworkMonitoringService 초기화 (Presentation/Services)
+        networkMonitoringService = DefaultNetworkMonitoringService(monitor: networkMonitor)
+        
         // Interceptor 초기화
         loggingInterceptor = DynamicLoggingInterceptor(initialLevel: .verbose)
         etagInterceptor = ETagInterceptor()

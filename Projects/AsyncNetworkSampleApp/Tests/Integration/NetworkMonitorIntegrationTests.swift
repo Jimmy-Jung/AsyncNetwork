@@ -170,17 +170,3 @@ struct NetworkMonitorIntegrationTests {
         #expect(store.state.isConstrained == false)
     }
 }
-
-// MARK: - Mock NetworkMonitor
-
-/// NetworkMonitor의 Mock 구현
-final class MockNetworkMonitor: NetworkMonitoring, @unchecked Sendable {
-    var isConnected: Bool = true
-    var connectionType: NetworkMonitor.ConnectionType = .wifi
-    var currentPath: NWPath?
-    var isExpensive: Bool = false
-    var isConstrained: Bool = false
-
-    func startMonitoring() {}
-    func stopMonitoring() {}
-}

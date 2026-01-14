@@ -5,7 +5,6 @@
 //  Created by jimmy on 2026/01/03.
 //
 
-import Combine
 import Foundation
 import Network
 
@@ -13,7 +12,7 @@ import Network
 
 /// 네트워크 상태
 public enum NetworkStatus: Equatable, Sendable {
-    case connected(NetworkMonitor.ConnectionType)
+    case connected(ConnectionType)
     case disconnected
 
     public var displayName: String {
@@ -42,55 +41,134 @@ public enum NetworkStatus: Equatable, Sendable {
 
 // MARK: - NetworkMonitoring Protocol
 
+/// 네트워크 모니터링을 위한 프로토콜
+///
+/// ## 설계 철학
+/// - **최소한의 인터페이스**: 동기 상태 getter만 정의
+/// - **순수 인프라 레벨**: NetworkService에서 네트워크 연결 상태 확인 용도
+/// - **관찰 기능 분리**: UI 레이어에서 사용하려면 NetworkMonitoringUseCase 사용
+///
+/// ## 사용 예시
+///
+/// ### NetworkService에서 사용
+/// ```swift
+/// let service = NetworkService(
+///     networkMonitor: NetworkMonitor.shared,
+///     checkNetworkBeforeRequest: true
+/// )
+/// ```
+///
+/// ### UI 레이어에서 상태 관찰 (UseCase 사용)
+/// ```swift
+/// let useCase = DefaultNetworkMonitoringUseCase(monitor: NetworkMonitor.shared)
+/// // useCase는 ObservableObject이므로 SwiftUI에서 @ObservedObject로 사용 가능
+/// ```
 public protocol NetworkMonitoring: AnyObject, Sendable {
+    // MARK: - Synchronous State (Required)
+    
+    /// 현재 네트워크 연결 여부
     var isConnected: Bool { get }
-    var connectionType: NetworkMonitor.ConnectionType { get }
-    var currentPath: NWPath? { get }
+    
+    /// 현재 연결 타입 (Wi-Fi, Cellular 등)
+    var connectionType: ConnectionType { get }
+    
+    /// 현재 네트워크 상태
+    var status: NetworkStatus { get }
+    
+    /// 비용이 많이 드는 연결인지 여부 (셀룰러 등)
     var isExpensive: Bool { get }
+    
+    /// 제한된 연결인지 여부 (Low Data Mode 등)
     var isConstrained: Bool { get }
-
+    
+    // MARK: - Lifecycle Methods
+    
+    /// 모니터링 시작
     func startMonitoring()
+    
+    /// 모니터링 중지
     func stopMonitoring()
+    
+    // MARK: - Callback Registration
+    
+    /// 네트워크 상태 변경 콜백 등록
+    /// - Parameter callback: 상태 변경 시 호출될 콜백
+    func onStatusChange(_ callback: @escaping @Sendable (NetworkStatus) -> Void)
+}
+
+// MARK: - NetworkMonitoring + Default Implementation
+
+public extension NetworkMonitoring {
+    /// 네트워크 상태 요약 정보
+    var summary: String {
+        """
+        Connection: \(isConnected ? "✅" : "❌")
+        Type: \(connectionType.description)
+        Expensive: \(isExpensive ? "⚠️" : "✅")
+        Constrained: \(isConstrained ? "⚠️" : "✅")
+        """
+    }
 }
 
 /// 네트워크 연결 상태를 실시간으로 모니터링합니다.
-public final class NetworkMonitor: ObservableObject, NetworkMonitoring, @unchecked Sendable {
+///
+/// ## 특징
+/// - `NWPathMonitor` 기반 Apple 표준 구현
+/// - 순수 인프라 레벨: 네트워크 상태 감지만 담당
+/// - 콜백 기반 상태 알림
+///
+/// ## 사용 예시
+///
+/// ### NetworkService에서 직접 사용
+/// ```swift
+/// let monitor = NetworkMonitor.shared
+/// if !monitor.isConnected {
+///     throw NetworkError.offline
+/// }
+/// ```
+///
+/// ### UI 레이어에서 UseCase를 통한 관찰
+/// ```swift
+/// let useCase = DefaultNetworkMonitoringUseCase(monitor: NetworkMonitor.shared)
+/// // useCase는 ObservableObject이므로 SwiftUI에서 @ObservedObject로 사용
+/// ```
+public final class NetworkMonitor: NetworkMonitoring, @unchecked Sendable {
     public static let shared = NetworkMonitor()
-
-    public enum ConnectionType: Sendable {
-        case wifi
-        case cellular
-        case ethernet
-        case loopback
-        case unknown
-
-        var description: String {
-            switch self {
-            case .wifi: return "Wi-Fi"
-            case .cellular: return "Cellular"
-            case .ethernet: return "Ethernet"
-            case .loopback: return "Loopback"
-            case .unknown: return "Unknown"
-            }
-        }
-    }
 
     private let monitor: NWPathMonitor
     private let queue = DispatchQueue(label: "com.asyncnetwork.networkmonitor")
+    
+    // MARK: - State (Thread-safe via DispatchQueue)
+    
+    private var _isConnected: Bool = true
+    private var _connectionType: ConnectionType = .unknown
+    private var _status: NetworkStatus = .connected(.unknown)
+    private var _currentPath: NWPath?
+    
+    // MARK: - Callbacks
+    
+    private var statusChangeCallbacks: [@Sendable (NetworkStatus) -> Void] = []
 
-    @Published public private(set) var isConnected: Bool = true
-    @Published public private(set) var connectionType: ConnectionType = .unknown
-    @Published public private(set) var currentPath: NWPath?
-
-    /// 네트워크 상태 (구독 가능)
-    @Published public private(set) var status: NetworkStatus = .connected(.unknown)
+    // MARK: - Protocol Implementation (Computed Properties)
+    
+    public var isConnected: Bool {
+        queue.sync { _isConnected }
+    }
+    
+    public var connectionType: ConnectionType {
+        queue.sync { _connectionType }
+    }
+    
+    public var status: NetworkStatus {
+        queue.sync { _status }
+    }
 
     public var isExpensive: Bool {
-        currentPath?.isExpensive ?? false
+        queue.sync { _currentPath?.isExpensive ?? false }
     }
 
     public var isConstrained: Bool {
-        currentPath?.isConstrained ?? false
+        queue.sync { _currentPath?.isConstrained ?? false }
     }
 
     private init() {
@@ -113,33 +191,32 @@ public final class NetworkMonitor: ObservableObject, NetworkMonitoring, @uncheck
     public func stopMonitoring() {
         monitor.cancel()
     }
+    
+    public func onStatusChange(_ callback: @escaping @Sendable (NetworkStatus) -> Void) {
+        queue.async { [weak self] in
+            self?.statusChangeCallbacks.append(callback)
+        }
+    }
 
     private func handlePathUpdate(_ path: NWPath) {
-        DispatchQueue.main.async { [weak self] in
+        queue.async { [weak self] in
             guard let self = self else { return }
 
-            let wasConnected = self.isConnected
             let newIsConnected = path.status == .satisfied
 
-            self.currentPath = path
-            self.isConnected = newIsConnected
-            self.connectionType = self.determineConnectionType(from: path)
+            self._currentPath = path
+            self._isConnected = newIsConnected
+            self._connectionType = self.determineConnectionType(from: path)
 
             // NetworkStatus 업데이트
-            self.status = newIsConnected
-                ? .connected(self.connectionType)
+            self._status = newIsConnected
+                ? .connected(self._connectionType)
                 : .disconnected
-
-            // 네트워크 상태 변경 알림
-            if wasConnected != newIsConnected {
-                NotificationCenter.default.post(
-                    name: .networkStatusChanged,
-                    object: nil,
-                    userInfo: [
-                        "isConnected": newIsConnected,
-                        "connectionType": self.connectionType,
-                    ]
-                )
+            
+            // 콜백 호출
+            let currentStatus = self._status
+            DispatchQueue.main.async {
+                self.statusChangeCallbacks.forEach { $0(currentStatus) }
             }
         }
     }
@@ -156,8 +233,4 @@ public final class NetworkMonitor: ObservableObject, NetworkMonitoring, @uncheck
         }
         return .unknown
     }
-}
-
-public extension Notification.Name {
-    static let networkStatusChanged = Notification.Name("com.asyncnetwork.networkStatusChanged")
 }

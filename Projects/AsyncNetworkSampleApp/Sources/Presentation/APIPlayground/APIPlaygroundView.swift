@@ -10,14 +10,19 @@ import AsyncViewModel
 import SwiftUI
 
 /// API Playground 메인 뷰 (3열 레이아웃, AsyncNetworkDocKit 스타일 적용)
-struct APIPlaygroundView: View {
+struct APIPlaygroundView<Service: NetworkMonitoringService>: View {
     @StateObject private var viewModel: APIPlaygroundViewModel
     @State private var columnVisibility: NavigationSplitViewVisibility = .all
 
     let networkService: NetworkService
+    let networkMonitoring: Service
 
-    init(networkService: NetworkService) {
+    init(
+        networkService: NetworkService,
+        networkMonitoring: Service
+    ) {
         self.networkService = networkService
+        self.networkMonitoring = networkMonitoring
         _viewModel = StateObject(wrappedValue: APIPlaygroundViewModel())
     }
 
@@ -34,7 +39,11 @@ struct APIPlaygroundView: View {
                     }
                 ))
                 .navigationDestination(for: EndpointMetadata.self) { request in
-                    APIRequestDetailView(request: request, networkService: networkService)
+                    APIRequestDetailView(
+                        request: request,
+                        networkService: networkService,
+                        networkMonitoring: networkMonitoring
+                    )
                 }
                 .toolbar {
                     ToolbarItem(placement: .topBarTrailing) {
@@ -50,8 +59,12 @@ struct APIPlaygroundView: View {
         } content: {
             // 2열: API 상세 정보
             if let request = viewModel.state.selectedRequest {
-                APIRequestDetailView(request: request, networkService: networkService)
-                    .navigationSplitViewColumnWidth(min: 300, ideal: 400, max: 600)
+                APIRequestDetailView(
+                    request: request,
+                    networkService: networkService,
+                    networkMonitoring: networkMonitoring
+                )
+                .navigationSplitViewColumnWidth(min: 300, ideal: 400, max: 600)
             } else {
                 ContentUnavailableView(
                     "Select an API",
@@ -62,8 +75,12 @@ struct APIPlaygroundView: View {
         } detail: {
             // 3열: API 테스터
             if let request = viewModel.state.selectedRequest {
-                APIRequestTesterView(request: request, networkService: networkService)
-                    .navigationSplitViewColumnWidth(min: 300, ideal: 450, max: 600)
+                APIRequestTesterView(
+                    request: request,
+                    networkService: networkService,
+                    networkMonitoring: networkMonitoring
+                )
+                .navigationSplitViewColumnWidth(min: 300, ideal: 450, max: 600)
             } else {
                 ContentUnavailableView(
                     "No API Selected",
@@ -85,5 +102,8 @@ struct APIPlaygroundView: View {
 }
 
 #Preview {
-    APIPlaygroundView(networkService: AppDependency.shared.networkService)
+    APIPlaygroundView(
+        networkService: AppDependency.shared.networkService,
+        networkMonitoring: AppDependency.shared.networkMonitoringService
+    )
 }
