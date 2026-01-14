@@ -29,7 +29,10 @@ final class MainTabBarController: UITabBarController {
 
     private func setupViewControllers() {
         // API Playground 탭 (SwiftUI - DocKit 스타일)
-        let apiPlaygroundVC = APIPlaygroundViewController(networkService: appDependency.networkService)
+        let apiPlaygroundVC = APIPlaygroundViewController(
+            networkService: appDependency.networkService,
+            networkMonitoring: appDependency.networkMonitoringService
+        )
         apiPlaygroundVC.title = "API Playground"
         apiPlaygroundVC.tabBarItem = UITabBarItem(
             title: "Playground",
