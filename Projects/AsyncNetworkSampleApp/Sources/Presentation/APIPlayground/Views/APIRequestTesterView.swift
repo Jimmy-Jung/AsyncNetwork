@@ -11,16 +11,22 @@ import AsyncNetwork
 import SwiftUI
 
 /// API Request를 테스트하는 뷰 (AsyncNetworkDocKit 스타일 적용)
-struct APIRequestTesterView: View {
+struct APIRequestTesterView<Service: NetworkMonitoringService>: View {
     let request: EndpointMetadata
     let networkService: NetworkService
+    @ObservedObject var networkMonitoring: Service
 
     @State private var state: APIPlaygroundState
     @State private var requestTask: Task<Void, Never>?
 
-    init(request: EndpointMetadata, networkService: NetworkService) {
+    init(
+        request: EndpointMetadata,
+        networkService: NetworkService,
+        networkMonitoring: Service
+    ) {
         self.request = request
         self.networkService = networkService
+        self.networkMonitoring = networkMonitoring
         let existingState = APIPlaygroundStateStore.shared.getState(for: request.id)
         _state = State(initialValue: existingState)
     }
@@ -28,6 +34,10 @@ struct APIRequestTesterView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
+                // MARK: - Network Status Banner
+                
+                networkStatusBanner
+                
                 headerSection
 
                 Divider()
@@ -94,6 +104,81 @@ struct APIRequestTesterView: View {
         .onDisappear {
             requestTask?.cancel()
             requestTask = nil
+        }
+    }
+    
+    // MARK: - Network Status Banner
+    
+    private var networkStatusBanner: some View {
+        HStack(spacing: 12) {
+            // Status Icon
+            Image(systemName: networkMonitoring.isConnected ? "wifi" : "wifi.slash")
+                .font(.title3)
+                .foregroundStyle(networkMonitoring.isConnected ? .green : .red)
+            
+            // Status Info
+            VStack(alignment: .leading, spacing: 4) {
+                HStack(spacing: 6) {
+                    Text(networkMonitoring.isConnected ? "Connected" : "Offline")
+                        .font(.callout)
+                        .fontWeight(.semibold)
+                        .foregroundStyle(networkMonitoring.isConnected ? .green : .red)
+                    
+                    if networkMonitoring.isConnected {
+                        Text("•")
+                            .foregroundStyle(.secondary)
+                        Text(networkMonitoring.connectionType.description)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                
+                if networkMonitoring.isConnected {
+                    HStack(spacing: 8) {
+                        if networkMonitoring.isExpensive {
+                            Label("Expensive", systemImage: "exclamationmark.triangle.fill")
+                                .font(.caption2)
+                                .foregroundStyle(.orange)
+                        }
+                        
+                        if networkMonitoring.isConstrained {
+                            Label("Constrained", systemImage: "slowmo")
+                                .font(.caption2)
+                                .foregroundStyle(.orange)
+                        }
+                    }
+                }
+            }
+            
+            Spacer()
+            
+            // Connection Type Icon
+            if networkMonitoring.isConnected {
+                connectionTypeIcon
+                    .font(.title2)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .padding(12)
+        .background(networkMonitoring.isConnected ? Color.green.opacity(0.1) : Color.red.opacity(0.1))
+        .cornerRadius(8)
+        .overlay(
+            RoundedRectangle(cornerRadius: 8)
+                .stroke(networkMonitoring.isConnected ? Color.green.opacity(0.3) : Color.red.opacity(0.3), lineWidth: 1)
+        )
+    }
+    
+    @ViewBuilder
+    private var connectionTypeIcon: some View {
+        switch networkMonitoring.connectionType {
+        case .wifi:
+            Image(systemName: "wifi")
+        case .cellular:
+            Image(systemName: "antenna.radiowaves.left.and.right")
+        case .ethernet:
+            Image(systemName: "cable.connector")
+        default:
+            Image(systemName: "network")
         }
     }
 
@@ -1115,7 +1200,8 @@ struct APIRequestTesterView: View {
     NavigationStack {
         APIRequestTesterView(
             request: APIRequestCatalog.all.first!,
-            networkService: AppDependency.shared.networkService
+            networkService: AppDependency.shared.networkService,
+            networkMonitoring: AppDependency.shared.networkMonitoringService
         )
     }
 }

@@ -10,9 +10,12 @@ import SwiftUI
 import UIKit
 
 /// SwiftUI API Playground를 호스팅하는 UIKit ViewController
-final class APIPlaygroundViewController: UIHostingController<APIPlaygroundView> {
-    init(networkService: NetworkService) {
-        super.init(rootView: APIPlaygroundView(networkService: networkService))
+final class APIPlaygroundViewController<Service: NetworkMonitoringService>: UIHostingController<APIPlaygroundView<Service>> {
+    init(networkService: NetworkService, networkMonitoring: Service) {
+        super.init(rootView: APIPlaygroundView(
+            networkService: networkService,
+            networkMonitoring: networkMonitoring
+        ))
         title = "API Playground"
     }
 

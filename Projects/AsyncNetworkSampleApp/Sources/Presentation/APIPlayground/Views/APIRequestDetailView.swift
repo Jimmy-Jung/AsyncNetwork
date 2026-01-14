@@ -9,13 +9,19 @@ import AsyncNetwork
 import SwiftUI
 
 /// API Request 상세 정보를 표시하는 뷰 (AsyncNetworkDocKit 스타일 적용)
-struct APIRequestDetailView: View {
+struct APIRequestDetailView<Service: NetworkMonitoringService>: View {
     let request: EndpointMetadata
     let networkService: NetworkService
+    let networkMonitoring: Service
 
-    init(request: EndpointMetadata, networkService: NetworkService) {
+    init(
+        request: EndpointMetadata,
+        networkService: NetworkService,
+        networkMonitoring: Service
+    ) {
         self.request = request
         self.networkService = networkService
+        self.networkMonitoring = networkMonitoring
     }
 
     var body: some View {
@@ -64,7 +70,11 @@ struct APIRequestDetailView: View {
         .navigationTitle("API Specification")
         .navigationBarTitleDisplayMode(.inline)
         .navigationDestination(for: EndpointMetadata.self) { endpoint in
-            APIRequestTesterView(request: endpoint, networkService: networkService)
+            APIRequestTesterView(
+                request: endpoint,
+                networkService: networkService,
+                networkMonitoring: networkMonitoring
+            )
         }
     }
 
@@ -161,7 +171,8 @@ struct APIRequestDetailView: View {
     NavigationStack {
         APIRequestDetailView(
             request: APIRequestCatalog.all.first!,
-            networkService: AppDependency.shared.networkService
+            networkService: AppDependency.shared.networkService,
+            networkMonitoring: AppDependency.shared.networkMonitoringService
         )
     }
 }
