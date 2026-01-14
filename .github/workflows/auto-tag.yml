@@ -51,6 +51,73 @@ jobs:
           git push origin "$VERSION"
           echo "✅ Created and pushed tag: $VERSION"
       
+      - name: Generate Changelog
+        if: steps.check_tag.outputs.exists == 'false'
+        id: changelog
+        run: |
+          VERSION="${{ steps.version.outputs.VERSION }}"
+          
+          # 이전 태그 찾기
+          PREV_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
+          
+          if [ -n "$PREV_TAG" ]; then
+            echo "Generating changelog from $PREV_TAG to $VERSION"
+            COMMITS=$(git log $PREV_TAG..HEAD --pretty=format:"- %s (%h)" --no-merges)
+          else
+            echo "No previous tag found, generating changelog from beginning"
+            COMMITS=$(git log HEAD --pretty=format:"- %s (%h)" --no-merges | head -20)
+          fi
+          
+          # EOF delimiter를 사용하여 multiline 저장
+          echo "CHANGELOG<<EOF" >> $GITHUB_OUTPUT
+          echo "$COMMITS" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+      
+      - name: Create GitHub Release
+        if: steps.check_tag.outputs.exists == 'false'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.version.outputs.VERSION }}
+          name: AsyncNetwork ${{ steps.version.outputs.VERSION }}
+          body: |
+            # AsyncNetwork ${{ steps.version.outputs.VERSION }}
+            
+            ## 📋 What's Changed
+            
+            ${{ steps.changelog.outputs.CHANGELOG }}
+            
+            ## 📦 Installation
+            
+            ### Swift Package Manager
+            
+            ```swift
+            dependencies: [
+                .package(url: "https://github.com/Jimmy-Jung/AsyncNetwork", from: "${{ steps.version.outputs.VERSION }}")
+            ]
+            ```
+            
+            ### Products
+            
+            ```swift
+            .target(
+                name: "YourTarget",
+                dependencies: [
+                    .product(name: "AsyncNetwork", package: "AsyncNetwork")
+                ]
+            )
+            ```
+            
+            ## 🔗 Documentation
+            
+            - [CHANGELOG.md](https://github.com/Jimmy-Jung/AsyncNetwork/blob/main/CHANGELOG.md)
+            - [README.md](https://github.com/Jimmy-Jung/AsyncNetwork/blob/main/README.md)
+            
+            **Full Changelog**: https://github.com/Jimmy-Jung/AsyncNetwork/compare/${{ steps.changelog.outputs.PREV_TAG || 'v1.0.0' }}...${{ steps.version.outputs.VERSION }}
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      
       - name: Tag Already Exists
         if: steps.check_tag.outputs.exists == 'true'
         run: |
