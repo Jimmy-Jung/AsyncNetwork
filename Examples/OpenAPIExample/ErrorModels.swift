@@ -3,10 +3,10 @@
 //  OpenAPIExample
 //
 //  Created by jimmy on 2026/01/06.
+//  Updated: 2026/01/14 - Improved error models
 //
 
 import AsyncNetwork
-import AsyncNetworkMacros
 import Foundation
 
 // MARK: - Error Models
@@ -16,12 +16,11 @@ import Foundation
     {
       "error": "Resource not found",
       "code": "NOT_FOUND",
-      "timestamp": "2026-01-06T10:30:00Z"
+      "timestamp": "2026-01-14T10:30:00Z"
     }
     """
 )
-@ResponseTestable()
-struct NotFoundError: Codable, Sendable {
+struct NotFoundError: Codable, Sendable, Error {
     let error: String
     let code: String
     let timestamp: String
@@ -32,13 +31,12 @@ struct NotFoundError: Codable, Sendable {
     {
       "error": "Internal server error",
       "code": "INTERNAL_ERROR",
-      "timestamp": "2026-01-06T10:30:00Z",
+      "timestamp": "2026-01-14T10:30:00Z",
       "requestId": "req-12345"
     }
     """
 )
-@ResponseTestable()
-struct ServerError: Codable, Sendable {
+struct ServerError: Codable, Sendable, Error {
     let error: String
     let code: String
     let timestamp: String
@@ -54,8 +52,7 @@ struct ServerError: Codable, Sendable {
     }
     """
 )
-@ResponseTestable()
-struct BadRequestError: Codable, Sendable {
+struct BadRequestError: Codable, Sendable, Error {
     let error: String
     let code: String
     let details: [String]

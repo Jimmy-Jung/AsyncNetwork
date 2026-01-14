@@ -44,11 +44,11 @@
         }
   ],
   "paths": {    
-        "/albums/{albumId}/photos": {    
-          "get": {
-            "summary": "Get album photos",
-            "description": "특정 앨범의 모든 사진을 가져옵니다.",
-            "tags": ["Albums", "Read"],
+        "/albums/{albumId}/photos": {
+      "get": {
+        "summary": "Get album photos",
+        "description": "특정 앨범의 모든 사진을 가져옵니다.\n    \n    파라미터:\n    • albumId: 사진을 조회할 Album의 ID\n    \n    응답 형식:\n    Photo 객체의 배열을 반환합니다. 각 Photo는 썸네일과 원본 이미지 URL을 포함합니다.\n    \n    에러 처리:\n    • 404: 앨범을 찾을 수 없음",
+        "tags": ["Albums"],
             "parameters": [
           {
             "name": "albumId",
@@ -72,15 +72,41 @@
                     }    
                   }
                 }
-              }
+              },
+                  "404": {
+                    "description": "Error",
+                    "content": {
+                      "application/json": {
+                        "schema": {
+                          "$ref": "#/components/schemas/NotFoundError"
+                        },
+                        "example":     {
+      "error": "Resource not found",
+      "code": "NOT_FOUND",
+      "timestamp": "2026-01-14T10:30:00Z"
+    }
+                      }
+                    }
+                  }
             }
           }    
         },    
-        "/comments": {    
-          "post": {
-            "summary": "Create a comment",
-            "description": "새로운 댓글을 작성합니다.",
-            "tags": ["Comments", "Write"],
+        "/comments": {
+      "post": {
+        "summary": "Create a comment",
+        "description": "새로운 댓글을 작성합니다.\n    \n    요청 바디:\n    • postId: 댓글을 작성할 Post의 ID (필수)\n    • name: 댓글 제목 (필수)\n    • email: 작성자 이메일 (필수)\n    • body: 댓글 내용 (필수)\n    \n    검증 규칙:\n    • postId: 양의 정수\n    • email: 유효한 이메일 형식\n    • body: 1-1000자",
+        "tags": ["Comments"],
+            "parameters": [
+          {
+            "name": "Content-Type",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+          "default": "application/json"
+            }
+          }    
+            ],
             "requestBody": {
               "required": false,
               "content": {
@@ -101,80 +127,30 @@
                     }    
                   }
                 }
-              }
-            }
-          }    
-        },    
-        "/orders": {    
-          "post": {
-            "summary": "Create an order",
-            "description": "복잡한 주문을 생성합니다. 여러 상품, 배송지, 결제 정보를 포함합니다.",
-            "tags": ["Orders", "Write", "Complex"],
-            "parameters": [
-          {
-            "name": "Authorization",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "X-Request-ID",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "string",
-          "default": "UUID().uuidString"
-            }
-          },
-          {
-            "name": "X-Session-ID",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "X-Idempotency-Key",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "string",
-          "default": "UUID().uuidString"
-            }
-          }    
-            ],
-            "requestBody": {
-              "required": false,
-              "content": {
-                "application/json": {
-                  "schema": {
-                    "$ref": "#/components/schemas/CreateOrderBody"
-                  }    
-                }
-              }
-            },
-            "responses": {
-              "200": {
-                "description": "Success",
-                "content": {
-                  "application/json": {
-                    "schema": {    
-                      "$ref": "#/components/schemas/Order"    
-                    }    
+              },
+                  "400": {
+                    "description": "Error",
+                    "content": {
+                      "application/json": {
+                        "schema": {
+                          "$ref": "#/components/schemas/BadRequestError"
+                        },
+                        "example":     {
+      "error": "Invalid request",
+      "code": "BAD_REQUEST",
+      "details": ["Field 'email' is required", "Field 'password' must be at least 8 characters"]
+    }
+                      }
+                    }
                   }
-                }
-              }
             }
           }    
         },    
-        "/orders/{orderId}": {    
-          "get": {
-            "summary": "Get order by ID",
-            "description": "특정 주문의 상세 정보를 조회합니다.",
-            "tags": ["Orders", "Read", "Complex"],
+        "/orders/{orderId}": {
+      "get": {
+        "summary": "Get order by ID",
+        "description": "특정 주문의 상세 정보를 조회합니다.\n    \n    파라미터:\n    • orderId: 조회할 Order의 ID\n    \n    헤더:\n    • Authorization: 인증 토큰 (필수)\n    • User-Agent: 클라이언트 정보\n    \n    응답:\n    완전한 주문 정보 (주문 항목, 배송지, 결제 정보, 배송 예정일 포함)\n    \n    에러 처리:\n    • 404: 주문을 찾을 수 없음\n    • 403: 접근 권한 없음",
+        "tags": ["Orders"],
             "parameters": [
           {
             "name": "orderId",
@@ -212,15 +188,30 @@
                     }    
                   }
                 }
-              }
+              },
+                  "404": {
+                    "description": "Error",
+                    "content": {
+                      "application/json": {
+                        "schema": {
+                          "$ref": "#/components/schemas/NotFoundError"
+                        },
+                        "example":     {
+      "error": "Resource not found",
+      "code": "NOT_FOUND",
+      "timestamp": "2026-01-14T10:30:00Z"
+    }
+                      }
+                    }
+                  }
             }
           }    
         },    
-        "/posts": {    
-          "get": {
-            "summary": "Get all posts",
-            "description": "JSONPlaceholder에서 모든 포스트를 가져옵니다. 페이지네이션과 필터링을 지원합니다.",
-            "tags": ["Posts", "Read"],
+        "/posts": {
+      "get": {
+        "summary": "Get all posts",
+        "description": "JSONPlaceholder에서 모든 포스트를 가져옵니다.\n    \n    기능:\n    • 페이지네이션 지원 (_limit 파라미터)\n    • 사용자별 필터링 (userId 파라미터)\n    \n    응답 형식:\n    Post 객체의 배열을 반환합니다.",
+        "tags": ["Posts"],
             "parameters": [
           {
             "name": "userId",
@@ -254,11 +245,11 @@
                 }
               }
             }
-          },    
-          "post": {
-            "summary": "Create a new post",
-            "description": "새로운 포스트를 생성합니다.",
-            "tags": ["Posts", "Write"],
+          },
+      "post": {
+        "summary": "Create a new post",
+        "description": "새로운 포스트를 생성합니다.\n    \n    요청 바디:\n    • title: 포스트 제목 (필수)\n    • body: 포스트 본문 (필수)\n    • userId: 작성자 ID (필수)\n    \n    검증 규칙:\n    • title: 1-200자\n    • body: 1-5000자\n    • userId: 양의 정수",
+        "tags": ["Posts"],
             "parameters": [
           {
             "name": "Content-Type",
@@ -299,15 +290,30 @@
                     }    
                   }
                 }
-              }
+              },
+                  "400": {
+                    "description": "Error",
+                    "content": {
+                      "application/json": {
+                        "schema": {
+                          "$ref": "#/components/schemas/BadRequestError"
+                        },
+                        "example":     {
+      "error": "Invalid request",
+      "code": "BAD_REQUEST",
+      "details": ["Field 'email' is required", "Field 'password' must be at least 8 characters"]
+    }
+                      }
+                    }
+                  }
             }
           }    
         },    
-        "/posts/{id}": {    
-          "get": {
-            "summary": "Get post by ID",
-            "description": "특정 포스트의 상세 정보를 가져옵니다.",
-            "tags": ["Posts", "Read"],
+        "/posts/{id}": {
+      "get": {
+        "summary": "Get post by ID",
+        "description": "특정 포스트의 상세 정보를 가져옵니다.\n    \n    파라미터:\n    • id: Post의 고유 식별자\n    \n    헤더:\n    • User-Agent: 클라이언트 정보\n    • Accept-Language: 선호 언어 설정\n    \n    에러 처리:\n    • 404: 포스트를 찾을 수 없음\n    • 500: 서버 내부 오류",
+        "tags": ["Posts"],
             "parameters": [
           {
             "name": "id",
@@ -346,13 +352,28 @@
                     }    
                   }
                 }
-              }
+              },
+                  "404": {
+                    "description": "Error",
+                    "content": {
+                      "application/json": {
+                        "schema": {
+                          "$ref": "#/components/schemas/NotFoundError"
+                        },
+                        "example":     {
+      "error": "Resource not found",
+      "code": "NOT_FOUND",
+      "timestamp": "2026-01-14T10:30:00Z"
+    }
+                      }
+                    }
+                  }
             }
-          },    
-          "put": {
-            "summary": "Update a post",
-            "description": "기존 포스트를 업데이트합니다.",
-            "tags": ["Posts", "Write"],
+          },
+      "put": {
+        "summary": "Update a post",
+        "description": "기존 포스트를 업데이트합니다.\n    \n    동작 방식:\n    • PUT: 전체 리소스 교체\n    • 모든 필드가 요청 바디에 포함되어야 함\n    \n    파라미터:\n    • id: 업데이트할 Post의 ID\n    \n    에러 처리:\n    • 404: 포스트를 찾을 수 없음\n    • 400: 잘못된 요청 데이터",
+        "tags": ["Posts"],
             "parameters": [
           {
             "name": "id",
@@ -360,6 +381,15 @@
             "required": true,
             "schema": {
               "type": "integer"
+            }
+          },
+          {
+            "name": "Content-Type",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+          "default": "application/json"
             }
           }    
             ],
@@ -383,13 +413,43 @@
                     }    
                   }
                 }
-              }
+              },
+                  "400": {
+                    "description": "Error",
+                    "content": {
+                      "application/json": {
+                        "schema": {
+                          "$ref": "#/components/schemas/BadRequestError"
+                        },
+                        "example":     {
+      "error": "Invalid request",
+      "code": "BAD_REQUEST",
+      "details": ["Field 'email' is required", "Field 'password' must be at least 8 characters"]
+    }
+                      }
+                    }
+                  },
+                  "404": {
+                    "description": "Error",
+                    "content": {
+                      "application/json": {
+                        "schema": {
+                          "$ref": "#/components/schemas/NotFoundError"
+                        },
+                        "example":     {
+      "error": "Resource not found",
+      "code": "NOT_FOUND",
+      "timestamp": "2026-01-14T10:30:00Z"
+    }
+                      }
+                    }
+                  }
             }
-          },    
-          "delete": {
-            "summary": "Delete a post",
-            "description": "포스트를 삭제합니다.",
-            "tags": ["Posts", "Write"],
+          },
+      "delete": {
+        "summary": "Delete a post",
+        "description": "특정 ID를 가진 포스트를 삭제합니다.\n    \n    파라미터:\n    • id: 삭제할 Post의 ID\n    \n    응답:\n    성공 시 빈 응답 반환 (204 No Content)\n    \n    에러 처리:\n    • 404: 포스트를 찾을 수 없음\n    • 403: 삭제 권한 없음",
+        "tags": ["Posts"],
             "parameters": [
           {
             "name": "id",
@@ -410,15 +470,30 @@
                     }    
                   }
                 }
-              }
+              },
+                  "404": {
+                    "description": "Error",
+                    "content": {
+                      "application/json": {
+                        "schema": {
+                          "$ref": "#/components/schemas/NotFoundError"
+                        },
+                        "example":     {
+      "error": "Resource not found",
+      "code": "NOT_FOUND",
+      "timestamp": "2026-01-14T10:30:00Z"
+    }
+                      }
+                    }
+                  }
             }
           }    
         },    
-        "/posts/{postId}/comments": {    
-          "get": {
-            "summary": "Get post comments",
-            "description": "특정 포스트의 모든 댓글을 가져옵니다.",
-            "tags": ["Comments", "Read"],
+        "/posts/{postId}/comments": {
+      "get": {
+        "summary": "Get post comments",
+        "description": "특정 포스트의 모든 댓글을 가져옵니다.\n    \n    파라미터:\n    • postId: 댓글을 조회할 Post의 ID\n    \n    응답 형식:\n    Comment 객체의 배열을 반환합니다.\n    \n    에러 처리:\n    • 404: 포스트를 찾을 수 없음",
+        "tags": ["Comments"],
             "parameters": [
           {
             "name": "postId",
@@ -442,15 +517,30 @@
                     }    
                   }
                 }
-              }
+              },
+                  "404": {
+                    "description": "Error",
+                    "content": {
+                      "application/json": {
+                        "schema": {
+                          "$ref": "#/components/schemas/NotFoundError"
+                        },
+                        "example":     {
+      "error": "Resource not found",
+      "code": "NOT_FOUND",
+      "timestamp": "2026-01-14T10:30:00Z"
+    }
+                      }
+                    }
+                  }
             }
           }    
         },    
-        "/users": {    
-          "get": {
-            "summary": "Get all users",
-            "description": "모든 사용자 목록을 가져옵니다.",
-            "tags": ["Users", "Read"],
+        "/users": {
+      "get": {
+        "summary": "Get all users",
+        "description": "모든 사용자 목록을 가져옵니다.\n    \n    기능:\n    • 완전한 사용자 프로필 정보 포함\n    • 주소, 회사, 연락처 정보 포함\n    \n    응답 형식:\n    User 객체의 배열을 반환합니다.",
+        "tags": ["Users"],
             "responses": {
               "200": {
                 "description": "Success",
@@ -475,18 +565,18 @@
                         "example":     {
       "error": "Internal server error",
       "code": "INTERNAL_ERROR",
-      "timestamp": "2026-01-06T10:30:00Z",
+      "timestamp": "2026-01-14T10:30:00Z",
       "requestId": "req-12345"
     }
                       }
                     }
                   }
             }
-          },    
-          "post": {
-            "summary": "Create a new user",
-            "description": "새로운 사용자를 생성합니다.",
-            "tags": ["Users", "Write"],
+          },
+      "post": {
+        "summary": "Create a new user",
+        "description": "새로운 사용자를 생성합니다.\n    \n    요청 바디:\n    • name: 사용자 이름 (필수)\n    • username: 사용자명 (필수, 고유)\n    • email: 이메일 주소 (필수, 유효한 형식)\n    \n    검증 규칙:\n    • name: 1-100자\n    • username: 3-20자, 영문/숫자만\n    • email: 유효한 이메일 형식\n    \n    에러 처리:\n    • 400: 잘못된 요청 데이터\n    • 409: 이미 존재하는 username 또는 email",
+        "tags": ["Users"],
             "parameters": [
           {
             "name": "Authorization",
@@ -526,15 +616,30 @@
                     }    
                   }
                 }
-              }
+              },
+                  "400": {
+                    "description": "Error",
+                    "content": {
+                      "application/json": {
+                        "schema": {
+                          "$ref": "#/components/schemas/BadRequestError"
+                        },
+                        "example":     {
+      "error": "Invalid request",
+      "code": "BAD_REQUEST",
+      "details": ["Field 'email' is required", "Field 'password' must be at least 8 characters"]
+    }
+                      }
+                    }
+                  }
             }
           }    
         },    
-        "/users/{id}": {    
-          "get": {
-            "summary": "Get user by ID",
-            "description": "특정 사용자의 상세 정보를 가져옵니다.",
-            "tags": ["Users", "Read"],
+        "/users/{id}": {
+      "get": {
+        "summary": "Get user by ID",
+        "description": "특정 사용자의 상세 정보를 가져옵니다.\n    \n    파라미터:\n    • id: User의 고유 식별자\n    \n    커스텀 헤더:\n    • X-Client-Version: 클라이언트 버전 정보\n    • X-Platform: 플랫폼 정보 (iOS/Android/Web)\n    \n    응답:\n    완전한 사용자 프로필 정보 (주소, 회사, 연락처 포함)\n    \n    에러 처리:\n    • 404: 사용자를 찾을 수 없음\n    • 500: 서버 내부 오류",
+        "tags": ["Users"],
             "parameters": [
           {
             "name": "id",
@@ -584,7 +689,7 @@
                         "example":     {
       "error": "Resource not found",
       "code": "NOT_FOUND",
-      "timestamp": "2026-01-06T10:30:00Z"
+      "timestamp": "2026-01-14T10:30:00Z"
     }
                       }
                     }
@@ -599,7 +704,7 @@
                         "example":     {
       "error": "Internal server error",
       "code": "INTERNAL_ERROR",
-      "timestamp": "2026-01-06T10:30:00Z",
+      "timestamp": "2026-01-14T10:30:00Z",
       "requestId": "req-12345"
     }
                       }
@@ -608,11 +713,11 @@
             }
           }    
         },    
-        "/users/{userId}/albums": {    
-          "get": {
-            "summary": "Get user albums",
-            "description": "특정 사용자의 모든 앨범을 가져옵니다.",
-            "tags": ["Albums", "Read"],
+        "/users/{userId}/albums": {
+      "get": {
+        "summary": "Get user albums",
+        "description": "특정 사용자의 모든 앨범을 가져옵니다.\n    \n    파라미터:\n    • userId: 앨범을 조회할 User의 ID\n    \n    응답 형식:\n    Album 객체의 배열을 반환합니다.\n    \n    에러 처리:\n    • 404: 사용자를 찾을 수 없음",
+        "tags": ["Albums"],
             "parameters": [
           {
             "name": "userId",
@@ -636,7 +741,22 @@
                     }    
                   }
                 }
-              }
+              },
+                  "404": {
+                    "description": "Error",
+                    "content": {
+                      "application/json": {
+                        "schema": {
+                          "$ref": "#/components/schemas/NotFoundError"
+                        },
+                        "example":     {
+      "error": "Resource not found",
+      "code": "NOT_FOUND",
+      "timestamp": "2026-01-14T10:30:00Z"
+    }
+                      }
+                    }
+                  }
             }
           }    
         }    
