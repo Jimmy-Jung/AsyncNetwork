@@ -710,18 +710,48 @@ try await service.request(DeletePostRequest(id: 123))
 
 #### SwiftUI에서 사용
 
+NetworkMonitor를 직접 사용하는 대신, UI 레이어를 위한 어댑터 서비스를 만들어 사용합니다.
+
 ```swift
 import SwiftUI
 import AsyncNetwork
 
+// 1. NetworkMonitor를 ObservableObject로 래핑하는 서비스 (앱에서 한 번만 정의)
+@MainActor
+final class NetworkMonitoringService: ObservableObject {
+    @Published private(set) var isConnected: Bool
+    @Published private(set) var connectionType: ConnectionType
+    @Published private(set) var status: NetworkStatus
+    
+    private let monitor: NetworkMonitor
+    
+    init(monitor: NetworkMonitor = .shared) {
+        self.monitor = monitor
+        self.isConnected = monitor.isConnected
+        self.connectionType = monitor.connectionType
+        self.status = monitor.status
+        
+        // 상태 변경 콜백 등록
+        monitor.onStatusChange { [weak self] newStatus in
+            Task { @MainActor in
+                guard let self = self else { return }
+                self.status = newStatus
+                self.isConnected = monitor.isConnected
+                self.connectionType = monitor.connectionType
+            }
+        }
+    }
+}
+
+// 2. SwiftUI View에서 사용
 struct ContentView: View {
-    @StateObject private var networkMonitor = NetworkMonitor.shared
+    @StateObject private var networkMonitoring = NetworkMonitoringService()
     @State private var posts: [Post] = []
     
     var body: some View {
         NavigationView {
             Group {
-                if !networkMonitor.isConnected {
+                if !networkMonitoring.isConnected {
                     OfflineView()
                 } else {
                     PostListView(posts: posts)
@@ -731,8 +761,8 @@ struct ContentView: View {
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     NetworkStatusIndicator(
-                        isConnected: networkMonitor.isConnected,
-                        type: networkMonitor.connectionType
+                        isConnected: networkMonitoring.isConnected,
+                        type: networkMonitoring.connectionType
                     )
                 }
             }
@@ -740,7 +770,7 @@ struct ContentView: View {
         .task {
             await loadPosts()
         }
-        .onChange(of: networkMonitor.isConnected) { _, newValue in
+        .onChange(of: networkMonitoring.isConnected) { _, newValue in
             if newValue {
                 // 네트워크 복구 시 자동 재시도
                 Task {
@@ -765,7 +795,7 @@ struct ContentView: View {
 
 struct NetworkStatusIndicator: View {
     let isConnected: Bool
-    let type: NetworkMonitor.ConnectionType
+    let type: ConnectionType
     
     var body: some View {
         HStack(spacing: 4) {
@@ -781,10 +811,11 @@ struct NetworkStatusIndicator: View {
 }
 ```
 
-#### Combine으로 구독
+#### 콜백으로 상태 변경 감지
+
+NetworkMonitor는 콜백 기반으로 설계되어 있어, 상태 변경을 감지할 수 있습니다.
 
 ```swift
-import Combine
 import AsyncNetwork
 
 class PostViewModel: ObservableObject {
@@ -793,29 +824,29 @@ class PostViewModel: ObservableObject {
     @Published var errorMessage: String?
     
     private let service = NetworkService()
-    private var cancellables = Set<AnyCancellable>()
+    private let monitor = NetworkMonitor.shared
     
     init() {
         // 네트워크 상태 변경 감지
-        NetworkMonitor.shared.$isConnected
-            .dropFirst() // 초기값 무시
-            .sink { [weak self] isConnected in
-                if isConnected {
+        monitor.onStatusChange { [weak self] status in
+            Task { @MainActor [weak self] in
+                guard let self = self else { return }
+                
+                switch status {
+                case .connected:
                     // 네트워크 복구 시 자동 재시도
-                    Task { @MainActor [weak self] in
-                        await self?.loadPosts()
-                    }
-                } else {
+                    await self.loadPosts()
+                case .disconnected:
                     // 오프라인 상태 표시
-                    self?.errorMessage = "인터넷 연결이 끊어졌습니다"
+                    self.errorMessage = "인터넷 연결이 끊어졌습니다"
                 }
             }
-            .store(in: &cancellables)
+        }
     }
     
     @MainActor
     func loadPosts() async {
-        guard NetworkMonitor.shared.isConnected else {
+        guard monitor.isConnected else {
             errorMessage = "오프라인 상태입니다"
             return
         }
@@ -904,19 +935,24 @@ if monitor.isConstrained {
     // 이미지 품질 낮추기 등
 }
 
-// NotificationCenter로 네트워크 상태 변경 감지
-NotificationCenter.default.addObserver(
-    forName: .networkStatusChanged,
-    object: nil,
-    queue: .main
-) { notification in
-    if let isConnected = notification.userInfo?["isConnected"] as? Bool {
-        print("네트워크 상태 변경: \(isConnected ? "연결됨" : "끊어짐")")
-    }
-    if let type = notification.userInfo?["connectionType"] as? NetworkMonitor.ConnectionType {
-        print("연결 타입: \(type.description)")
-    }
+// NetworkStatus enum으로 상태 확인
+switch monitor.status {
+case .connected(let type):
+    print("연결됨 - 타입: \(type.description)")
+case .disconnected:
+    print("연결 끊김")
 }
+
+// 콜백으로 실시간 상태 변경 감지
+monitor.onStatusChange { status in
+    print("네트워크 상태 변경: \(status.displayName)")
+    print("연결 타입: \(status.connectionTypeDescription)")
+    print("연결 여부: \(status.isConnected)")
+}
+
+// 모니터링 제어 (보통 자동으로 시작되므로 불필요)
+monitor.startMonitoring()  // 모니터링 시작
+monitor.stopMonitoring()   // 모니터링 중지
 ```
 
 ## 🧪 테스트
