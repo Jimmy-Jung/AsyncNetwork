@@ -314,6 +314,26 @@ AsyncNetwork 1.0.0 정식 출시! 순수 Foundation 기반의 현대적인 Swift
 
 ---
 
+## [1.2.2] - 2026-01-14
+
+### 🔧 Changed
+
+#### CI/CD Automation
+- **Auto Tag 워크플로우 개선**
+  - release/* 브랜치 머지 시 자동으로 GitHub Release 생성
+  - 이전 태그와의 변경사항 자동 수집 및 릴리즈 노트 생성
+  - SPM 설치 가이드 자동 포함
+  - 수동 릴리즈 생성 프로세스 제거
+
+### 🎯 Impact
+
+- 배포 프로세스 완전 자동화
+- 릴리즈 생성 시간 단축 (수동 → 자동)
+- 일관된 릴리즈 포맷 보장
+- 개발자 경험 개선
+
+---
+
 ## [1.2.1] - 2026-01-14
 
 ### ✨ Added
@@ -464,6 +484,7 @@ AsyncNetwork 1.0.0 정식 출시! 순수 Foundation 기반의 현대적인 Swift
 
 ---
 
+[1.2.2]: https://github.com/Jimmy-Jung/AsyncNetwork/releases/tag/1.2.2
 [1.2.1]: https://github.com/Jimmy-Jung/AsyncNetwork/releases/tag/1.2.1
 [1.2.0]: https://github.com/Jimmy-Jung/AsyncNetwork/releases/tag/1.2.0
 [1.1.0]: https://github.com/Jimmy-Jung/AsyncNetwork/releases/tag/1.1.0
