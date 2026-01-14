@@ -16,19 +16,100 @@
 
 ## 왜 AsyncNetwork인가?
 
-AsyncNetwork은 순수 Foundation만을 사용하여 구축된 현대적인 Swift 네트워크 라이브러리입니다.
+### 이런 경험 있으신가요?
+
+```swift
+// 😫 기존 방식: 반복되는 보일러플레이트
+func fetchPosts() async throws -> [Post] {
+    // 1. URL 조합
+    guard var components = URLComponents(string: "https://api.example.com") else {
+        throw NetworkError.invalidURL
+    }
+    components.path = "/posts"
+    components.queryItems = [
+        URLQueryItem(name: "userId", value: "\(userId)"),
+        URLQueryItem(name: "page", value: "\(page)")
+    ]
+    
+    guard let url = components.url else {
+        throw NetworkError.invalidURL
+    }
+    
+    // 2. URLRequest 생성
+    var request = URLRequest(url: url)
+    request.httpMethod = "GET"
+    request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+    request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+    
+    // 3. 네트워크 요청
+    let (data, response) = try await URLSession.shared.data(for: request)
+    
+    // 4. 상태 코드 검증
+    guard let httpResponse = response as? HTTPURLResponse else {
+        throw NetworkError.invalidResponse
+    }
+    
+    guard (200...299).contains(httpResponse.statusCode) else {
+        throw NetworkError.serverError(httpResponse.statusCode)
+    }
+    
+    // 5. 디코딩
+    let decoder = JSONDecoder()
+    return try decoder.decode([Post].self, from: data)
+}
+```
+
+**문제점:**
+- 🔄 매번 같은 코드를 반복 작성 (URL 조합, 헤더 설정, 에러 처리)
+- 🐛 오타나 실수로 인한 버그 (쿼리 파라미터 이름, 헤더 키 등)
+- 🔁 재시도 로직을 직접 구현해야 함
+- 📝 테스트 코드 작성이 어려움 (URLSession mocking)
+- 🔌 로깅, 인증 토큰 갱신 등을 각 요청마다 중복 구현
+
+---
+
+### AsyncNetwork로 해결하세요
+
+```swift
+// ✨ AsyncNetwork: 간결하고 타입 안전한 API
+@APIRequest(
+    response: [Post].self,
+    baseURL: "https://api.example.com",
+    path: "/posts",
+    method: .get
+)
+struct GetPostsRequest {
+    @QueryParameter var userId: Int
+    @QueryParameter var page: Int
+    @HeaderField(key: .authorization) var authorization: String
+}
+
+// 사용
+let posts: [Post] = try await service.request(
+    GetPostsRequest(userId: 1, page: 2, authorization: "Bearer \(token)")
+)
+```
+
+**개선 사항:**
+- ✅ **90% 코드 감소**: 보일러플레이트 자동 생성
+- 🎯 **타입 안전성**: 컴파일 타임에 오류 감지
+- 🔄 **재시도 자동화**: 네트워크 실패 시 지수 백오프로 자동 재시도
+- 🔌 **인터셉터 패턴**: 로깅, 인증 토큰 갱신을 한 곳에서 처리
+- 🧪 **테스트 용이**: MockURLProtocol으로 쉬운 단위 테스트
+
+---
 
 ### 주요 특징
 
 - ✅ **순수 Foundation**: URLSession, Codable, async/await만 사용 (외부 의존성 제로)
 - ⚡ **Swift Concurrency 네이티브**: async/await 완벽 지원
-- 🧱 **책임별 모듈 구조**: 명확한 단일 책임 원칙 (Models, Client, Service 등)
-- 🔄 **재시도 정책**: 유연한 재시도 전략 (지수 백오프, 커스텀 규칙)
-- 🔗 **Chain of Responsibility 패턴**: 확장 가능한 응답 처리 파이프라인
-- 🔌 **RequestInterceptor**: 프로토콜 기반 요청/응답 인터셉터 (로깅, 인증 등)
-- 🪄 **매크로 지원**: `@APIRequest` 매크로로 보일러플레이트 제거
+- 🪄 **매크로 지원**: `@APIRequest` 매크로로 보일러플레이트 90% 제거
 - 🎯 **Property Wrappers**: 선언적 API (`@QueryParameter`, `@PathParameter`, `@RequestBody`, `@HeaderField`)
+- 🔄 **스마트 재시도**: 유연한 재시도 전략 (지수 백오프, 커스텀 규칙, Jitter)
+- 🔌 **인터셉터 패턴**: 프로토콜 기반 요청/응답 인터셉터 (로깅, 인증 등)
+- 🔗 **Chain of Responsibility**: 확장 가능한 응답 처리 파이프라인
 - 📡 **Network Reachability**: 실시간 네트워크 연결 상태 감지
+- 🧱 **책임별 모듈 구조**: 명확한 단일 책임 원칙 (Models, Client, Service 등)
 - 🧪 **테스트 용이성**: MockURLProtocol 지원, 의존성 주입 설계
 
 ### 다른 라이브러리와 비교
@@ -92,31 +173,26 @@ let service = NetworkService()
 
 // 커스텀 설정으로 초기화
 let service = NetworkService(
-    httpClient: HTTPClient(timeout: 60),
-    retryPolicy: .aggressive,
-        checkNetworkBeforeRequest: true
-)
-    plugins: [
+    httpClient: HTTPClient(),
+    retryPolicy: RetryPolicy(configuration: .quick),
+    interceptors: [
         ConsoleLoggingInterceptor(minimumLevel: .info)
-    ]
+    ],
+    checkNetworkBeforeRequest: true
 )
 
 // 사전 정의된 설정 사용
-let devService = NetworkService(
-    configuration: .development  // 빠른 타임아웃, 최소 재시도
-)
+let defaultService = NetworkService.default()  // 일반 API 요청용
 
-let testService = NetworkService(
-    configuration: .test  // 재시도 없음, 로깅 비활성화
-)
+let imageService = NetworkService.image()  // 이미지 다운로드용
 
-let stableService = NetworkService(
-    configuration: .stable  // 긴 타임아웃, 많은 재시도
-)
+let uploadService = NetworkService.upload()  // 파일 업로드용
 
-let fastService = NetworkService(
-    configuration: .fast  // 빠른 응답, 로깅 없음
-)
+let downloadService = NetworkService.download()  // 대용량 파일 다운로드용
+
+let realtimeService = NetworkService.realtime()  // 실시간 API용
+
+let offlineService = NetworkService.offline()  // 오프라인 우선 (캐시 우선)
 ```
 
 ### 1️⃣ 기본 사용법
@@ -134,7 +210,6 @@ struct Post: Codable {
 // 2. @APIRequest 매크로로 API 요청 정의
 @APIRequest(
     response: [Post].self,
-    title: "Get all posts",
     baseURL: "https://jsonplaceholder.typicode.com",
     path: "/posts",
     method: .get
@@ -153,7 +228,6 @@ print("총 \(posts.count)개의 게시글")
 ```swift
 @APIRequest(
     response: [Post].self,
-    title: "Search posts by user",
     baseURL: "https://jsonplaceholder.typicode.com",
     path: "/posts",
     method: .get
@@ -174,7 +248,6 @@ let posts: [Post] = try await service.request(
 ```swift
 @APIRequest(
     response: Post.self,
-    title: "Get post by ID",
     baseURL: "https://jsonplaceholder.typicode.com",
     path: "/posts/{id}",  // {id}는 PathParameter로 대체됨
     method: .get
@@ -203,7 +276,6 @@ struct LoginResponse: Codable {
 
 @APIRequest(
     response: LoginResponse.self,
-    title: "User login",
     baseURL: "https://api.example.com",
     path: "/auth/login",
     method: .post
@@ -223,7 +295,6 @@ let response: LoginResponse = try await service.request(
 ```swift
 @APIRequest(
     response: UserProfile.self,
-    title: "Get user profile",
     baseURL: "https://api.example.com",
     path: "/me",
     method: .get
@@ -244,7 +315,6 @@ let profile: UserProfile = try await service.request(
 ```swift
 @APIRequest(
     response: UserProfile.self,
-    title: "Get user profile",
     baseURL: "https://api.example.com",
     path: "/me",
     method: .get
@@ -408,7 +478,7 @@ final class AuthInterceptor: RequestInterceptor {
 // 서비스에 인터셉터 추가
 let authInterceptor = AuthInterceptor()
 let service = NetworkService(
-    plugins: [authInterceptor]
+    interceptors: [authInterceptor]
 )
 ```
 
@@ -424,14 +494,14 @@ let service = NetworkService() // 기본적으로 ConsoleLoggingInterceptor 포�
 
 // 로그 레벨 조정
 let service = NetworkService(
-    plugins: [
+    interceptors: [
         ConsoleLoggingInterceptor(minimumLevel: .info) // info 이상만 로깅
     ]
 )
 
 // 민감한 정보 필터링
 let service = NetworkService(
-    plugins: [
+    interceptors: [
         ConsoleLoggingInterceptor(
             minimumLevel: .debug,
             sensitiveKeys: ["password", "token", "apiKey", "secret"]
@@ -494,40 +564,26 @@ let retryPolicy = RetryPolicy(
 
 let service = NetworkService(
     httpClient: HTTPClient(),
-    retryPolicy: retryPolicy,
-    responseProcessor: ResponseProcessor()
+    retryPolicy: retryPolicy
 )
 ```
 
 #### 사전 정의된 RetryPolicy
 
 ```swift
-// 기본 정책 (maxRetries: 3, baseDelay: 1.0)
+// 표준 정책 (maxRetries: 3, baseDelay: 1.0)
 let service = NetworkService(
-    httpClient: HTTPClient(),
-    retryPolicy: .default,
-    responseProcessor: ResponseProcessor()
+    retryPolicy: RetryPolicy(configuration: .standard)
 )
 
-// 공격적 정책 (maxRetries: 5, baseDelay: 0.5)
+// 빠른 재시도 (maxRetries: 5, baseDelay: 0.5)
 let service = NetworkService(
-    httpClient: HTTPClient(),
-    retryPolicy: .aggressive,
-    responseProcessor: ResponseProcessor()
+    retryPolicy: RetryPolicy(configuration: .quick)
 )
 
-// 보수적 정책 (maxRetries: 1, baseDelay: 2.0)
+// 느린 재시도 (maxRetries: 1, baseDelay: 2.0)
 let service = NetworkService(
-    httpClient: HTTPClient(),
-    retryPolicy: .conservative,
-    responseProcessor: ResponseProcessor()
-)
-
-// 재시도 없음
-let service = NetworkService(
-    httpClient: HTTPClient(),
-    retryPolicy: .none,
-    responseProcessor: ResponseProcessor()
+    retryPolicy: RetryPolicy(configuration: .patient)
 )
 ```
 
@@ -542,8 +598,9 @@ let configuration = RetryConfiguration(
 )
 
 // 사전 정의된 설정
-let aggressive = RetryConfiguration.aggressive  // maxRetries: 5, baseDelay: 0.5
-let conservative = RetryConfiguration.conservative  // maxRetries: 1, baseDelay: 2.0
+let standard = RetryConfiguration.standard  // maxRetries: 3, baseDelay: 1.0
+let quick = RetryConfiguration.quick  // maxRetries: 5, baseDelay: 0.5
+let patient = RetryConfiguration.patient  // maxRetries: 1, baseDelay: 2.0
 ```
 
 ### Response Processing Pipeline
@@ -584,7 +641,6 @@ let service = NetworkService(
 ```swift
 @APIRequest(
     response: SearchResult.self,
-    title: "Search with filters",
     baseURL: "https://api.example.com",
     path: "/search/{category}",
     method: .get
@@ -635,7 +691,6 @@ import AsyncNetwork
 
 @APIRequest(
     response: EmptyResponse.self,
-    title: "Delete post",
     baseURL: "https://api.example.com",
     path: "/posts/{id}",
     method: .delete
@@ -818,7 +873,7 @@ default:
 
 // 오프라인 체크 비활성화 (테스트 환경 등)
 let service = NetworkService(
-        checkNetworkBeforeRequest: false
+    checkNetworkBeforeRequest: false
 )
 ```
 
@@ -918,8 +973,7 @@ func testGetUsersSuccess() async throws {
     let client = HTTPClient(session: session)
     let service = NetworkService(
         httpClient: client,
-        retryPolicy: .none,
-        responseProcessor: ResponseProcessor()
+        retryPolicy: RetryPolicy(configuration: RetryConfiguration(maxRetries: 0))
     )
     
     // When
@@ -972,8 +1026,7 @@ func testRetryPolicy() async throws {
     )
     let service = NetworkService(
         httpClient: client,
-        retryPolicy: retryPolicy,
-        responseProcessor: ResponseProcessor()
+        retryPolicy: retryPolicy
     )
     
     // When

@@ -3,10 +3,10 @@
 //  OpenAPIExample
 //
 //  Created by jimmy on 2026/01/06.
+//  Updated: 2026/01/14 - Migrated to @ResponseDocument
 //
 
 import AsyncNetwork
-import AsyncNetworkMacros
 import Foundation
 
 // MARK: - Post Models
@@ -21,7 +21,6 @@ import Foundation
     }
     """
 )
-@ResponseTestable()
 struct Post: Codable, Identifiable, Sendable {
     let userId: Int
     let id: Int
@@ -38,7 +37,6 @@ struct Post: Codable, Identifiable, Sendable {
     }
     """
 )
-@ResponseTestable()
 struct PostBody: Codable, Sendable {
     let title: String
     let body: String
@@ -74,7 +72,6 @@ struct PostBody: Codable, Sendable {
     }
     """
 )
-@ResponseTestable()
 struct User: Codable, Identifiable, Sendable {
     let id: Int
     let name: String
@@ -100,7 +97,6 @@ struct User: Codable, Identifiable, Sendable {
     }
     """
 )
-@ResponseTestable()
 struct Address: Codable, Sendable {
     let street: String
     let suite: String
@@ -117,7 +113,6 @@ struct Address: Codable, Sendable {
     }
     """
 )
-@ResponseTestable()
 struct Geo: Codable, Sendable {
     let lat: String
     let lng: String
@@ -132,7 +127,6 @@ struct Geo: Codable, Sendable {
     }
     """
 )
-@ResponseTestable()
 struct Company: Codable, Sendable {
     let name: String
     let catchPhrase: String
@@ -148,7 +142,6 @@ struct Company: Codable, Sendable {
     }
     """
 )
-@ResponseTestable()
 struct UserBody: Codable, Sendable {
     let name: String
     let username: String
@@ -168,7 +161,6 @@ struct UserBody: Codable, Sendable {
     }
     """
 )
-@ResponseTestable()
 struct Comment: Codable, Identifiable, Sendable {
     let postId: Int
     let id: Int
@@ -187,7 +179,6 @@ struct Comment: Codable, Identifiable, Sendable {
     }
     """
 )
-@ResponseTestable()
 struct CommentBody: Codable, Sendable {
     let postId: Int
     let name: String
@@ -206,7 +197,6 @@ struct CommentBody: Codable, Sendable {
     }
     """
 )
-@ResponseTestable()
 struct Album: Codable, Identifiable, Sendable {
     let userId: Int
     let id: Int
@@ -224,7 +214,6 @@ struct Album: Codable, Identifiable, Sendable {
     }
     """
 )
-@ResponseTestable()
 struct Photo: Codable, Identifiable, Sendable {
     let albumId: Int
     let id: Int
@@ -273,7 +262,6 @@ struct Photo: Codable, Identifiable, Sendable {
     }
     """
 )
-@ResponseTestable()
 struct Order: Codable, Identifiable, Sendable {
     let id: Int
     let userId: Int
@@ -299,7 +287,6 @@ struct Order: Codable, Identifiable, Sendable {
     }
     """
 )
-@ResponseTestable()
 struct OrderItem: Codable, Sendable {
     let productId: Int
     let productName: String
@@ -323,7 +310,6 @@ struct OrderItem: Codable, Sendable {
     }
     """
 )
-@ResponseTestable()
 struct ShippingAddress: Codable, Sendable {
     let recipientName: String
     let phoneNumber: String
@@ -344,7 +330,6 @@ struct ShippingAddress: Codable, Sendable {
     }
     """
 )
-@ResponseTestable()
 struct PaymentMethod: Codable, Sendable {
     let type: String
     let cardLastFour: String?
@@ -382,7 +367,6 @@ struct PaymentMethod: Codable, Sendable {
     }
     """
 )
-@ResponseTestable()
 struct CreateOrderBody: Codable, Sendable {
     let items: [OrderItemInput]
     let shippingAddress: ShippingAddress
@@ -401,7 +385,6 @@ struct CreateOrderBody: Codable, Sendable {
     }
     """
 )
-@ResponseTestable()
 struct OrderItemInput: Codable, Sendable {
     let productId: Int
     let quantity: Int
@@ -417,7 +400,6 @@ struct OrderItemInput: Codable, Sendable {
     }
     """
 )
-@ResponseTestable()
 struct PaymentMethodInput: Codable, Sendable {
     let type: String
     let cardToken: String?

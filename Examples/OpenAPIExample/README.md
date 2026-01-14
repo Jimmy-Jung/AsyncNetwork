@@ -1,24 +1,26 @@
 # OpenAPI Example
 
-AsyncNetwork의 `@APIRequest`, `@TestableDTO`, `@TestableSchemer` 매크로를 사용한 OpenAPI 스펙 생성 예제입니다.
+AsyncNetwork의 `@APIRequest`, `@APIDocument`, `@APITestable`, `@ResponseDocument` 매크로를 사용한 OpenAPI 스펙 생성 예제입니다.
 
 ## 📁 파일 구조
 
 ```
 Examples/OpenAPIExample/
 ├── README.md           # 이 파일
-├── Models.swift        # @TestableDTO가 적용된 데이터 모델
-└── APIRequests.swift   # @APIRequest + @TestableSchemer가 적용된 API 정의
+├── Models.swift        # @ResponseDocument가 적용된 데이터 모델
+├── ErrorModels.swift   # @ResponseDocument가 적용된 에러 모델
+└── APIRequests.swift   # @APIRequest + @APIDocument + @APITestable이 적용된 API 정의
 ```
 
 ## 🎯 목적
 
 이 예제는 다음을 보여줍니다:
 
-1. **@TestableDTO**: Codable 모델에 테스트 데이터 생성 및 OpenAPI example 제공
+1. **@ResponseDocument**: Codable 모델에 OpenAPI example 제공
 2. **@APIRequest**: RESTful API 엔드포인트 선언적 정의
-3. **@TestableSchemer**: API 테스트 시나리오 및 에러 응답 example 정의
-4. **ExportOpenAPI.swift**: 소스 코드를 파싱하여 OpenAPI 3.0 스펙 자동 생성
+3. **@APIDocument**: API 문서화 메타데이터 (title, description, tags)
+4. **@APITestable**: API 테스트 시나리오 및 에러 응답 example 정의
+5. **ExportOpenAPI.swift**: 소스 코드를 파싱하여 OpenAPI 3.0 스펙 자동 생성
 
 ## 🚀 OpenAPI 스펙 생성 방법
 
@@ -30,7 +32,7 @@ cd /Users/jimmy/Documents/GitHub/AsyncNetwork
 # OpenAPI JSON 생성
 bash Scripts/OpenAPI/generate-docs.sh \
   --project Examples/OpenAPIExample \
-  --output Docs/openapi-example.json \
+  --output docs/openapi-example.json \
   --title "OpenAPI Example API" \
   --version "1.0.0" \
   --description "AsyncNetwork 매크로를 사용한 API 문서화 예제"
@@ -43,7 +45,7 @@ bash Scripts/OpenAPI/generate-docs.sh \
 bash Scripts/OpenAPI/generate-docs.sh \
   --project Examples/OpenAPIExample \
   --project Projects/AsyncNetwork/Tests \
-  --output Docs/full-api.json \
+  --output docs/full-api.json \
   --title "Full API Documentation" \
   --version "2.0.0"
 ```
@@ -53,7 +55,7 @@ bash Scripts/OpenAPI/generate-docs.sh \
 ```bash
 swift Scripts/OpenAPI/ExportOpenAPI.swift \
   --project Examples/OpenAPIExample \
-  --output Docs/openapi.json \
+  --output docs/openapi.json \
   --title "My API" \
   --version "1.0.0" \
   --format json
@@ -74,6 +76,8 @@ swift Scripts/OpenAPI/ExportOpenAPI.swift \
     "/posts/{id}": {
       "get": {
         "summary": "Get post by ID",
+        "description": "특정 포스트의 상세 정보를 가져옵니다...",
+        "tags": ["Posts"],
         "responses": {
           "200": {
             "description": "Success",
@@ -128,10 +132,96 @@ swift Scripts/OpenAPI/ExportOpenAPI.swift \
 
 ## 🎨 매크로 사용 예시
 
-### @TestableDTO
+### 분리된 매크로 구조
+
+AsyncNetwork는 역할별로 분리된 매크로를 제공합니다:
+
+#### @APIRequest (필수)
+API 엔드포인트의 핵심 정보를 정의합니다.
 
 ```swift
-@TestableDTO(
+@APIRequest(
+    response: Post.self,
+    baseURL: "https://api.example.com",
+    path: "/posts/{id}",
+    method: .get,
+    errorResponses: [
+        404: NotFoundError.self
+    ]
+)
+```
+
+#### @APIDocument (선택)
+API 문서화를 위한 메타데이터를 추가합니다.
+
+```swift
+@APIDocument(
+    title: "Get post by ID",
+    description: """
+    특정 포스트의 상세 정보를 가져옵니다.
+    
+    파라미터:
+    • id: Post의 고유 식별자
+    """,
+    tags: ["Posts"]
+)
+```
+
+#### @APITestable (선택)
+테스트 시나리오와 에러 예제를 정의합니다.
+
+```swift
+@APITestable(
+    scenarios: [.success, .notFound, .serverError],
+    errorExamples: [
+        "404": """
+        {
+          "error": "Post not found",
+          "code": "POST_NOT_FOUND"
+        }
+        """
+    ]
+)
+```
+
+#### 전체 예제
+
+```swift
+@APIRequest(
+    response: Post.self,
+    baseURL: "https://api.example.com",
+    path: "/posts/{id}",
+    method: .get,
+    errorResponses: [
+        404: NotFoundError.self
+    ]
+)
+@APIDocument(
+    title: "Get post by ID",
+    description: "특정 포스트의 상세 정보를 가져옵니다.",
+    tags: ["Posts"]
+)
+@APITestable(
+    scenarios: [.success, .notFound],
+    errorExamples: [
+        "404": """{"error": "Not found"}"""
+    ]
+)
+struct GetPostByIdRequest {
+    @PathParameter var id: Int
+    
+    init(id: Int) {
+        self.id = id
+    }
+}
+```
+
+### @ResponseDocument
+
+Codable 모델에 OpenAPI example을 제공합니다.
+
+```swift
+@ResponseDocument(
     fixtureJSON: """
     {
       "id": 1,
@@ -145,38 +235,6 @@ struct Post: Codable {
     let title: String
     let body: String
 }
-
-// 자동 생성된 메서드들
-let mock = Post.mock()        // 랜덤 테스트 데이터
-let fixture = Post.fixture()  // fixtureJSON 기반 고정 데이터
-let array = Post.mockArray(count: 10)
-try post.assertValid()        // 자동 검증
-```
-
-### @APIRequest + @TestableSchemer
-
-```swift
-@APIRequest(
-    response: Post.self,
-    title: "Get post",
-    baseURL: "https://api.example.com",
-    path: "/posts/{id}",
-    method: .get,
-    tags: ["Posts"]
-)
-@TestableSchemer(
-    errorExamples: [
-        "404": """{"error": "Not found"}""",
-        "500": """{"error": "Server error"}"""
-    ]
-)
-struct GetPostRequest {
-    @PathParameter var id: Int
-}
-
-// 자동 생성된 테스트 헬퍼
-let (data, response, error) = GetPostRequest.mockResponse(for: .success)
-let (_, _, error) = GetPostRequest.mockResponse(for: .notFound)
 ```
 
 ## 📖 API 목록
@@ -213,16 +271,34 @@ let (_, _, error) = GetPostRequest.mockResponse(for: .notFound)
 
 ### 에러 응답 추가
 
-`APIRequests.swift`에서 `@TestableSchemer`의 `errorExamples`를 수정하여 에러 응답을 추가할 수 있습니다.
+`APIRequests.swift`에서 `@APITestable`의 `errorExamples`를 수정하여 에러 응답을 추가할 수 있습니다.
 
 ```swift
-@TestableSchemer(
+@APITestable(
+    scenarios: [.success, .clientError, .unauthorized],
     errorExamples: [
         "400": """{"error": "Bad request"}""",
         "401": """{"error": "Unauthorized"}""",
         "403": """{"error": "Forbidden"}""",
         "404": """{"error": "Not found"}""",
         "500": """{"error": "Server error"}"""
+    ]
+)
+```
+
+### 에러 타입 매핑
+
+`@APIRequest`의 `errorResponses`로 HTTP 상태 코드와 에러 타입을 매핑할 수 있습니다.
+
+```swift
+@APIRequest(
+    response: Post.self,
+    baseURL: "https://api.example.com",
+    path: "/posts/{id}",
+    method: .get,
+    errorResponses: [
+        404: NotFoundError.self,
+        500: ServerError.self
     ]
 )
 ```
