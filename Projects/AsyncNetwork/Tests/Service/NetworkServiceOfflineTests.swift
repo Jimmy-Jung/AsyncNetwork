@@ -109,19 +109,24 @@ struct NetworkServiceOfflineTests {
 /// 테스트용 Mock NetworkMonitor
 final class MockNetworkMonitor: NetworkMonitoring, @unchecked Sendable {
     var isConnected: Bool
-    var connectionType: NetworkMonitor.ConnectionType
+    var connectionType: ConnectionType
     var currentPath: NWPath?
+
+    var status: NetworkStatus {
+        isConnected ? .connected(connectionType) : .disconnected
+    }
 
     var isExpensive: Bool { false }
     var isConstrained: Bool { false }
 
-    init(isConnected: Bool, connectionType: NetworkMonitor.ConnectionType = .unknown) {
+    init(isConnected: Bool, connectionType: ConnectionType = .unknown) {
         self.isConnected = isConnected
         self.connectionType = connectionType
     }
 
     func startMonitoring() {}
     func stopMonitoring() {}
+    func onStatusChange(_ callback: @escaping @Sendable (NetworkStatus) -> Void) {}
 }
 
 // MARK: - Test Request

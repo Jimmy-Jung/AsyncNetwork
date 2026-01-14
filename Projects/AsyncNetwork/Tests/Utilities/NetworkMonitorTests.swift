@@ -28,7 +28,7 @@ struct NetworkMonitorTests {
         #expect(monitor.isConnected == true || monitor.isConnected == false)
 
         // connectionType이 유효한 값인지 확인
-        let validTypes: [NetworkMonitor.ConnectionType] = [
+        let validTypes: [ConnectionType] = [
             .wifi, .cellular, .ethernet, .loopback, .unknown,
         ]
         #expect(validTypes.contains(where: { $0 == monitor.connectionType }))
@@ -36,10 +36,10 @@ struct NetworkMonitorTests {
 
     @Test("ConnectionType description 확인")
     func connectionTypeDescription() {
-        #expect(NetworkMonitor.ConnectionType.wifi.description == "Wi-Fi")
-        #expect(NetworkMonitor.ConnectionType.cellular.description == "Cellular")
-        #expect(NetworkMonitor.ConnectionType.ethernet.description == "Ethernet")
-        #expect(NetworkMonitor.ConnectionType.loopback.description == "Loopback")
-        #expect(NetworkMonitor.ConnectionType.unknown.description == "Unknown")
+        #expect(ConnectionType.wifi.description == "Wi-Fi")
+        #expect(ConnectionType.cellular.description == "Cellular")
+        #expect(ConnectionType.ethernet.description == "Ethernet")
+        #expect(ConnectionType.loopback.description == "Loopback")
+        #expect(ConnectionType.unknown.description == "Unknown")
     }
 }
