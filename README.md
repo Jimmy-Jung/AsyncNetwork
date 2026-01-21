@@ -201,10 +201,11 @@ let offlineService = NetworkService.offline()  // 오프라인 우선 (캐시 �
 import AsyncNetwork
 
 // 1. 응답 모델 정의
-struct Post: Codable {
+struct Post: Codable, Sendable {
     let id: Int
     let title: String
     let body: String
+    let userId: Int
 }
 
 // 2. @APIRequest 매크로로 API 요청 정의
@@ -233,14 +234,20 @@ print("총 \(posts.count)개의 게시글")
     method: .get
 )
 struct GetPostsByUserRequest {
-    @QueryParameter var userId: Int
+    @QueryParameter var userId: Int?               // Optional: nil이면 쿼리에서 제외
+    @QueryParameter(key: "_limit") var limit: Int? // 커스텀 키 사용
+    
+    init(userId: Int? = nil, limit: Int? = nil) {
+        self.userId = userId
+        self.limit = limit
+    }
 }
 
 // 사용
 let posts: [Post] = try await service.request(
-    GetPostsByUserRequest(userId: 1)
+    GetPostsByUserRequest(userId: 1, limit: 10)
 )
-// 결과: GET /posts?userId=1
+// 결과: GET /posts?userId=1&_limit=10
 ```
 
 ### 3️⃣ Path Parameters
@@ -254,6 +261,10 @@ let posts: [Post] = try await service.request(
 )
 struct GetPostRequest {
     @PathParameter var id: Int
+    
+    init(id: Int) {
+        self.id = id
+    }
 }
 
 // 사용
@@ -264,33 +275,37 @@ let post: Post = try await service.request(GetPostRequest(id: 42))
 ### 4️⃣ Request Body (POST/PUT)
 
 ```swift
-struct LoginBody: Codable {
-    let username: String
-    let password: String
-}
-
-struct LoginResponse: Codable {
-    let token: String
+struct PostBodyDTO: Codable, Sendable {
+    let title: String
+    let body: String
     let userId: Int
 }
 
 @APIRequest(
-    response: LoginResponse.self,
-    baseURL: "https://api.example.com",
-    path: "/auth/login",
+    response: Post.self,
+    baseURL: "https://jsonplaceholder.typicode.com",
+    path: "/posts",
     method: .post
 )
-struct LoginRequest {
-    @RequestBody var body: LoginBody
+struct CreatePostRequest {
+    @RequestBody var body: PostBodyDTO?
+    @HeaderField(key: .contentType) var contentType: String? = "application/json"
+    
+    init(body: PostBodyDTO? = nil, contentType: String? = "application/json") {
+        self.body = body
+        self.contentType = contentType
+    }
 }
 
 // 사용
-let response: LoginResponse = try await service.request(
-    LoginRequest(body: LoginBody(username: "user", password: "pass"))
+let newPost: Post = try await service.request(
+    CreatePostRequest(body: PostBodyDTO(title: "제목", body: "내용", userId: 1))
 )
 ```
 
-### 5️⃣ Custom Headers
+### 5️⃣ Headers
+
+#### @HeaderField - 표준 HTTP 헤더
 
 ```swift
 @APIRequest(
@@ -300,17 +315,18 @@ let response: LoginResponse = try await service.request(
     method: .get
 )
 struct GetProfileRequest {
-    @HeaderField(key: .authorization) var authorization: String
+    @HeaderField(key: .authorization) var authorization: String?
+    @HeaderField(key: .contentType) var contentType: String? = "application/json"
 }
 
 // 사용
 let profile: UserProfile = try await service.request(
     GetProfileRequest(authorization: "Bearer \(token)")
 )
-// 결과: GET /me (Authorization 헤더 포함)
+// 결과: GET /me (Authorization, Content-Type 헤더 포함)
 ```
 
-#### 커스텀 헤더 (HTTPHeaders.HeaderKey에 없는 경우)
+#### @CustomHeader - 커스텀 헤더 (HTTPHeaders.HeaderKey에 없는 경우)
 
 ```swift
 @APIRequest(
@@ -319,13 +335,19 @@ let profile: UserProfile = try await service.request(
     path: "/me",
     method: .get
 )
-struct GetProfileRequest {
-    @CustomHeader("X-Custom-Header") var customValue: String
+struct GetProfileWithCustomHeaderRequest {
+    @HeaderField(key: .authorization) var authorization: String?
+    @CustomHeader("X-Request-ID") var requestId: String?
+    @CustomHeader("X-Client-Version") var clientVersion: String?
 }
 
 // 사용
 let profile: UserProfile = try await service.request(
-    GetProfileRequest(customValue: "custom-value")
+    GetProfileWithCustomHeaderRequest(
+        authorization: "Bearer \(token)",
+        requestId: UUID().uuidString,
+        clientVersion: "1.0.0"
+    )
 )
 ```
 
@@ -345,7 +367,59 @@ AsyncNetwork은 세 가지 주요 모듈로 구성됩니다:
 
 대부분의 경우 `import AsyncNetwork`만으로 모든 기능을 사용할 수 있습니다.
 
-#### 매크로 아키텍처 (v1.2.0+)
+#### 분리된 매크로 시스템 (v1.2.0+)
+
+AsyncNetwork은 세 가지 분리된 매크로를 제공합니다:
+
+| 매크로 | 역할 | 필수 여부 |
+|-------|------|----------|
+| `@APIRequest` | 네트워크 요청 필수 프로퍼티 생성 | 필수 |
+| `@APIDocument` | 문서화 메타데이터 생성 | 선택 |
+| `@APITestable` | 테스트 시나리오 및 Mock 응답 | 선택 |
+
+```swift
+// 기본 사용 (필수)
+@APIRequest(
+    response: [Post].self,
+    baseURL: "https://api.example.com",
+    path: "/posts",
+    method: .get
+)
+struct GetPostsRequest {}
+
+// 문서화 추가 (선택)
+@APIRequest(
+    response: [Post].self,
+    baseURL: "https://api.example.com",
+    path: "/posts",
+    method: .get
+)
+@APIDocument(
+    title: "Get all posts",
+    description: "모든 포스트를 조회합니다.",
+    tags: ["Posts"]
+)
+struct GetPostsDocumentedRequest {}
+
+// 테스트 시나리오 추가 (선택)
+@APIRequest(
+    response: Post.self,
+    baseURL: "https://api.example.com",
+    path: "/posts/{id}",
+    method: .get,
+    errorResponses: [404: PostNotFoundError.self]
+)
+@APIDocument(title: "Get post by ID", tags: ["Posts"])
+@APITestable(
+    scenarios: [.success, .notFound, .serverError],
+    errorExamples: ["404": """{"error": "Post not found"}"""]
+)
+struct GetPostByIdRequest {
+    @PathParameter var id: Int
+}
+```
+
+#### 매크로 아키텍처
 
 `@APIRequest` 매크로는 Clean Architecture 원칙에 따라 설계되었습니다:
 
@@ -451,8 +525,12 @@ sequenceDiagram
 import Foundation
 import AsyncNetwork
 
-final class AuthInterceptor: RequestInterceptor {
+final class AuthInterceptor: RequestInterceptor, @unchecked Sendable {
     private var accessToken: String?
+    
+    func updateToken(_ token: String?) {
+        accessToken = token
+    }
     
     func prepare(_ request: inout URLRequest, target: (any APIRequest)?) async throws {
         // 인증 토큰 자동 추가
@@ -478,7 +556,7 @@ final class AuthInterceptor: RequestInterceptor {
 // 서비스에 인터셉터 추가
 let authInterceptor = AuthInterceptor()
 let service = NetworkService(
-    interceptors: [authInterceptor]
+    interceptors: [authInterceptor, ConsoleLoggingInterceptor(minimumLevel: .info)]
 )
 ```
 
@@ -528,21 +606,16 @@ import AsyncNetwork
 // 1. 커스텀 재시도 규칙
 struct CustomRetryRule: RetryRule {
     func shouldRetry(error: Error) -> Bool? {
-        // 401 에러는 재시도하지 않음
-        if let statusError = error as? StatusCodeValidationError,
-           statusError.statusCode == 401 {
-            return false
-        }
-        
-        // 500번대 서버 에러는 재시도
+        // StatusCodeValidationError 처리
         if let statusError = error as? StatusCodeValidationError {
             switch statusError {
             case .serverError:
-                return true
-            case .clientError:
+                return true  // 500번대 서버 에러는 재시도
+            case .clientError(let code, _):
+                // 401, 403은 재시도하지 않음 (인증/권한 문제)
+                return code >= 500
+            case .invalidStatusCode, .unknownError:
                 return false
-            default:
-                return nil
             }
         }
         
@@ -647,10 +720,24 @@ let service = NetworkService(
 )
 struct SearchRequest {
     @PathParameter var category: String
-    @QueryParameter var query: String
-    @QueryParameter var page: Int
-    @QueryParameter var limit: Int
-    @HeaderField(key: .authorization) var authorization: String
+    @QueryParameter var query: String?
+    @QueryParameter var page: Int?
+    @QueryParameter var limit: Int?
+    @HeaderField(key: .authorization) var authorization: String?
+    
+    init(
+        category: String,
+        query: String? = nil,
+        page: Int? = 1,
+        limit: Int? = 20,
+        authorization: String? = nil
+    ) {
+        self.category = category
+        self.query = query
+        self.page = page
+        self.limit = limit
+        self.authorization = authorization
+    }
 }
 
 // 사용
@@ -697,6 +784,10 @@ import AsyncNetwork
 )
 struct DeletePostRequest {
     @PathParameter var id: Int
+    
+    init(id: Int) {
+        self.id = id
+    }
 }
 
 // 사용
@@ -722,14 +813,18 @@ final class NetworkMonitoringService: ObservableObject {
     @Published private(set) var isConnected: Bool
     @Published private(set) var connectionType: ConnectionType
     @Published private(set) var status: NetworkStatus
+    @Published private(set) var isExpensive: Bool
+    @Published private(set) var isConstrained: Bool
     
-    private let monitor: NetworkMonitor
+    private let monitor: any NetworkMonitoring
     
-    init(monitor: NetworkMonitor = .shared) {
+    init(monitor: any NetworkMonitoring = NetworkMonitor.shared) {
         self.monitor = monitor
         self.isConnected = monitor.isConnected
         self.connectionType = monitor.connectionType
         self.status = monitor.status
+        self.isExpensive = monitor.isExpensive
+        self.isConstrained = monitor.isConstrained
         
         // 상태 변경 콜백 등록
         monitor.onStatusChange { [weak self] newStatus in
@@ -738,6 +833,8 @@ final class NetworkMonitoringService: ObservableObject {
                 self.status = newStatus
                 self.isConnected = monitor.isConnected
                 self.connectionType = monitor.connectionType
+                self.isExpensive = monitor.isExpensive
+                self.isConstrained = monitor.isConstrained
             }
         }
     }
@@ -898,7 +995,7 @@ case .ethernet:
     print("이더넷 연결")
 case .loopback:
     print("로컬 루프백")
-default:
+case .unknown:
     print("알 수 없는 연결")
 }
 
@@ -966,7 +1063,7 @@ import Testing
 @testable import AsyncNetwork
 
 // 테스트용 모델 정의
-struct User: Codable, Equatable {
+struct User: Codable, Equatable, Sendable {
     let id: Int
     let name: String
 }
@@ -974,7 +1071,6 @@ struct User: Codable, Equatable {
 // 테스트용 API 요청 정의
 @APIRequest(
     response: [User].self,
-    title: "Get users",
     baseURL: "https://api.example.com",
     path: "/users",
     method: .get
@@ -1009,7 +1105,10 @@ func testGetUsersSuccess() async throws {
     let client = HTTPClient(session: session)
     let service = NetworkService(
         httpClient: client,
-        retryPolicy: RetryPolicy(configuration: RetryConfiguration(maxRetries: 0))
+        retryPolicy: RetryPolicy(configuration: RetryConfiguration(maxRetries: 0)),
+        interceptors: [],  // 테스트에서는 인터셉터 비활성화
+        networkMonitor: nil,  // 테스트에서는 네트워크 모니터 비활성화
+        checkNetworkBeforeRequest: false
     )
     
     // When
@@ -1023,7 +1122,6 @@ func testGetUsersSuccess() async throws {
 // 테스트용 API 요청 정의
 @APIRequest(
     response: EmptyResponse.self,
-    title: "Test retry request",
     baseURL: "https://api.example.com",
     path: "/users/retry",
     method: .get
@@ -1062,7 +1160,10 @@ func testRetryPolicy() async throws {
     )
     let service = NetworkService(
         httpClient: client,
-        retryPolicy: retryPolicy
+        retryPolicy: retryPolicy,
+        interceptors: [],
+        networkMonitor: nil,
+        checkNetworkBeforeRequest: false
     )
     
     // When
@@ -1100,7 +1201,7 @@ func testExample() async throws {
 
 ### 🎯 추가 리소스
 
-- 📱 [AsyncNetworkDocKitExample](Projects/AsyncNetworkDocKitExample) - API 문서 앱 데모
+- 📱 [AsyncNetworkSampleApp](Projects/AsyncNetworkSampleApp) - API Playground 및 샘플 앱 데모
 - 🐛 [Issues](https://github.com/Jimmy-Jung/AsyncNetwork/issues) - 버그 리포트 및 기능 제안
 - 💬 [Discussions](https://github.com/Jimmy-Jung/AsyncNetwork/discussions) - 질문 및 피드백
 
