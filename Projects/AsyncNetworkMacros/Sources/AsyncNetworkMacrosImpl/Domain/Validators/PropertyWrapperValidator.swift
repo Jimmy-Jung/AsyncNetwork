@@ -272,13 +272,29 @@ public struct PropertyWrapperValidator {
     }
 
     /// 요청 바디 관련 프로퍼티인지 확인
+    /// - Parameters:
+    ///   - propertyName: 검사할 프로퍼티 이름
+    ///   - httpMethod: HTTP 메서드 (post, put, patch 등)
+    /// - Returns: 바디 관련 프로퍼티인지 여부
     private func isBodyRelated(propertyName: String, httpMethod: String) -> Bool {
-        let bodyKeywords = ["body", "payload", "data", "request"]
-        let hasBodyKeyword = bodyKeywords.contains { propertyName.contains($0) }
-
-        // POST, PUT, PATCH 메서드는 바디를 자주 사용
+        let lowercasedName = propertyName.lowercased()
+        
+        // 바디 키워드 확인
+        let bodyKeywords = ["body", "payload", "data", "request", "content"]
+        let hasBodyKeyword = bodyKeywords.contains { lowercasedName.contains($0) }
+        
+        // 쿼리 파라미터로 자주 사용되는 이름 제외
+        let queryKeywords = [
+            "page", "size", "limit", "offset", 
+            "sort", "filter", "search", "query",
+            "order", "per", "from", "to"
+        ]
+        let isQueryParam = queryKeywords.contains { lowercasedName.contains($0) }
+        
+        // POST, PUT, PATCH 메서드 확인
         let isBodyMethod = ["post", "put", "patch"].contains(httpMethod.lowercased())
-
-        return hasBodyKeyword && isBodyMethod
+        
+        // 바디 키워드가 있고, 쿼리 파라미터가 아니며, 바디를 사용하는 메서드인 경우
+        return hasBodyKeyword && !isQueryParam && isBodyMethod
     }
 }

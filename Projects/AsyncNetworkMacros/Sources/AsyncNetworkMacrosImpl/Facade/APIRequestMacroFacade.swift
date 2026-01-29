@@ -115,6 +115,7 @@ public struct APIRequestMacroFacade {
         // @APIDocument가 없으면 MetadataGenerator 실행
         if !hasAPIDocumentAttribute(declaration: declaration) {
             let metadataGenerator = MetadataGenerator(
+                typeName: structDecl.name.text,
                 args: args,
                 properties: properties
             )

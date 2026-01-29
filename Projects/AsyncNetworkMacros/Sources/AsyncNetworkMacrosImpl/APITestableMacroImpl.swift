@@ -176,15 +176,63 @@ public struct APITestableMacroImpl: MemberMacro {
 
             switch label {
             case "scenarios":
-                scenarios = extractTestScenarios(from: expr)
+                scenarios = extractTestScenariosInternal(from: expr)
             case "errorExamples":
-                errorExamples = extractErrorExamples(from: expr)
+                errorExamples = extractErrorExamplesInternal(from: expr)
             default:
                 break
             }
         }
 
         return TestableArguments(scenarios: scenarios, errorExamples: errorExamples)
+    }
+    
+    /// scenarios 배열을 파싱합니다.
+    private static func extractTestScenariosInternal(from expr: ExprSyntax) -> [String] {
+        guard let arrayExpr = expr.as(ArrayExprSyntax.self) else {
+            return []
+        }
+
+        var scenarios: [String] = []
+        for element in arrayExpr.elements {
+            if let memberAccess = element.expression.as(MemberAccessExprSyntax.self) {
+                scenarios.append(memberAccess.declName.baseName.text)
+            }
+        }
+
+        return scenarios
+    }
+
+    /// errorExamples 딕셔너리를 파싱합니다.
+    private static func extractErrorExamplesInternal(from expr: ExprSyntax) -> [String: String] {
+        guard let dictExpr = expr.as(DictionaryExprSyntax.self) else {
+            return [:]
+        }
+
+        var examples: [String: String] = [:]
+
+        for element in dictExpr.content.as(DictionaryElementListSyntax.self) ?? [] {
+            // Key (status code)
+            guard let keyString = element.key.as(StringLiteralExprSyntax.self),
+                  let keySegment = keyString.segments.first?.as(StringSegmentSyntax.self)
+            else {
+                continue
+            }
+            let key = keySegment.content.text
+
+            // Value (JSON)
+            if let valueString = element.value.as(StringLiteralExprSyntax.self) {
+                var json = ""
+                for segment in valueString.segments {
+                    if let stringSegment = segment.as(StringSegmentSyntax.self) {
+                        json += stringSegment.content.text
+                    }
+                }
+                examples[key] = json
+            }
+        }
+
+        return examples
     }
 
     /// 기존 멤버를 수집합니다.
@@ -247,26 +295,36 @@ public struct APITestableMacroImpl: MemberMacro {
         """
     }
 
-    /// mockResponse() 메서드 생성 (기존 코드 재사용)
+    /// mockResponse() 메서드 생성 (개선된 버전)
     private static func generateMockResponseMethod(
         typeName _: String,
         responseType: String,
         scenarios: [String],
         errorExamples: [String: String]
     ) -> DeclSyntax {
+        // 타입 문자열 정규화
+        let trimmedType = responseType.trimmingCharacters(in: .whitespaces)
+        
         // 배열 타입이거나 EmptyResponse인지 확인
-        let isArrayType = responseType.hasPrefix("[") && responseType.hasSuffix("]")
-        let isEmptyResponse = responseType == "EmptyResponse"
+        let isArrayType = trimmedType.hasPrefix("[") && trimmedType.hasSuffix("]") && !trimmedType.contains("?")
+        let isEmptyResponse = trimmedType == "EmptyResponse"
 
         let fixtureCall: String
         if isEmptyResponse {
             fixtureCall = "let response = EmptyResponse()"
         } else if isArrayType {
             // 배열 타입일 경우, 내부 타입을 추출하여 fixture() 배열 생성
-            let innerType = String(responseType.dropFirst().dropLast())
-            fixtureCall = "let response = [\(innerType).fixture()]"
+            let innerType = String(trimmedType.dropFirst().dropLast()).trimmingCharacters(in: .whitespaces)
+            
+            // 중첩 배열 체크
+            if innerType.hasPrefix("[") {
+                // 중첩 배열은 빈 배열로 처리
+                fixtureCall = "let response: \(trimmedType) = []"
+            } else {
+                fixtureCall = "let response = [\(innerType).fixture()]"
+            }
         } else {
-            fixtureCall = "let response = \(responseType).fixture()"
+            fixtureCall = "let response = \(trimmedType).fixture()"
         }
 
         var cases = """
@@ -403,6 +461,60 @@ public struct APITestableMacroImpl: MemberMacro {
                     )
                     return (errorData, httpResponse, nil)
                 """
+            case "forbidden":
+                cases += """
+
+                case .forbidden:
+                    let errorData = Data(\"\"\"
+                    {
+                        "error": "Forbidden",
+                        "code": "FORBIDDEN"
+                    }
+                    \"\"\".utf8)
+                    let httpResponse = HTTPURLResponse(
+                        url: url,
+                        statusCode: 403,
+                        httpVersion: nil,
+                        headerFields: ["Content-Type": "application/json"]
+                    )
+                    return (errorData, httpResponse, nil)
+                """
+            case "tooManyRequests":
+                cases += """
+
+                case .tooManyRequests:
+                    let errorData = Data(\"\"\"
+                    {
+                        "error": "Too Many Requests",
+                        "message": "Rate limit exceeded"
+                    }
+                    \"\"\".utf8)
+                    let httpResponse = HTTPURLResponse(
+                        url: url,
+                        statusCode: 429,
+                        httpVersion: nil,
+                        headerFields: ["Content-Type": "application/json"]
+                    )
+                    return (errorData, httpResponse, nil)
+                """
+            case "serviceUnavailable":
+                cases += """
+
+                case .serviceUnavailable:
+                    let errorData = Data(\"\"\"
+                    {
+                        "error": "Service Unavailable",
+                        "message": "Service is temporarily unavailable"
+                    }
+                    \"\"\".utf8)
+                    let httpResponse = HTTPURLResponse(
+                        url: url,
+                        statusCode: 503,
+                        httpVersion: nil,
+                        headerFields: ["Content-Type": "application/json"]
+                    )
+                    return (errorData, httpResponse, nil)
+                """
             default:
                 cases += """
 
@@ -433,18 +545,44 @@ public struct APITestableMacroImpl: MemberMacro {
         """
     }
 
-    /// 상태 코드에 해당하는 케이스 이름 반환
+    /// 상태 코드에 해당하는 케이스 이름 반환 (개선된 버전)
     private static func getCaseNameForStatusCode(_ statusCode: String) -> String {
-        switch statusCode {
-        case "404": return "notFound"
-        case "500": return "serverError"
-        case "401": return "unauthorized"
-        case "400": return "clientError"
-        default: return "serverError"
+        guard let code = Int(statusCode) else {
+            return "invalidStatusCode"
+        }
+        
+        switch code {
+        case 200...299:
+            return "success"
+        case 400:
+            return "clientError"
+        case 401:
+            return "unauthorized"
+        case 403:
+            return "forbidden"
+        case 404:
+            return "notFound"
+        case 429:
+            return "tooManyRequests"
+        case 500:
+            return "serverError"
+        case 502:
+            return "badGateway"
+        case 503:
+            return "serviceUnavailable"
+        case 504:
+            return "gatewayTimeout"
+        default:
+            if code >= 400 && code < 500 {
+                return "clientError"
+            } else if code >= 500 {
+                return "serverError"
+            }
+            return "unexpectedStatusCode"
         }
     }
 
-    /// JSON escape 처리
+    /// JSON escape 처리 (개선된 버전)
     private static func escapeJSON(_ json: String) -> String {
         return json
             .replacingOccurrences(of: "\\", with: "\\\\")
@@ -452,6 +590,8 @@ public struct APITestableMacroImpl: MemberMacro {
             .replacingOccurrences(of: "\n", with: "\\n")
             .replacingOccurrences(of: "\r", with: "\\r")
             .replacingOccurrences(of: "\t", with: "\\t")
+            .replacingOccurrences(of: "\u{08}", with: "\\b")  // Backspace
+            .replacingOccurrences(of: "\u{0C}", with: "\\f")  // Form feed
     }
 }
 

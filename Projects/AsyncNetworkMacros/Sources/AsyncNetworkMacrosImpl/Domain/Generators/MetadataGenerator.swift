@@ -29,13 +29,16 @@ import SwiftSyntax
 /// }
 /// ```
 public struct MetadataGenerator: CodeGenerator {
+    private let typeName: String
     private let args: MacroArguments
     private let properties: [PropertyInfo]
 
     public init(
+        typeName: String,
         args: MacroArguments,
         properties: [PropertyInfo]
     ) {
+        self.typeName = typeName
         self.args = args
         self.properties = properties
     }
@@ -50,21 +53,44 @@ public struct MetadataGenerator: CodeGenerator {
 
     /// EndpointMetadata 생성
     private func generateMetadata() -> DeclSyntax {
-        let parametersArray = generateParametersArray()
-
-        let titleEscaped = args.title.replacingOccurrences(of: "\"", with: "\\\"")
-        let descriptionEscaped = args.description.replacingOccurrences(of: "\"", with: "\\\"")
+        // 완전한 escape 처리 (백슬래시, 따옴표, 줄바꿈)
+        let titleEscaped = escapeString(args.title)
+        let descriptionEscaped = escapeString(args.description)
         let tagsArray = args.tags.map { "\"\($0)\"" }.joined(separator: ", ")
+        
+        // headers 딕셔너리 생성
+        var headerEntries: [String] = []
+        for property in properties {
+            if property.wrapperType == "HeaderField" || property.wrapperType == "CustomHeader",
+               let headerKey = property.headerKey,
+               let defaultValue = property.defaultValue {
+                let escapedValue = defaultValue
+                    .replacingOccurrences(of: "\\", with: "\\\\")
+                    .replacingOccurrences(of: "\"", with: "\\\"")
+                headerEntries.append("\"\(headerKey)\": \"\(escapedValue)\"")
+            }
+        }
+        let headersString = headerEntries.isEmpty ? "[:]" : "[\(headerEntries.joined(separator: ", "))]"
+        
+        // parameters 배열을 문자열 배열로 변환
+        let parameterNames = properties
+            .filter { ["PathParameter", "QueryParameter"].contains($0.wrapperType) }
+            .map { "\"\($0.name)\"" }
+        let parametersStringArray = parameterNames.isEmpty ? "[]" : "[\(parameterNames.joined(separator: ", "))]"
 
         return """
-        public var metadata: EndpointMetadata {
+        public static var metadata: EndpointMetadata {
             EndpointMetadata(
+                id: "\(raw: typeName)",
                 title: "\(raw: titleEscaped)",
                 description: "\(raw: descriptionEscaped)",
                 method: "\(raw: args.method.uppercased())",
                 path: "\(raw: args.path)",
+                baseURLString: \(raw: args.baseURL),
+                headers: \(raw: headersString),
                 tags: [\(raw: tagsArray)],
-                parameters: \(raw: parametersArray)
+                parameters: \(raw: parametersStringArray),
+                responseTypeName: "\(raw: args.responseType)"
             )
         }
         """
@@ -110,5 +136,16 @@ public struct MetadataGenerator: CodeGenerator {
         }
 
         return "[\n        " + parameters.joined(separator: ",\n        ") + "\n    ]"
+    }
+    
+    /// 문자열을 안전하게 escape 처리
+    /// - 백슬래시, 따옴표, 줄바꿈, 캐리지 리턴, 탭을 처리
+    private func escapeString(_ string: String) -> String {
+        return string
+            .replacingOccurrences(of: "\\", with: "\\\\")
+            .replacingOccurrences(of: "\"", with: "\\\"")
+            .replacingOccurrences(of: "\n", with: "\\n")
+            .replacingOccurrences(of: "\r", with: "\\r")
+            .replacingOccurrences(of: "\t", with: "\\t")
     }
 }

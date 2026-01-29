@@ -20,6 +20,17 @@ public struct PathParser {
     /// let placeholders = parser.extractPlaceholders(from: "/posts/{id}")
     /// // placeholders == ["id"]
     /// ```
+    ///
+    /// ## 유효한 플레이스홀더 패턴
+    /// - `{id}`: 필수 파라미터
+    /// - `{userId}`: 캐멀케이스
+    /// - `{user_id}`: 언더스코어
+    /// - `{id?}`: 선택적 파라미터
+    ///
+    /// ## 무효한 패턴 (무시됨)
+    /// - `{}`: 빈 플레이스홀더
+    /// - `{123}`: 숫자로 시작
+    /// - `{my-id}`: 하이픈 포함
     public func extractPlaceholders(from path: String) -> [String] {
         var placeholders: [String] = []
         var current = ""
@@ -33,7 +44,11 @@ public struct PathParser {
                 if inPlaceholder, !current.isEmpty {
                     // {id?} 형태에서 ? 제거
                     let cleaned = current.replacingOccurrences(of: "?", with: "")
-                    placeholders.append(cleaned)
+                    
+                    // 유효한 식별자인지 검증
+                    if isValidIdentifier(cleaned) {
+                        placeholders.append(cleaned)
+                    }
                 }
                 inPlaceholder = false
             } else if inPlaceholder {
@@ -42,6 +57,30 @@ public struct PathParser {
         }
 
         return placeholders
+    }
+    
+    /// Swift 식별자로 유효한지 검증
+    /// - Parameter name: 검증할 이름
+    /// - Returns: 유효한 식별자 여부
+    ///
+    /// Swift 식별자 규칙:
+    /// - 첫 글자: 알파벳 또는 언더스코어
+    /// - 이후 글자: 알파벳, 숫자, 언더스코어
+    private func isValidIdentifier(_ name: String) -> Bool {
+        guard !name.isEmpty else { return false }
+        
+        let first = name.first!
+        guard first.isLetter || first == "_" else {
+            return false
+        }
+        
+        for char in name.dropFirst() {
+            guard char.isLetter || char.isNumber || char == "_" else {
+                return false
+            }
+        }
+        
+        return true
     }
 
     /// 선택적 파라미터 추출

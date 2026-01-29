@@ -11,6 +11,44 @@ import AsyncViewModel
 import Network
 import Testing
 
+// MARK: - MockNetworkMonitor (테스트용)
+
+/// 테스트용 NetworkMonitoring Mock
+private final class MockNetworkMonitor: NetworkMonitoring, @unchecked Sendable {
+    var isConnected: Bool = true
+    var connectionType: ConnectionType = .wifi
+    var status: NetworkStatus = .connected(.wifi)
+    var isExpensive: Bool = false
+    var isConstrained: Bool = false
+    
+    private var callbacks: [@Sendable (NetworkStatus) -> Void] = []
+    
+    init(
+        isConnected: Bool = true,
+        connectionType: ConnectionType = .wifi,
+        isExpensive: Bool = false,
+        isConstrained: Bool = false
+    ) {
+        self.isConnected = isConnected
+        self.connectionType = connectionType
+        self.status = isConnected ? .connected(connectionType) : .disconnected
+        self.isExpensive = isExpensive
+        self.isConstrained = isConstrained
+    }
+    
+    func startMonitoring() {}
+    func stopMonitoring() {}
+    
+    func onStatusChange(_ callback: @escaping @Sendable (NetworkStatus) -> Void) {
+        callbacks.append(callback)
+    }
+    
+    func simulateStatusChange(_ status: NetworkStatus) {
+        self.status = status
+        callbacks.forEach { $0(status) }
+    }
+}
+
 /// NetworkMonitor 통합 테스트
 @Suite("NetworkMonitor 통합")
 @MainActor
@@ -28,10 +66,10 @@ struct NetworkMonitorIntegrationTests {
         let viewModel = SettingsViewModel(networkMonitor: mockMonitor)
         let store = AsyncTestStore(viewModel: viewModel)
 
-        store.send(.viewDidAppear)
+        store.send(SettingsViewModel.Input.viewDidAppear)
         try await store.waitForEffects()
 
-        #expect(store.state.networkStatus == .connected(.wifi))
+        #expect(store.state.networkStatus == NetworkStatus.connected(.wifi))
         #expect(store.state.isExpensive == false)
         #expect(store.state.isConstrained == false)
     }
@@ -44,10 +82,10 @@ struct NetworkMonitorIntegrationTests {
         let viewModel = SettingsViewModel(networkMonitor: mockMonitor)
         let store = AsyncTestStore(viewModel: viewModel)
 
-        store.send(.viewDidAppear)
+        store.send(SettingsViewModel.Input.viewDidAppear)
         try await store.waitForEffects()
 
-        #expect(store.state.networkStatus == .disconnected)
+        #expect(store.state.networkStatus == NetworkStatus.disconnected)
         #expect(store.state.isExpensive == false)
         #expect(store.state.isConstrained == false)
     }
@@ -63,10 +101,10 @@ struct NetworkMonitorIntegrationTests {
         let viewModel = SettingsViewModel(networkMonitor: mockMonitor)
         let store = AsyncTestStore(viewModel: viewModel)
 
-        store.send(.viewDidAppear)
+        store.send(SettingsViewModel.Input.viewDidAppear)
         try await store.waitForEffects()
 
-        #expect(store.state.networkStatus == .connected(.cellular))
+        #expect(store.state.networkStatus == NetworkStatus.connected(.cellular))
         #expect(store.state.isExpensive == true)
         #expect(store.state.isConstrained == false)
     }
@@ -82,22 +120,22 @@ struct NetworkMonitorIntegrationTests {
         let viewModel = SettingsViewModel(networkMonitor: mockMonitor)
         let store = AsyncTestStore(viewModel: viewModel)
 
-        store.send(.viewDidAppear)
+        store.send(SettingsViewModel.Input.viewDidAppear)
         try await store.waitForEffects()
 
-        #expect(store.state.networkStatus == .connected(.wifi))
+        #expect(store.state.networkStatus == NetworkStatus.connected(.wifi))
         #expect(store.state.isExpensive == false)
         #expect(store.state.isConstrained == true)
     }
 
     @Test("ViewModel이 모든 연결 타입을 올바르게 처리한다", arguments: [
-        NetworkMonitor.ConnectionType.wifi,
-        NetworkMonitor.ConnectionType.cellular,
-        NetworkMonitor.ConnectionType.ethernet,
-        NetworkMonitor.ConnectionType.loopback,
-        NetworkMonitor.ConnectionType.unknown
+        ConnectionType.wifi,
+        ConnectionType.cellular,
+        ConnectionType.ethernet,
+        ConnectionType.loopback,
+        ConnectionType.unknown
     ])
-    func viewModelHandlesAllConnectionTypes(connectionType: NetworkMonitor.ConnectionType) async throws {
+    func viewModelHandlesAllConnectionTypes(connectionType: ConnectionType) async throws {
         let mockMonitor = MockNetworkMonitor()
         mockMonitor.isConnected = true
         mockMonitor.connectionType = connectionType
@@ -105,10 +143,10 @@ struct NetworkMonitorIntegrationTests {
         let viewModel = SettingsViewModel(networkMonitor: mockMonitor)
         let store = AsyncTestStore(viewModel: viewModel)
 
-        store.send(.viewDidAppear)
+        store.send(SettingsViewModel.Input.viewDidAppear)
         try await store.waitForEffects()
 
-        #expect(store.state.networkStatus == .connected(connectionType))
+        #expect(store.state.networkStatus == NetworkStatus.connected(connectionType))
     }
 
     @Test("viewDidDisappear 시 NetworkMonitor 구독이 취소된다")
@@ -117,12 +155,12 @@ struct NetworkMonitorIntegrationTests {
         let viewModel = SettingsViewModel(networkMonitor: mockMonitor)
         let store = AsyncTestStore(viewModel: viewModel)
 
-        store.send(.viewDidAppear)
+        store.send(SettingsViewModel.Input.viewDidAppear)
         try await store.waitForEffects()
 
-        #expect(store.state.networkStatus == .connected(.wifi))
+        #expect(store.state.networkStatus == NetworkStatus.connected(.wifi))
 
-        store.send(.viewDidDisappear)
+        store.send(SettingsViewModel.Input.viewDidDisappear)
         try await store.waitForEffects()
 
         // Effect가 취소되었는지 확인 (추가 Action이 없어야 함)
@@ -142,10 +180,10 @@ struct NetworkMonitorIntegrationTests {
         let viewModel = SettingsViewModel(networkMonitor: mockMonitor)
         let store = AsyncTestStore(viewModel: viewModel)
 
-        store.send(.viewDidAppear)
+        store.send(SettingsViewModel.Input.viewDidAppear)
         try await store.waitForEffects()
 
-        #expect(store.state.networkStatus == .connected(.cellular))
+        #expect(store.state.networkStatus == NetworkStatus.connected(.cellular))
         #expect(store.state.networkStatus.isConnected == true)
         #expect(store.state.isExpensive == true)
         #expect(store.state.isConstrained == true)
@@ -161,10 +199,10 @@ struct NetworkMonitorIntegrationTests {
         let viewModel = SettingsViewModel(networkMonitor: mockMonitor)
         let store = AsyncTestStore(viewModel: viewModel)
 
-        store.send(.viewDidAppear)
+        store.send(SettingsViewModel.Input.viewDidAppear)
         try await store.waitForEffects()
 
-        #expect(store.state.networkStatus == .disconnected)
+        #expect(store.state.networkStatus == NetworkStatus.disconnected)
         #expect(store.state.networkStatus.isConnected == false)
         #expect(store.state.isExpensive == false)
         #expect(store.state.isConstrained == false)

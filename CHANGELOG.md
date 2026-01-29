@@ -7,6 +7,42 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [Unreleased]
+
+### 🔒 Security
+
+#### @APIDocument Macro - Special Character Escape Fix
+- **Fixed critical string escape vulnerabilities in @APIDocument macro**
+  - Added `escapeForStringLiteral()` helper function to properly escape special characters
+  - Fixed unescaped special characters in `tags` array elements (HIGH priority)
+  - Fixed unescaped special characters in `headerKey` for @HeaderField and @CustomHeader (HIGH priority)
+  - Fixed unescaped special characters in `baseURL` when using string literals (MEDIUM priority)
+  - Fixed unescaped special characters in `path` (MEDIUM priority)
+  - Fixed unescaped special characters in `typeName`, `responseType`, and parameter names (LOW priority)
+  - Special characters now properly escaped: `\`, `"`, `\n`, `\r`, `\t`
+
+### 🧪 Tests
+
+#### @APIDocument Macro - Enhanced Test Coverage
+- **Added 7 new test cases for special character handling**
+  - Test for tags with quotes: `["Test\"Tag"]`
+  - Test for tags with backslashes: `["Category\\Path"]`
+  - Test for title and description with special chars: `"Get \"all\" posts"`, `"Line1\nLine2"`
+  - Test for baseURL with special chars: `"https://api.test.com/\"endpoint\""`
+  - Test for path with special chars: `"/posts/{id}/comments\"test"`
+  - Test for tabs and carriage returns: `"Get\tposts"`, `"Line1\r\nLine2\tTabbed"`
+  - Test for multiple special chars combined
+- **Added integration test in MacroCompositionTests**
+  - Test for special characters in all fields with PropertyWrappers
+
+### 📊 Test Results
+
+- All 242 tests passed successfully
+- No linter errors detected
+- All special character edge cases now properly handled
+
+---
+
 ## [1.0.0] - 2026-01-02
 
 ### 🎉 Initial Release
