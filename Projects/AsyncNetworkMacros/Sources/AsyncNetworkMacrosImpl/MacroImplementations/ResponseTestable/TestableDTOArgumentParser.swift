@@ -1,14 +1,8 @@
 import SwiftSyntax
 
-/// @ResponseTestable 매크로 인자 파서
 struct TestableDTOArgumentParser {
-    /// 매크로 인자를 파싱하여 TestableDTOArguments로 변환
-    ///
-    /// - Parameter node: @ResponseTestable 어트리뷰트 노드
-    /// - Returns: 파싱된 인자 (인자가 없으면 기본값 반환)
     func parse(from node: AttributeSyntax) throws -> TestableDTOArguments {
         guard let arguments = node.arguments?.as(LabeledExprListSyntax.self) else {
-            // 기본값 사용
             return TestableDTOArguments(
                 mockStrategy: "random",
                 fixtureJSON: nil,
