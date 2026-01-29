@@ -15,7 +15,7 @@ public struct TestGenerator: CodeGenerator {
     public func generate() -> [DeclSyntax] {
         [
             generateMockScenarioEnum(),
-            generateMockResponseMethod()
+            generateMockResponseMethod(),
         ]
     }
 }
@@ -61,7 +61,7 @@ extension TestGenerator {
         let switchCases = [
             generateSuccessCase(),
             generateErrorCases(),
-            generateDefaultCase()
+            generateDefaultCase(),
         ].flatMap { $0 }
 
         let switchBody = switchCases.joined(separator: "\n        ")
@@ -79,7 +79,7 @@ extension TestGenerator {
         [createMockResponseCase(
             scenario: "success",
             json: MockJSON.success,
-            statusCode: HTTPStatusCode.ok
+            statusCode: HTTPStatusCode.success
         )]
     }
 
