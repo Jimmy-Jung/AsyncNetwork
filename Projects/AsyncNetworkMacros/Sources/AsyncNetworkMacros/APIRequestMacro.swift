@@ -379,7 +379,7 @@
 /// struct GetCurrentUserRequest {
 ///     let token: String?
 ///
-///     @HeaderField(key: .authorization) 
+///     @HeaderField(key: .authorization)
 ///     var authorization: String? {
 ///         token.map { "Bearer \($0)" }
 ///     }
@@ -434,8 +434,7 @@
 ///
 /// - `@APIDocument`: API 문서화 메타데이터 추가
 /// - `@APITestable`: 테스트 Mock 응답 자동 생성
-/// - `@ResponseDocument`: 응답 타입 문서화
-/// - `@ResponseTestable`: 응답 타입 테스트 데이터 생성
+/// - `@ResponseTestable`: 응답 타입 테스트 데이터 생성 및 문서화 (통합됨)
 ///
 /// ## 성능 고려사항
 ///

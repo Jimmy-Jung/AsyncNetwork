@@ -28,12 +28,17 @@ public struct ResponseTestableMacroImpl: MemberMacro, ExtensionMacro {
 
         var members: [DeclSyntax] = []
 
-        members.append(generateMockMethod(typeName: typeName, properties: properties, strategy: args.mockStrategy))
+        members.append(generateMockMethod(typeName: typeName, properties: properties))
         members.append(generateFixtureMethod(typeName: typeName, properties: properties, fixtureJSON: fixtureJSON))
         members.append(generateMockArrayMethod(defaultCount: args.defaultArrayCount))
 
         // assertValid() 메서드
         members.append(generateAssertValidMethod(properties: properties))
+
+        // jsonSample 프로퍼티 (generateDocumentation: true인 경우)
+        if args.generateDocumentation, let json = fixtureJSON {
+            members.append(generateJSONSampleProperty(json: json))
+        }
 
         // builder() 메서드 및 Builder 타입 (옵션)
         if args.includeBuilder {
@@ -70,11 +75,10 @@ public struct ResponseTestableMacroImpl: MemberMacro, ExtensionMacro {
 
     // MARK: - Helper Methods
 
-    /// mock() 메서드 생성
+    /// mock() 메서드 생성 (항상 랜덤 값)
     private static func generateMockMethod(
         typeName: String,
-        properties: [PropertyInfo],
-        strategy _: String
+        properties: [PropertyInfo]
     ) -> DeclSyntax {
         var initParams: [String] = []
 
@@ -177,6 +181,27 @@ public struct ResponseTestableMacroImpl: MemberMacro, ExtensionMacro {
         /// 데이터 검증
         public func assertValid() {
             \(raw: validationCode)
+        }
+        """
+    }
+
+    /// jsonSample 프로퍼티 생성 (OpenAPI 문서화용)
+    private static func generateJSONSampleProperty(json: String) -> DeclSyntax {
+        // 들여쓰기 추가 (빈 줄 제외)
+        let indented = json
+            .components(separatedBy: .newlines)
+            .map { $0.isEmpty ? $0 : "    " + $0 }
+            .joined(separator: "\n")
+
+        return """
+        /// JSON 샘플 문자열
+        ///
+        /// OpenAPI 문서 생성 시 사용되는 응답 예시입니다.
+        /// fixtureJSON과 동일한 내용을 포함합니다.
+        public static var jsonSample: String {
+            \"\"\"
+        \(raw: indented)
+            \"\"\"
         }
         """
     }

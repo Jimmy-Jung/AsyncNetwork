@@ -17,11 +17,10 @@ import Testing
 
 @Suite("@ResponseTestable Macro Fixture Tests")
 struct ResponseTestableMacroFixtureTests {
-
     // MARK: - Builder 패턴 테스트
 
     @Test("@ResponseTestable이 Builder를 올바르게 생성하는지 확인")
-    func testBuilderGeneration() {
+    func builderGeneration() {
         // Given
         let source = """
         @ResponseTestable(mockStrategy: .random, includeBuilder: true, defaultArrayCount: 5)
@@ -140,17 +139,17 @@ struct ResponseTestableMacroFixtureTests {
     // MARK: - fixtureJSON 에러 처리 테스트
 
     @Test("@ResponseTestable이 잘못된 fixtureJSON에 대해 명확한 에러를 제공하는지 확인")
-    func testInvalidFixtureJSONErrorHandling() {
+    func invalidFixtureJSONErrorHandling() {
         // Given - 의도적으로 잘못된 JSON
         let source = """
-        @ResponseTestable(mockStrategy: .random, includeBuilder: false)
-        @ResponseDocument(
+        @ResponseTestable(
             fixtureJSON: \"""
             {
               "id": "invalid_not_int",
               "name": "Test"
             }
-            \"""
+            \""",
+            includeBuilder: false
         )
         struct ErrorDTO: Codable, Sendable {
             let id: Int
@@ -199,14 +198,26 @@ struct ResponseTestableMacroFixtureTests {
                     assert(id > 0, "id must be positive")
                     assert(!name.isEmpty, "name must not be empty")
                 }
+
+                /// JSON 샘플 문자열
+                ///
+                /// OpenAPI 문서 생성 시 사용되는 응답 예시입니다.
+                /// fixtureJSON과 동일한 내용을 포함합니다.
+                public static var jsonSample: String {
+                    \"""
+                    {
+                      "id": "invalid_not_int",
+                      "name": "Test"
+                    }
+                    \"""
+                }
             }
 
             extension ErrorDTO: TestableDTO {
             }
             """,
             macros: [
-                "ResponseTestable": ResponseTestableMacroImpl.self,
-                "ResponseDocument": ResponseDocumentMacroImpl.self
+                "ResponseTestable": ResponseTestableMacroImpl.self
             ]
         )
     }

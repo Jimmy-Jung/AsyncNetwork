@@ -14,17 +14,14 @@ let learningPlatformBaseURL: String = "https://api.learning-platform.example.com
 
 // MARK: - Response DTOs
 
-@ResponseDocument(
+@ResponseTestable(
     fixtureJSON: """
     {
       "id": "course-001",
       "title": "Swift Programming Fundamentals",
       "description": "Learn the basics of Swift programming language"
     }
-    """
-)
-@ResponseTestable(
-    mockStrategy: .random,
+    """,
     includeBuilder: true,
     defaultArrayCount: 5
 )
@@ -34,16 +31,13 @@ struct CourseDTO: Codable, Sendable {
     let description: String
 }
 
-@ResponseDocument(
+@ResponseTestable(
     fixtureJSON: """
     {
       "id": "lesson-001",
       "title": "Introduction to Variables"
     }
-    """
-)
-@ResponseTestable(
-    mockStrategy: .random,
+    """,
     includeBuilder: true,
     defaultArrayCount: 5
 )
@@ -52,16 +46,13 @@ struct LessonDTO: Codable, Sendable {
     let title: String
 }
 
-@ResponseDocument(
+@ResponseTestable(
     fixtureJSON: """
     {
       "id": "exercise-001",
       "question": "What is a variable in Swift?"
     }
-    """
-)
-@ResponseTestable(
-    mockStrategy: .random,
+    """,
     includeBuilder: true,
     defaultArrayCount: 5
 )
@@ -70,7 +61,7 @@ struct ExerciseDTO: Codable, Sendable {
     let question: String
 }
 
-@ResponseDocument(
+@ResponseTestable(
     fixtureJSON: """
     {
       "items": [
@@ -87,10 +78,7 @@ struct ExerciseDTO: Codable, Sendable {
       ],
       "nextToken": "eyJwYWdlIjoxfQ=="
     }
-    """
-)
-@ResponseTestable(
-    mockStrategy: .random,
+    """,
     includeBuilder: true,
     defaultArrayCount: 5
 )

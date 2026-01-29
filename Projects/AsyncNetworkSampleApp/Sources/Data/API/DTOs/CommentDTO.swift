@@ -5,10 +5,10 @@
 //  Created by jimmy on 2026/01/06.
 //
 
-import Foundation
 import AsyncNetwork
+import Foundation
 
-@ResponseDocument(
+@ResponseTestable(
     fixtureJSON: """
     {
       "postId": 1,
@@ -17,10 +17,7 @@ import AsyncNetwork
       "email": "eliseo@example.com",
       "body": "laudantium enim quasi est quidem"
     }
-    """
-)
-@ResponseTestable(
-    mockStrategy: .random,
+    """,
     includeBuilder: true,
     defaultArrayCount: 10
 )
