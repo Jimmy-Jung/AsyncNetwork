@@ -1,20 +1,10 @@
-//
-//  MacroError.swift
-//  AsyncNetworkMacrosImpl
-//
-//  Created by jimmy on 2026/01/13.
-//
-
 import SwiftDiagnostics
 
-/// 매크로 에러 타입
 public enum MacroError: Error, DiagnosticMessage {
     case onlyApplicableToStruct
     case missingArguments
     case missingRequiredArgument(String)
     case invalidArgument(String)
-
-    // MARK: - DiagnosticMessage
 
     public var message: String {
         switch self {

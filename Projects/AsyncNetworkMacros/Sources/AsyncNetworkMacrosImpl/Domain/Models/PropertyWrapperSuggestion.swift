@@ -1,14 +1,6 @@
-//
-//  PropertyWrapperSuggestion.swift
-//  AsyncNetworkMacrosImpl
-//
-//  Created by jimmy on 2026/01/13.
-//
-
 import SwiftDiagnostics
 import SwiftSyntax
 
-/// Property Wrapper 제안
 public struct PropertyWrapperSuggestion: Sendable {
     public let propertyName: String
     public let suggestedWrapper: String
@@ -24,7 +16,6 @@ public struct PropertyWrapperSuggestion: Sendable {
         self.reason = reason
     }
 
-    /// Diagnostic으로 변환
     public func toDiagnostic(node: some SyntaxProtocol) -> Diagnostic {
         Diagnostic(
             node: node,
@@ -32,8 +23,6 @@ public struct PropertyWrapperSuggestion: Sendable {
         )
     }
 }
-
-// MARK: - DiagnosticMessage
 
 extension PropertyWrapperSuggestion {
     struct Message: SwiftDiagnostics.DiagnosticMessage {

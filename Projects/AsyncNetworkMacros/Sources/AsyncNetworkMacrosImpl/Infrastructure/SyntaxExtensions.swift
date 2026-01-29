@@ -1,10 +1,3 @@
-//
-//  SyntaxExtensions.swift
-//  AsyncNetworkMacrosImpl
-//
-//  Created by jimmy on 2026/01/13.
-//
-
 import SwiftSyntax
 
 // MARK: - StructDeclSyntax Extensions
@@ -113,10 +106,8 @@ public extension AttributeSyntax {
     func argument(labeled label: String) -> ExprSyntax? {
         guard let arguments = labeledArguments else { return nil }
 
-        for argument in arguments {
-            if argument.label?.text == label {
-                return argument.expression
-            }
+        for argument in arguments where argument.label?.text == label {
+            return argument.expression
         }
 
         return nil

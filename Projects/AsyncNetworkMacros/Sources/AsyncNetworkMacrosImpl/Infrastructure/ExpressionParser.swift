@@ -1,10 +1,3 @@
-//
-//  ExpressionParser.swift
-//  AsyncNetworkMacrosImpl
-//
-//  Created by jimmy on 2026/01/13.
-//
-
 import SwiftSyntax
 
 /// SwiftSyntax ExprSyntax를 파싱하는 유틸리티

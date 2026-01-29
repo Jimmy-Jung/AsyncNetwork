@@ -1,10 +1,3 @@
-//
-//  DiagnosticBuilder.swift
-//  AsyncNetworkMacrosImpl
-//
-//  Created by jimmy on 2026/01/13.
-//
-
 import SwiftDiagnostics
 import SwiftSyntax
 
