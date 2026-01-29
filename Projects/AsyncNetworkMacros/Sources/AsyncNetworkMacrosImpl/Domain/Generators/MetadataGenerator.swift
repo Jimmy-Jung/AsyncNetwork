@@ -63,6 +63,12 @@ extension MetadataGenerator {
         }
 
         let entries = headerProperties.compactMap(formatHeaderEntry)
+
+        // entries가 비어있으면 빈 딕셔너리 반환
+        guard !entries.isEmpty else {
+            return "[:]"
+        }
+
         return "[\(entries.joined(separator: ", "))]"
     }
 
@@ -89,7 +95,7 @@ extension MetadataGenerator {
         }
 
         guard !parameterProperties.isEmpty else {
-            return "[]"
+            return "[String]()"
         }
 
         let parameterNames = parameterProperties.map { #""\#($0.name)""# }
