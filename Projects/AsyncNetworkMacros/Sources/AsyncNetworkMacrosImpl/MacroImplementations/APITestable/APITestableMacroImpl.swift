@@ -6,7 +6,6 @@ import SwiftSyntaxMacros
 
 // MARK: - APITestableMacroError
 
-/// APITestable 매크로 에러 타입
 public enum APITestableMacroError: CustomStringConvertible, Error, DiagnosticMessage {
     case onlyApplicableToStruct
     case missingAPIRequest
@@ -42,9 +41,6 @@ public enum APITestableMacroError: CustomStringConvertible, Error, DiagnosticMes
 
 // MARK: - APITestableMacroImpl
 
-/// @APITestable 매크로 구현
-///
-/// @APIRequest와 함께 사용하여 테스트 Mock 응답을 생성합니다.
 public struct APITestableMacroImpl: MemberMacro {
     // MARK: - MemberMacro Implementation
 
@@ -102,7 +98,6 @@ public struct APITestableMacroImpl: MemberMacro {
 
     // MARK: - Helper Methods
 
-    /// 구조체 선언을 검증합니다.
     private static func validateStructDeclaration(
         _ declaration: some DeclGroupSyntax,
         node: AttributeSyntax,
@@ -119,7 +114,6 @@ public struct APITestableMacroImpl: MemberMacro {
         return structDecl
     }
 
-    /// declaration에서 @APIRequest 어트리뷰트를 찾습니다.
     private static func findAPIRequestAttribute(
         from declaration: some DeclGroupSyntax
     ) -> AttributeSyntax? {
@@ -132,7 +126,6 @@ public struct APITestableMacroImpl: MemberMacro {
         return nil
     }
 
-    /// @APIRequest의 인자를 파싱합니다.
     private static func parseAPIRequestArguments(
         from attribute: AttributeSyntax,
         context: some MacroExpansionContext
@@ -212,7 +205,6 @@ public struct APITestableMacroImpl: MemberMacro {
         )
     }
 
-    /// @APITestable의 인자를 파싱합니다.
     private static func parseAPITestableArguments(
         from node: AttributeSyntax,
         context _: some MacroExpansionContext
@@ -242,7 +234,6 @@ public struct APITestableMacroImpl: MemberMacro {
         return TestableArguments(scenarios: scenarios, errorExamples: errorExamples)
     }
 
-    /// scenarios 배열을 파싱합니다.
     private static func extractTestScenariosInternal(from expr: ExprSyntax) -> [String] {
         guard let arrayExpr = expr.as(ArrayExprSyntax.self) else {
             return []

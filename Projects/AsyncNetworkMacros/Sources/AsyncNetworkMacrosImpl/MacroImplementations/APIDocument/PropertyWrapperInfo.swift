@@ -1,23 +1,21 @@
-/// Property Wrapper 정보를 담는 구조체
-///
-/// @PathParameter, @QueryParameter, @HeaderField, @CustomHeader 등의
-/// Property Wrapper에서 추출한 정보를 저장합니다.
-struct PropertyWrapperInfo {
-    /// 프로퍼티 이름
-    let name: String
+public struct PropertyWrapperInfo {
+    public let name: String
+    public let type: String
+    public let wrapperType: String
+    public let headerKey: String?
+    public let defaultValue: String?
 
-    /// 프로퍼티 타입 (예: "String", "Int?")
-    let type: String
-
-    /// Property Wrapper 타입 (예: "PathParameter", "HeaderField")
-    let wrapperType: String
-
-    /// 필수 여부 (옵셔널이 아니면 true)
-    let isRequired: Bool
-
-    /// 헤더 키 (HeaderField, CustomHeader용)
-    let headerKey: String?
-
-    /// 기본값 (HeaderField, CustomHeader용)
-    let defaultValue: String?
+    public init(
+        name: String,
+        type: String,
+        wrapperType: String,
+        headerKey: String? = nil,
+        defaultValue: String? = nil
+    ) {
+        self.name = name
+        self.type = type
+        self.wrapperType = wrapperType
+        self.headerKey = headerKey
+        self.defaultValue = defaultValue
+    }
 }
