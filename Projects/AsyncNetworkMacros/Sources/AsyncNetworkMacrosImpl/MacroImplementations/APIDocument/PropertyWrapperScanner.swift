@@ -1,10 +1,3 @@
-//
-//  PropertyWrapperScanner.swift
-//  AsyncNetworkMacrosImpl
-//
-//  Created by jimmy on 2026/01/29.
-//
-
 import SwiftSyntax
 
 /// Property Wrapper를 스캔하여 파라미터 정보를 수집하는 유틸리티
@@ -35,7 +28,7 @@ struct PropertyWrapperScanner {
                 let validTypes = [
                     "PathParameter", "QueryParameter",
                     "HeaderParameter", "HeaderField", "CustomHeader",
-                    "RequestBody",
+                    "RequestBody"
                 ]
                 guard validTypes.contains(wrapperType) else {
                     continue

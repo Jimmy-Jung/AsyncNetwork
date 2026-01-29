@@ -1,10 +1,3 @@
-//
-//  TestableDTOMacroError.swift
-//  AsyncNetworkMacrosImpl
-//
-//  Created by jimmy on 2026/01/29.
-//
-
 /// @ResponseTestable 매크로 에러 타입
 enum TestableDTOMacroError: Error, CustomStringConvertible {
     case notAStruct

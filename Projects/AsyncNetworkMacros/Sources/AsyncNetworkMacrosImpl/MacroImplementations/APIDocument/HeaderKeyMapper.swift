@@ -1,10 +1,3 @@
-//
-//  HeaderKeyMapper.swift
-//  AsyncNetworkMacrosImpl
-//
-//  Created by jimmy on 2026/01/29.
-//
-
 /// HTTPHeaders.HeaderKey enum case를 실제 HTTP 헤더 이름으로 매핑하는 유틸리티
 enum HeaderKeyMapper {
     /// HTTPHeaders.HeaderKey enum case를 실제 HTTP 헤더 이름으로 매핑합니다.
@@ -26,7 +19,7 @@ enum HeaderKeyMapper {
             "timestamp": "X-Timestamp",
             "sessionId": "X-Session-Id",
             "clientVersion": "X-Client-Version",
-            "platform": "X-Platform",
+            "platform": "X-Platform"
         ]
         return mapping[key] ?? key
     }

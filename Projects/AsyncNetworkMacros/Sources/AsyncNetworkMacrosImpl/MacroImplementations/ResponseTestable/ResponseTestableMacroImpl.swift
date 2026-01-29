@@ -1,10 +1,3 @@
-//
-//  ResponseTestableMacroImpl.swift
-//  AsyncNetworkMacrosImpl
-//
-//  Created by jimmy on 2026/01/12.
-//
-
 import Foundation
 import SwiftCompilerPlugin
 import SwiftSyntax

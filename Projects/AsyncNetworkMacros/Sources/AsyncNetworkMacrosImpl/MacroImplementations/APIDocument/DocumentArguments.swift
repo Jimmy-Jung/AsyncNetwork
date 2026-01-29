@@ -1,10 +1,3 @@
-//
-//  DocumentArguments.swift
-//  AsyncNetworkMacrosImpl
-//
-//  Created by jimmy on 2026/01/29.
-//
-
 /// @APIDocument 매크로 인자를 담는 구조체
 ///
 /// `@APIDocument`의 세 가지 파라미터(title, description, tags)를

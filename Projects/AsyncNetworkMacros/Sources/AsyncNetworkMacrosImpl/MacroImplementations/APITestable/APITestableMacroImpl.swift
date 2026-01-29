@@ -1,10 +1,3 @@
-//
-//  APITestableMacroImpl.swift
-//  AsyncNetworkMacrosImpl
-//
-//  Created by jimmy on 2026/01/12.
-//
-
 import Foundation
 import SwiftCompilerPlugin
 import SwiftDiagnostics
@@ -132,8 +125,7 @@ public struct APITestableMacroImpl: MemberMacro {
     ) -> AttributeSyntax? {
         for attribute in declaration.attributes {
             if let customAttribute = attribute.as(AttributeSyntax.self),
-               customAttribute.attributeName.trimmedDescription == "APIRequest"
-            {
+               customAttribute.attributeName.trimmedDescription == "APIRequest" {
                 return customAttribute
             }
         }

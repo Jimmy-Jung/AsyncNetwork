@@ -1,10 +1,3 @@
-//
-//  APIDocumentMacroImpl.swift
-//  AsyncNetworkMacrosImpl
-//
-//  Created by jimmy on 2026/01/12.
-//
-
 import Foundation
 import SwiftCompilerPlugin
 import SwiftDiagnostics
@@ -342,8 +335,7 @@ public struct APIDocumentMacroImpl: MemberMacro, ExtensionMacro {
     ) -> AttributeSyntax? {
         for attribute in declaration.attributes {
             if let customAttribute = attribute.as(AttributeSyntax.self),
-               customAttribute.attributeName.trimmedDescription == "APIRequest"
-            {
+               customAttribute.attributeName.trimmedDescription == "APIRequest" {
                 return customAttribute
             }
         }
@@ -604,8 +596,7 @@ public struct APIDocumentMacroImpl: MemberMacro, ExtensionMacro {
         for prop in properties {
             if prop.wrapperType == "HeaderField" || prop.wrapperType == "CustomHeader",
                let headerKey = prop.headerKey,
-               let defaultValue = prop.defaultValue
-            {
+               let defaultValue = prop.defaultValue {
                 // headerKey와 기본값을 모두 escape 처리
                 let escapedKey = escapeForStringLiteral(headerKey)
                 let escapedValue = escapeForStringLiteral(defaultValue)

@@ -1,10 +1,3 @@
-//
-//  FixtureJSONExtractor.swift
-//  AsyncNetworkMacrosImpl
-//
-//  Created by jimmy on 2026/01/29.
-//
-
 import SwiftSyntax
 
 /// @ResponseDocument 속성에서 fixtureJSON을 추출하는 유틸리티
@@ -30,10 +23,8 @@ struct FixtureJSONExtractor {
                 }
 
                 // fixtureJSON 인자 찾기
-                for argument in arguments {
-                    if argument.label?.text == "fixtureJSON" {
-                        return try? expressionParser.extractString(from: argument.expression)
-                    }
+                for argument in arguments where argument.label?.text == "fixtureJSON" {
+                    return try? expressionParser.extractString(from: argument.expression)
                 }
             }
         }

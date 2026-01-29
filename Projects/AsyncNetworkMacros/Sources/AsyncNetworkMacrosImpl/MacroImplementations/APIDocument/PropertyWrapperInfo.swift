@@ -1,10 +1,3 @@
-//
-//  PropertyWrapperInfo.swift
-//  AsyncNetworkMacrosImpl
-//
-//  Created by jimmy on 2026/01/29.
-//
-
 /// Property Wrapper 정보를 담는 구조체
 ///
 /// @PathParameter, @QueryParameter, @HeaderField, @CustomHeader 등의

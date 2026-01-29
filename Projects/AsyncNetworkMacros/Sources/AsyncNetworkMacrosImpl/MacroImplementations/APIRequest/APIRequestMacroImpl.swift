@@ -1,10 +1,3 @@
-//
-//  APIRequestMacroImpl.swift
-//  AsyncNetworkMacrosImpl
-//
-//  Created by jimmy on 2026/01/01.
-//
-
 import Foundation
 import SwiftCompilerPlugin
 import SwiftDiagnostics
@@ -13,7 +6,6 @@ import SwiftSyntaxMacros
 
 // MARK: - APIRequestMacroError
 
-/// APIRequest 매크로 에러 타입
 public enum APIRequestMacroError: CustomStringConvertible, Error, DiagnosticMessage {
     case onlyApplicableToStruct
     case missingArguments
@@ -48,16 +40,6 @@ public enum APIRequestMacroError: CustomStringConvertible, Error, DiagnosticMess
 
 // MARK: - APIRequestMacroImpl
 
-/// @APIRequest 매크로 구현
-///
-/// 이 매크로는 다음을 자동 생성합니다:
-/// - typealias Response
-/// - var baseURLString: String
-/// - var path: String
-/// - var method: HTTPMethod
-/// - var task: HTTPTask
-///
-/// 사용 예시:
 public struct APIRequestMacroImpl: MemberMacro, ExtensionMacro {
     // MARK: - MemberMacro Implementation
 
@@ -84,7 +66,6 @@ public struct APIRequestMacroImpl: MemberMacro, ExtensionMacro {
         conformingTo _: [TypeSyntax],
         in context: some MacroExpansionContext
     ) throws -> [ExtensionDeclSyntax] {
-        // 구조체에만 적용 가능
         guard declaration.is(StructDeclSyntax.self) else {
             let diagnostic = Diagnostic(
                 node: node,
@@ -94,7 +75,6 @@ public struct APIRequestMacroImpl: MemberMacro, ExtensionMacro {
             return []
         }
 
-        // APIRequest 프로토콜 채택
         let ext: DeclSyntax =
             """
             extension \(type.trimmed): APIRequest {}
@@ -106,30 +86,7 @@ public struct APIRequestMacroImpl: MemberMacro, ExtensionMacro {
 
         return [extensionDeclSyntax]
     }
-
-    // MARK: - Deprecated Methods (Moved to Facade and Generators)
-
-    //
-    // ⚠️ The following methods were moved to dedicated classes for better separation of concerns:
-    // - Validation → MacroContext, APIRequestArgumentParser
-    // - Property Generation → PropertyGenerator, PathGenerator
-    // - Metadata Generation → MetadataGenerator
-    // - Suggestions → PropertyWrapperValidator
-    //
-    // These methods are kept here for reference but are no longer used.
-
-    // ⚠️ DEPRECATED: Moved to PropertyWrapperValidator
-    // These validation and suggestion methods are no longer used.
-    // See: Projects/AsyncNetworkMacros/Sources/AsyncNetworkMacrosImpl/Domain/Validators/PropertyWrapperValidator.swift
-
-    // ⚠️ DEPRECATED: Moved to @APITestable macro
-    // Mock scenario and response generation moved to APITestableMacroImpl.swift
-
-    // ⚠️ DEPRECATED: Moved to MetadataGenerator
-    // Metadata generation is now handled by Domain/Generators/MetadataGenerator.swift
 }
-
-// MARK: - Plugin Registration
 
 @main
 struct AsyncNetworkMacrosPlugin: CompilerPlugin {
@@ -138,6 +95,6 @@ struct AsyncNetworkMacrosPlugin: CompilerPlugin {
         APIDocumentMacroImpl.self,
         APITestableMacroImpl.self,
         ResponseDocumentMacroImpl.self,
-        ResponseTestableMacroImpl.self,
+        ResponseTestableMacroImpl.self
     ]
 }

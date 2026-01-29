@@ -1,10 +1,3 @@
-//
-//  TestableDTOArgumentParser.swift
-//  AsyncNetworkMacrosImpl
-//
-//  Created by jimmy on 2026/01/29.
-//
-
 import SwiftSyntax
 
 /// @ResponseTestable 매크로 인자 파서
