@@ -11,6 +11,7 @@ import Foundation
 @propertyWrapper
 public struct PathParameter<Value: Sendable>: RequestParameter {
     public var wrappedValue: Value
+    public var projectedValue: PathParameter<Value> { self }
     private let customKey: String?
 
     public init(wrappedValue: Value) {
@@ -28,14 +29,16 @@ public struct PathParameter<Value: Sendable>: RequestParameter {
 
         let parameterKey = customKey ?? key
         let placeholder = "{\(parameterKey)}"
-        let encodedPlaceholder = placeholder.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? placeholder
-        
+        let encodedPlaceholder = placeholder.addingPercentEncoding(
+            withAllowedCharacters: .urlPathAllowed
+        ) ?? placeholder
+
         // 먼저 인코딩되지 않은 플레이스홀더 치환 시도
         var replaced = url.absoluteString.replacingOccurrences(
             of: placeholder,
             with: "\(wrappedValue)"
         )
-        
+
         // 인코딩된 플레이스홀더도 치환 시도 (%7B...%7D 형태)
         if replaced == url.absoluteString {
             replaced = url.absoluteString.replacingOccurrences(

@@ -33,14 +33,14 @@ struct CommentValidationError: Codable, Sendable, Error {
     title: "Get comments for a post",
     description: """
     특정 포스트의 모든 댓글을 가져옵니다.
-    
+
     파라미터:
     • postId: 댓글을 조회할 Post의 ID (필수)
-    
+
     기능:
     • postId 기준 필터링
     • 댓글 작성 순서대로 정렬
-    
+
     응답 형식:
     Comment 객체의 배열을 반환합니다.
     """,
@@ -64,10 +64,10 @@ struct CommentValidationError: Codable, Sendable, Error {
     ]
 )
 struct GetCommentsForPostRequest {
-    @QueryParameter var postId: Int?
+    @QueryParameter var postId: Int
     @QueryParameter(key: "_limit") var limit: Int?
-    
-    init(postId: Int? = nil, limit: Int? = nil) {
+
+    init(postId: Int, limit: Int? = nil) {
         self.postId = postId
         self.limit = limit
     }
@@ -88,10 +88,10 @@ struct GetCommentsForPostRequest {
     title: "Get a comment by ID",
     description: """
     특정 ID를 가진 댓글을 가져옵니다.
-    
+
     파라미터:
     • id: Comment의 고유 식별자
-    
+
     에러 처리:
     • 404: 댓글을 찾을 수 없음
     """,
@@ -110,10 +110,6 @@ struct GetCommentsForPostRequest {
 )
 struct GetCommentByIdRequest {
     @PathParameter var id: Int
-    
-    init(id: Int) {
-        self.id = id
-    }
 }
 
 // MARK: - Create Comment
@@ -132,18 +128,18 @@ struct GetCommentByIdRequest {
     title: "Create a comment",
     description: """
     새로운 댓글을 생성합니다.
-    
+
     요청 바디:
     • postId: 댓글을 작성할 포스트 ID (필수)
     • name: 작성자 이름 (필수)
     • email: 작성자 이메일 (필수, 유효한 형식)
     • body: 댓글 내용 (필수)
-    
+
     검증 규칙:
     • name: 1-100자
     • email: 유효한 이메일 형식
     • body: 1-1000자
-    
+
     에러 처리:
     • 400: 잘못된 요청 데이터
     • 404: 연관된 포스트를 찾을 수 없음
@@ -177,7 +173,7 @@ struct GetCommentByIdRequest {
 struct CreateCommentRequest {
     @RequestBody var body: CommentBodyDTO?
     @HeaderField(key: .contentType) var contentType: String? = "application/json"
-    
+
     init(body: CommentBodyDTO? = nil, contentType: String? = "application/json") {
         self.body = body
         self.contentType = contentType

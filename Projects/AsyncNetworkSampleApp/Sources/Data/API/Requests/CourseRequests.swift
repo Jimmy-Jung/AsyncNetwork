@@ -140,6 +140,16 @@ struct PostCourseRequest {
     @RequestBody var body: PostCourseBody?
     @HeaderField(key: .authorization) var authorization: String?
     @HeaderField(key: .contentType) var contentType: String? = "application/json"
+    
+    init(
+        body: PostCourseBody? = nil,
+        authorization: String? = nil,
+        contentType: String? = "application/json"
+    ) {
+        self.body = body
+        self.authorization = authorization
+        self.contentType = contentType
+    }
 }
 
 // MARK: - Patch Course
@@ -160,6 +170,18 @@ struct PatchCourseRequest {
     @RequestBody var body: PatchCourseBody?
     @HeaderField(key: .authorization) var authorization: String?
     @HeaderField(key: .contentType) var contentType: String? = "application/json"
+    
+    init(
+        courseId: String,
+        body: PatchCourseBody? = nil,
+        authorization: String? = nil,
+        contentType: String? = "application/json"
+    ) {
+        self.courseId = courseId
+        self.body = body
+        self.authorization = authorization
+        self.contentType = contentType
+    }
 }
 
 // MARK: - Patch Lesson
@@ -181,6 +203,20 @@ struct PatchLessonRequest {
     @RequestBody var body: PatchLessonBody?
     @HeaderField(key: .authorization) var authorization: String?
     @HeaderField(key: .contentType) var contentType: String? = "application/json"
+    
+    init(
+        courseId: String,
+        lessonId: String,
+        body: PatchLessonBody? = nil,
+        authorization: String? = nil,
+        contentType: String? = "application/json"
+    ) {
+        self.courseId = courseId
+        self.lessonId = lessonId
+        self.body = body
+        self.authorization = authorization
+        self.contentType = contentType
+    }
 }
 
 // MARK: - Patch Exercise
@@ -203,4 +239,20 @@ struct PatchExerciseRequest {
     @RequestBody var body: PatchExerciseBody?
     @HeaderField(key: .authorization) var authorization: String?
     @HeaderField(key: .contentType) var contentType: String? = "application/json"
+    
+    init(
+        courseId: String,
+        lessonId: String,
+        exerciseId: String,
+        body: PatchExerciseBody? = nil,
+        authorization: String? = nil,
+        contentType: String? = "application/json"
+    ) {
+        self.courseId = courseId
+        self.lessonId = lessonId
+        self.exerciseId = exerciseId
+        self.body = body
+        self.authorization = authorization
+        self.contentType = contentType
+    }
 }

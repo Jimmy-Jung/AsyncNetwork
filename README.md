@@ -144,13 +144,13 @@ let posts: [Post] = try await service.request(
 ```
 https://github.com/Jimmy-Jung/AsyncNetwork.git
 ```
-3. Version: `1.2.4` 이상 선택
+3. Version: `1.2.5` 이상 선택
 
 #### Package.swift에 추가
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/Jimmy-Jung/AsyncNetwork.git", from: "1.2.4")
+    .package(url: "https://github.com/Jimmy-Jung/AsyncNetwork.git", from: "1.2.5")
 ]
 ```
 
@@ -262,6 +262,45 @@ let posts: [Post] = try await service.request(
 // 결과: GET /posts?userId=1&_limit=10
 ```
 
+#### 커스텀 타입과 DefaultInitializable
+
+Non-optional 커스텀 타입을 property 선언에서 key만 지정하여 사용하려면, `DefaultInitializable` 프로토콜을 구현해야 합니다:
+
+```swift
+// 커스텀 Enum
+enum SortOrder: String, Sendable, DefaultInitializable {
+    case asc
+    case desc
+    
+    static var defaultValue: SortOrder { .asc }
+}
+
+@APIRequest(
+    response: [Post].self,
+    baseURL: "https://api.example.com",
+    path: "/posts",
+    method: .get
+)
+struct GetPostsSortedRequest {
+    @QueryParameter(key: "sort") var sortOrder: SortOrder  // Non-optional 커스텀 타입
+    
+    init(sortOrder: SortOrder = .asc) {
+        self.sortOrder = sortOrder
+    }
+}
+
+// 사용
+let posts: [Post] = try await service.request(
+    GetPostsSortedRequest(sortOrder: .desc)
+)
+// 결과: GET /posts?sort=desc
+```
+
+**기본 타입은 이미 DefaultInitializable을 구현하고 있습니다:**
+- `Int`, `String`, `Bool`, `Double`, `Float`
+- `Int8`, `Int16`, `Int32`, `Int64`
+- `UInt`, `UInt8`, `UInt16`, `UInt32`, `UInt64`
+
 ### 3️⃣ Path Parameters
 
 ```swift
@@ -319,6 +358,10 @@ let newPost: Post = try await service.request(
 
 #### @HeaderField - 표준 HTTP 헤더
 
+@HeaderField는 타입 레벨에서 필수/비필수 헤더를 구분합니다:
+- **Non-optional 타입** (`String` 등): 필수 헤더 (항상 추가)
+- **Optional 타입** (`String?` 등): 비필수 헤더 (nil이면 추가되지 않음)
+
 ```swift
 @APIRequest(
     response: UserProfile.self,
@@ -327,8 +370,13 @@ let newPost: Post = try await service.request(
     method: .get
 )
 struct GetProfileRequest {
-    @HeaderField(key: .authorization) var authorization: String?
-    @HeaderField(key: .contentType) var contentType: String? = "application/json"
+    @HeaderField(key: .authorization) var authorization: String?  // 비필수
+    @HeaderField(key: .contentType) var contentType: String = "application/json"  // 필수 + 기본값
+    
+    init(authorization: String?, contentType: String = "application/json") {
+        self.authorization = authorization
+        self.contentType = contentType
+    }
 }
 
 // 사용
@@ -340,6 +388,8 @@ let profile: UserProfile = try await service.request(
 
 #### @CustomHeader - 커스텀 헤더 (HTTPHeaders.HeaderKey에 없는 경우)
 
+@CustomHeader도 동일하게 필수/비필수 구분을 지원합니다:
+
 ```swift
 @APIRequest(
     response: UserProfile.self,
@@ -348,17 +398,26 @@ let profile: UserProfile = try await service.request(
     method: .get
 )
 struct GetProfileWithCustomHeaderRequest {
-    @HeaderField(key: .authorization) var authorization: String?
-    @CustomHeader("X-Request-ID") var requestId: String?
-    @CustomHeader("X-Client-Version") var clientVersion: String?
+    @HeaderField(key: .authorization) var authorization: String?  // 비필수
+    @CustomHeader("X-Request-ID") var requestId: String?  // 비필수
+    @CustomHeader("X-API-Version") var apiVersion: String = "1.0"  // 필수 + 기본값
+    
+    init(
+        authorization: String?,
+        requestId: String? = nil,
+        apiVersion: String = "1.0"
+    ) {
+        self.authorization = authorization
+        self.requestId = requestId
+        self.apiVersion = apiVersion
+    }
 }
 
 // 사용
 let profile: UserProfile = try await service.request(
     GetProfileWithCustomHeaderRequest(
         authorization: "Bearer \(token)",
-        requestId: UUID().uuidString,
-        clientVersion: "1.0.0"
+        requestId: UUID().uuidString
     )
 )
 ```

@@ -1,8 +1,9 @@
 //
-//  MetadataGeneratorTests.swift
+//  MetadataGeneratorBasicTests.swift
 //  AsyncNetworkMacrosTests
 //
-//  Created by jimmy on 2026/01/13.
+//  Created by jimmy on 2026/01/29.
+//  Split from MetadataGeneratorTests.swift - Basic metadata generation tests
 //
 
 #if os(macOS)
@@ -11,8 +12,8 @@
     import SwiftSyntax
     import Testing
 
-    @Suite("MetadataGenerator Tests")
-    struct MetadataGeneratorTests {
+    @Suite("MetadataGenerator Basic Tests")
+    struct MetadataGeneratorBasicTests {
         @Test("기본 메타데이터 생성")
         func generateBasicMetadata() {
             let args = MacroArguments(
@@ -222,7 +223,7 @@
             // PathParameter와 QueryParameter만 parameters 배열에 포함됨
             #expect(metadataDecl.contains("parameters: [\"id\", \"page\"]"))
         }
-        
+
         @Test("HTTP 메서드는 항상 대문자로 생성 - GET")
         func httpMethodAlwaysUppercaseGet() {
             let args = MacroArguments(
@@ -231,20 +232,20 @@
                 path: "/posts",
                 method: "get"
             )
-            
+
             let generator = MetadataGenerator(
                 typeName: "GetPostsRequest",
                 args: args,
                 properties: []
             )
-            
+
             let declarations = generator.generate()
             let metadataDecl = declarations[0].description
-            
+
             #expect(metadataDecl.contains("method: \"GET\""))
             #expect(!metadataDecl.contains("method: \"get\""))
         }
-        
+
         @Test("HTTP 메서드는 항상 대문자로 생성 - POST")
         func httpMethodAlwaysUppercasePost() {
             let args = MacroArguments(
@@ -253,20 +254,20 @@
                 path: "/posts",
                 method: "post"
             )
-            
+
             let generator = MetadataGenerator(
                 typeName: "CreatePostRequest",
                 args: args,
                 properties: []
             )
-            
+
             let declarations = generator.generate()
             let metadataDecl = declarations[0].description
-            
+
             #expect(metadataDecl.contains("method: \"POST\""))
             #expect(!metadataDecl.contains("method: \"post\""))
         }
-        
+
         @Test("HTTP 메서드는 항상 대문자로 생성 - PATCH")
         func httpMethodAlwaysUppercasePatch() {
             let args = MacroArguments(
@@ -275,20 +276,20 @@
                 path: "/posts/{id}",
                 method: "patch"
             )
-            
+
             let generator = MetadataGenerator(
                 typeName: "UpdatePostRequest",
                 args: args,
                 properties: []
             )
-            
+
             let declarations = generator.generate()
             let metadataDecl = declarations[0].description
-            
+
             #expect(metadataDecl.contains("method: \"PATCH\""))
             #expect(!metadataDecl.contains("method: \"patch\""))
         }
-        
+
         @Test("HTTP 메서드는 항상 대문자로 생성 - DELETE")
         func httpMethodAlwaysUppercaseDelete() {
             let args = MacroArguments(
@@ -297,20 +298,20 @@
                 path: "/posts/{id}",
                 method: "delete"
             )
-            
+
             let generator = MetadataGenerator(
                 typeName: "DeletePostRequest",
                 args: args,
                 properties: []
             )
-            
+
             let declarations = generator.generate()
             let metadataDecl = declarations[0].description
-            
+
             #expect(metadataDecl.contains("method: \"DELETE\""))
             #expect(!metadataDecl.contains("method: \"delete\""))
         }
-        
+
         @Test("HTTP 메서드는 항상 대문자로 생성 - PUT")
         func httpMethodAlwaysUppercasePut() {
             let args = MacroArguments(
@@ -319,20 +320,20 @@
                 path: "/posts/{id}",
                 method: "put"
             )
-            
+
             let generator = MetadataGenerator(
                 typeName: "ReplacePostRequest",
                 args: args,
                 properties: []
             )
-            
+
             let declarations = generator.generate()
             let metadataDecl = declarations[0].description
-            
+
             #expect(metadataDecl.contains("method: \"PUT\""))
             #expect(!metadataDecl.contains("method: \"put\""))
         }
-        
+
         @Test("헤더 기본값이 메타데이터에 포함")
         func headerDefaultValuesInMetadata() {
             let args = MacroArguments(
@@ -341,7 +342,7 @@
                 path: "/posts",
                 method: "post"
             )
-            
+
             let properties = [
                 PropertyInfo(
                     name: "contentType",
@@ -360,21 +361,21 @@
                     defaultValue: nil
                 )
             ]
-            
+
             let generator = MetadataGenerator(
                 typeName: "CreatePostRequest",
                 args: args,
                 properties: properties
             )
-            
+
             let declarations = generator.generate()
             let metadataDecl = declarations[0].description
-            
+
             // 기본값이 있는 헤더만 메타데이터에 포함
             #expect(metadataDecl.contains("\"Content-Type\": \"application/json\""))
             #expect(!metadataDecl.contains("\"Authorization\""))
         }
-        
+
         @Test("특수문자가 포함된 description은 escape 처리")
         func descriptionWithSpecialCharactersEscaped() {
             let args = MacroArguments(
@@ -385,16 +386,16 @@
                 path: "/posts",
                 method: "get"
             )
-            
+
             let generator = MetadataGenerator(
                 typeName: "GetPostsRequest",
                 args: args,
                 properties: []
             )
-            
+
             let declarations = generator.generate()
             let metadataDecl = declarations[0].description
-            
+
             #expect(metadataDecl.contains("title: \"Get Posts\""))
             #expect(metadataDecl.contains("description: \"Retrieve posts with quotes\""))
             #expect(metadataDecl.contains("method: \"GET\""))
