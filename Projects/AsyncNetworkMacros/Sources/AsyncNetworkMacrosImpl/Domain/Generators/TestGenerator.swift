@@ -1,30 +1,5 @@
-//
-//  TestGenerator.swift
-//  AsyncNetworkMacrosImpl
-//
-//  Created by jimmy on 2026/01/13.
-//
-
 import SwiftSyntax
 
-/// 테스트 코드 생성기
-///
-/// 이 클래스는 `@APITestable` 매크로에서 테스트 관련 코드를 생성합니다:
-/// - `enum MockScenario`: 테스트 시나리오 정의
-/// - `func mockResponse(for:)`: 시나리오별 Mock 응답 생성
-///
-/// ## 생성 예시
-/// ```swift
-/// public enum MockScenario: String, CaseIterable {
-///     case success
-///     case notFound
-///     case serverError
-/// }
-///
-/// public func mockResponse(for scenario: MockScenario) -> (Data?, URLResponse?, Error?) {
-///     // ...
-/// }
-/// ```
 public struct TestGenerator: CodeGenerator {
     private let args: MacroArguments
     private let responseType: String
@@ -37,38 +12,17 @@ public struct TestGenerator: CodeGenerator {
         self.responseType = responseType
     }
 
-    // MARK: - CodeGenerator
-
     public func generate() -> [DeclSyntax] {
-        var declarations: [DeclSyntax] = []
-
-        declarations.append(generateMockScenarioEnum())
-        declarations.append(generateMockResponseMethod())
-
-        return declarations
+        [
+            generateMockScenarioEnum(),
+            generateMockResponseMethod()
+        ]
     }
+}
 
-    // MARK: - Private Methods
-
-    /// MockScenario enum 생성
+extension TestGenerator {
     private func generateMockScenarioEnum() -> DeclSyntax {
-        var cases = ["success"]
-
-        // errorExamples에서 케이스 추출
-        for (statusCode, _) in args.errorExamples.sorted(by: { $0.key < $1.key }) {
-            let caseName = getCaseNameForStatusCode(statusCode)
-            if !cases.contains(caseName) {
-                cases.append(caseName)
-            }
-        }
-
-        // testScenarios에서 케이스 추가
-        for scenario in args.testScenarios {
-            if !cases.contains(scenario) {
-                cases.append(scenario)
-            }
-        }
-
+        let cases = collectAllScenarioCases()
         let casesCode = cases.map { "case \($0)" }.joined(separator: "\n    ")
 
         return """
@@ -78,48 +32,37 @@ public struct TestGenerator: CodeGenerator {
         """
     }
 
-    /// mockResponse 메서드 생성
-    private func generateMockResponseMethod() -> DeclSyntax {
-        var switchCases: [String] = []
+    private func collectAllScenarioCases() -> [String] {
+        var cases = ["success"]
+        cases.append(contentsOf: extractErrorScenarioCases())
+        cases.append(contentsOf: extractCustomScenarioCases())
+        return cases
+    }
 
-        // success 케이스
-        switchCases.append("""
-        case .success:
-            let json = "{\\"id\\": 1, \\"title\\": \\"Mock Title\\"}"
-            let data = json.data(using: .utf8)
-            let response = HTTPURLResponse(
-                url: URL(string: "https://example.com")!,
-                statusCode: 200,
-                httpVersion: nil,
-                headerFields: nil
-            )
-            return (data, response, nil)
-        """)
+    private func extractErrorScenarioCases() -> [String] {
+        args.errorExamples
+            .sorted(by: { $0.key < $1.key })
+            .map { statusCode, _ in
+                getCaseNameForStatusCode(statusCode)
+            }
+            .filter { !["success"].contains($0) }
+    }
 
-        // errorExamples 케이스
-        for (statusCode, jsonExample) in args.errorExamples.sorted(by: { $0.key < $1.key }) {
-            let caseName = getCaseNameForStatusCode(statusCode)
-            let escapedJSON = escapeJSON(jsonExample)
-
-            switchCases.append("""
-            case .\(caseName):
-                let json = "\(escapedJSON)"
-                let data = json.data(using: .utf8)
-                let response = HTTPURLResponse(
-                    url: URL(string: "https://example.com")!,
-                    statusCode: \(statusCode),
-                    httpVersion: nil,
-                    headerFields: nil
-                )
-                return (data, response, nil)
-            """)
+    private func extractCustomScenarioCases() -> [String] {
+        args.testScenarios.filter { scenario in
+            !["success"].contains(scenario) &&
+                !extractErrorScenarioCases().contains(scenario)
         }
+    }
+}
 
-        // 기본 케이스
-        switchCases.append("""
-        default:
-            return (nil, nil, URLError(.unknown))
-        """)
+extension TestGenerator {
+    private func generateMockResponseMethod() -> DeclSyntax {
+        let switchCases = [
+            generateSuccessCase(),
+            generateErrorCases(),
+            generateDefaultCase()
+        ].flatMap { $0 }
 
         let switchBody = switchCases.joined(separator: "\n        ")
 
@@ -132,10 +75,81 @@ public struct TestGenerator: CodeGenerator {
         """
     }
 
-    /// 상태 코드에서 케이스 이름 생성
-    private func getCaseNameForStatusCode(_ statusCode: String) -> String {
-        let code = Int(statusCode) ?? 0
+    private func generateSuccessCase() -> [String] {
+        [createMockResponseCase(
+            scenario: "success",
+            json: MockJSON.success,
+            statusCode: HTTPStatusCode.ok
+        )]
+    }
 
+    private func generateErrorCases() -> [String] {
+        args.errorExamples
+            .sorted(by: { $0.key < $1.key })
+            .map { statusCode, jsonExample in
+                let caseName = getCaseNameForStatusCode(statusCode)
+                let escapedJSON = escapeJSON(jsonExample)
+                return createMockResponseCase(
+                    scenario: caseName,
+                    json: escapedJSON,
+                    statusCode: statusCode
+                )
+            }
+    }
+
+    private func generateDefaultCase() -> [String] {
+        ["""
+        default:
+            return (nil, nil, URLError(.unknown))
+        """]
+    }
+
+    private func createMockResponseCase(
+        scenario: String,
+        json: String,
+        statusCode: String
+    ) -> String {
+        """
+        case .\(scenario):
+            let json = "\(json)"
+            let data = json.data(using: .utf8)
+            let response = HTTPURLResponse(
+                url: URL(string: "\(MockConstants.baseURL)")!,
+                statusCode: \(statusCode),
+                httpVersion: nil,
+                headerFields: nil
+            )
+            return (data, response, nil)
+        """
+    }
+}
+
+extension TestGenerator {
+    private func getCaseNameForStatusCode(_ statusCode: String) -> String {
+        guard let code = Int(statusCode) else {
+            return "error\(statusCode)"
+        }
+
+        return HTTPStatusCode.caseName(for: code)
+    }
+
+    private func escapeJSON(_ json: String) -> String {
+        JSONEscaper.escape(json)
+    }
+}
+
+private enum MockConstants {
+    static let baseURL = "https://example.com"
+}
+
+private enum MockJSON {
+    static let success = #"{\\"id\\": 1, \\"title\\": \\"Mock Title\\"}"#
+}
+
+private enum HTTPStatusCode {
+    static let success = "200"
+
+    static func caseName(for code: Int) -> String {
         switch code {
         case 400: return "badRequest"
         case 401: return "unauthorized"
@@ -143,13 +157,14 @@ public struct TestGenerator: CodeGenerator {
         case 404: return "notFound"
         case 500: return "serverError"
         case 503: return "serviceUnavailable"
-        default: return "error\(statusCode)"
+        default: return "error\(code)"
         }
     }
+}
 
-    /// JSON 문자열 이스케이프
-    private func escapeJSON(_ json: String) -> String {
-        return json
+private enum JSONEscaper {
+    static func escape(_ json: String) -> String {
+        json
             .replacingOccurrences(of: "\\", with: "\\\\")
             .replacingOccurrences(of: "\"", with: "\\\"")
             .replacingOccurrences(of: "\n", with: "\\n")
