@@ -17,9 +17,9 @@ import Foundation
     method: .get
 )
 struct GetCoursesRequestWithoutDocument {
-    @QueryParameter var pageSize: Int?
-    @QueryParameter var sortBy: String?
-    @QueryParameter var nextToken: String?
+    @QueryParameter var pageSize: Int // 필수 파라미터
+    @QueryParameter var sortBy: String // 필수 파라미터
+    @QueryParameter var nextToken: String? // 비필수 파라미터
     @QueryParameter var instructorId: String?
     @QueryParameter var categoryId: String?
     @QueryParameter var levelId: String?
@@ -61,9 +61,9 @@ struct GetCoursesRequestWithoutDocument {
     tags: ["Courses"]
 )
 struct GetCoursesRequest {
-    @QueryParameter var pageSize: Int?
-    @QueryParameter var sortBy: String?
-    @QueryParameter var nextToken: String?
+    @QueryParameter var pageSize: Int // 필수 파라미터
+    @QueryParameter var sortBy: String // 필수 파라미터
+    @QueryParameter var nextToken: String? // 비필수 파라미터
     @QueryParameter var instructorId: String?
     @QueryParameter var categoryId: String?
     @QueryParameter var levelId: String?
@@ -99,7 +99,7 @@ struct GetCoursesRequest {
     path: "/v1/courses/{courseId}",
     method: .get,
     errorResponses: [
-        404: NotFoundErrorDTO.self,
+        404: NotFoundErrorDTO.self
     ]
 )
 @APIDocument(
@@ -140,16 +140,6 @@ struct PostCourseRequest {
     @RequestBody var body: PostCourseBody?
     @HeaderField(key: .authorization) var authorization: String?
     @HeaderField(key: .contentType) var contentType: String? = "application/json"
-
-    init(
-        body: PostCourseBody?,
-        authorization: String?,
-        contentType: String? = "application/json"
-    ) {
-        self.body = body
-        self.authorization = authorization
-        self.contentType = contentType
-    }
 }
 
 // MARK: - Patch Course
@@ -170,18 +160,6 @@ struct PatchCourseRequest {
     @RequestBody var body: PatchCourseBody?
     @HeaderField(key: .authorization) var authorization: String?
     @HeaderField(key: .contentType) var contentType: String? = "application/json"
-
-    init(
-        courseId: String,
-        body: PatchCourseBody?,
-        authorization: String?,
-        contentType: String? = "application/json"
-    ) {
-        self.courseId = courseId
-        self.body = body
-        self.authorization = authorization
-        self.contentType = contentType
-    }
 }
 
 // MARK: - Patch Lesson
@@ -203,20 +181,6 @@ struct PatchLessonRequest {
     @RequestBody var body: PatchLessonBody?
     @HeaderField(key: .authorization) var authorization: String?
     @HeaderField(key: .contentType) var contentType: String? = "application/json"
-
-    init(
-        courseId: String,
-        lessonId: String,
-        body: PatchLessonBody?,
-        authorization: String?,
-        contentType: String? = "application/json"
-    ) {
-        self.courseId = courseId
-        self.lessonId = lessonId
-        self.body = body
-        self.authorization = authorization
-        self.contentType = contentType
-    }
 }
 
 // MARK: - Patch Exercise
@@ -239,20 +203,4 @@ struct PatchExerciseRequest {
     @RequestBody var body: PatchExerciseBody?
     @HeaderField(key: .authorization) var authorization: String?
     @HeaderField(key: .contentType) var contentType: String? = "application/json"
-
-    init(
-        courseId: String,
-        lessonId: String,
-        exerciseId: String,
-        body: PatchExerciseBody?,
-        authorization: String?,
-        contentType: String? = "application/json"
-    ) {
-        self.courseId = courseId
-        self.lessonId = lessonId
-        self.exerciseId = exerciseId
-        self.body = body
-        self.authorization = authorization
-        self.contentType = contentType
-    }
 }
