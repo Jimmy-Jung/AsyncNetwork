@@ -1,3 +1,5 @@
+import SwiftSyntax
+
 struct PropertyWrapperScanner {
     func scan(from structDecl: StructDeclSyntax) -> [PropertyWrapperInfo] {
         var result: [PropertyWrapperInfo] = []

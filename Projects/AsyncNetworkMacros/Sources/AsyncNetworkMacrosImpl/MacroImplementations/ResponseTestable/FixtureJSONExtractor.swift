@@ -1,3 +1,5 @@
+import SwiftSyntax
+
 struct FixtureJSONExtractor {
     func extract(from structDecl: StructDeclSyntax) -> String? {
         for attribute in structDecl.attributes {
