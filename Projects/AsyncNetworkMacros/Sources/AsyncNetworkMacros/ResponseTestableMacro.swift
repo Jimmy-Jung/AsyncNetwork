@@ -7,47 +7,16 @@
 
 @_exported import AsyncNetworkCore
 
-// MARK: - Mock 생성 전략
+// MARK: - Deprecated (제거 예정 - v2.0.0)
 
-/// Mock 데이터 생성 전략을 정의합니다
-///
-/// ## 전략 선택 가이드
-///
-/// - **random**: 매번 다른 랜덤 값 생성 (기본값)
-///   - 테스트 독립성 보장
-///   - 엣지 케이스 발견에 유리
-///   - 사용 예: 대부분의 단위 테스트
-///
-/// - **fixture**: 고정된 값 생성 (fixtureJSON 기반)
-///   - 예측 가능한 테스트
-///   - 스냅샷 테스트에 적합
-///   - 사용 예: UI 테스트, 통합 테스트
-///
-/// - **sequential**: 순차적으로 증가하는 값 생성
-///   - 일관된 순서 보장
-///   - 정렬 로직 테스트에 적합
-///   - 사용 예: 페이지네이션 테스트
+@available(
+    *,
+    deprecated,
+    message: "MockStrategy is no longer used. Use mock() for random values and fixture() for fixed values."
+)
 public enum MockStrategy {
-    /// 랜덤 값 생성 (기본값)
-    ///
-    /// 매 호출마다 다른 값을 생성합니다.
-    /// - Int: `Int.random(in: 1...1000)`
-    /// - String: `"Mock \(UUID().uuidString.prefix(8))"`
-    /// - 배열: 2~5개의 랜덤 요소
     case random
-    
-    /// 고정 값 생성 (fixtureJSON 기반)
-    ///
-    /// fixtureJSON이 제공된 경우 해당 JSON을 디코딩하여 사용합니다.
-    /// fixtureJSON이 없는 경우 타입별 기본값을 사용합니다.
-    /// - Int: `1`
-    /// - String: `"Test String"`
-    /// - 배열: `[]` (빈 배열)
     case fixture
-    
-    /// 순차적으로 증가하는 값 생성 (미구현)
-    ///
-    /// 현재는 미구현 상태이며, 향후 버전에서 지원 예정입니다.
     case sequential
 }
 
@@ -139,16 +108,16 @@ public protocol TestableDTO {
 ///     let email: String
 /// }
 ///
-/// // 사용
-/// let user = UserDTO.mock()           // 랜덤 데이터
-/// let fixed = UserDTO.fixture()       // 고정 데이터
-/// let users = UserDTO.mockArray(count: 10)  // 10개 생성
-/// user.assertValid()                  // 검증
+/// // 사용 - mock()과 fixture()는 독립적으로 동작
+/// let user = UserDTO.mock()           // 매번 다른 랜덤 데이터
+/// let fixed = UserDTO.fixture()       // 항상 동일한 고정 데이터
+/// let users = UserDTO.mockArray(count: 10)  // 10개의 랜덤 데이터 배열
+/// user.assertValid()                  // 데이터 유효성 검증
 /// ```
 ///
 /// ## fixtureJSON 사용
 ///
-/// 일관된 고정 데이터가 필요한 경우 fixtureJSON을 제공합니다.
+/// `fixture()` 메서드에서 사용할 고정 JSON을 제공합니다.
 ///
 /// ```swift
 /// @ResponseTestable(
@@ -166,12 +135,14 @@ public protocol TestableDTO {
 ///     let email: String
 /// }
 ///
-/// let user = UserDTO.fixture()  // 항상 동일한 값
+/// // 사용 - 두 메서드 모두 사용 가능
+/// let random = UserDTO.mock()       // 랜덤 데이터
+/// let fixed = UserDTO.fixture()     // fixtureJSON 기반 고정 데이터
 /// ```
 ///
 /// ## Builder 패턴 사용
 ///
-/// 특정 필드만 커스터마이징하고 나머지는 fixture 값을 사용하려면 Builder를 활성화합니다.
+/// 특정 필드만 커스터마이징하고 나머지는 fixture 값을 사용할 수 있습니다.
 ///
 /// ```swift
 /// @ResponseTestable(includeBuilder: true)
@@ -181,11 +152,48 @@ public protocol TestableDTO {
 ///     let email: String
 /// }
 ///
+/// // 하이브리드 패턴 - 일부만 고정, 나머지는 fixture 값
 /// let customUser = UserDTO.builder()
 ///     .with(id: 999)
 ///     .with(name: "Custom Name")
 ///     .build()
 /// // email은 fixture() 값 사용
+/// ```
+///
+/// ## 동일 타입에서 random과 fixture 동시 사용
+///
+/// `mock()`과 `fixture()`는 독립적으로 동작하므로 같은 타입에서 모두 사용 가능합니다.
+///
+/// ```swift
+/// @ResponseTestable(
+///     fixtureJSON: """
+///     {
+///       "id": 1,
+///       "name": "John Doe"
+///     }
+///     """
+/// )
+/// struct UserDTO: Codable, Sendable {
+///     let id: Int
+///     let name: String
+/// }
+///
+/// // Pattern 1: 완전 랜덤 (테스트 독립성)
+/// let user1 = UserDTO.mock()
+/// let user2 = UserDTO.mock()
+/// #expect(user1.id != user2.id)  // ✅ 매번 다른 값
+///
+/// // Pattern 2: 완전 고정 (스냅샷 테스트)
+/// let fixed1 = UserDTO.fixture()
+/// let fixed2 = UserDTO.fixture()
+/// #expect(fixed1.id == fixed2.id)  // ✅ 항상 동일한 값
+///
+/// // Pattern 3: 혼합 사용
+/// let random = UserDTO.mock()      // 랜덤
+/// let fixed = UserDTO.fixture()    // 고정
+/// let custom = UserDTO.builder()   // 하이브리드
+///     .with(id: 999)
+///     .build()
 /// ```
 ///
 /// ## 중첩 DTO 지원
@@ -206,35 +214,30 @@ public protocol TestableDTO {
 ///
 /// ## @ResponseDocument와 함께 사용
 ///
-/// 문서화와 테스트를 동시에 지원하려면 두 매크로를 함께 사용합니다.
+/// ⚠️ **Deprecated**: `@ResponseDocument`는 더 이상 필요하지 않습니다.
+/// `@ResponseTestable`이 `jsonSample` 프로퍼티도 생성합니다.
 ///
 /// ```swift
-/// @ResponseDocument(
-///     title: "User Response",
-///     description: "사용자 정보",
-///     fixtureJSON: """
-///     {
-///       "id": 1,
-///       "name": "John Doe"
-///     }
-///     """
-/// )
-/// @ResponseTestable  // fixtureJSON을 자동으로 @ResponseDocument에서 가져옴
-/// struct UserDTO: Codable, Sendable {
-///     let id: Int
-///     let name: String
-/// }
+/// // Before (v1.2.6)
+/// @ResponseDocument(fixtureJSON: "...")
+/// @ResponseTestable
+/// struct UserDTO: Codable { }
+///
+/// // After (v1.3.0)
+/// @ResponseTestable(fixtureJSON: "...")
+/// struct UserDTO: Codable { }
+///
+/// // 사용 - 모든 기능 통합
+/// let random = UserDTO.mock()      // 랜덤
+/// let fixed = UserDTO.fixture()    // 고정
+/// let json = UserDTO.jsonSample    // 문서화용 JSON ✅
 /// ```
 ///
 /// ## 파라미터 설명
 ///
-/// - Parameter mockStrategy: Mock 생성 전략 (기본값: `.random`)
-///   - `.random`: 매번 다른 랜덤 값
-///   - `.fixture`: 고정된 값 (fixtureJSON 기반)
-///
-/// - Parameter fixtureJSON: 고정 테스트 데이터 JSON 문자열
-///   - `nil`이면 타입별 기본값 사용
-///   - `@ResponseDocument`의 fixtureJSON을 자동으로 사용
+/// - Parameter fixtureJSON: `fixture()` 메서드에서 사용할 고정 JSON 문자열
+///   - `nil`이면 타입별 기본값 사용 (Int: 1, String: "Test String")
+///   - `@ResponseDocument`의 fixtureJSON 자동 감지
 ///
 /// - Parameter includeBuilder: Builder 패턴 포함 여부 (기본값: `true`)
 ///   - `true`: `builder()` 메서드 및 `{TypeName}Builder` 타입 생성
@@ -242,6 +245,10 @@ public protocol TestableDTO {
 ///
 /// - Parameter defaultArrayCount: `mockArray()` 기본 개수 (기본값: `5`)
 ///   - `mockArray()` 호출 시 count 생략하면 이 값 사용
+///
+/// - Parameter generateDocumentation: OpenAPI 문서용 `jsonSample` 생성 여부 (기본값: `true`)
+///   - `true`: `static var jsonSample: String` 프로퍼티 생성
+///   - `false`: 문서화 프로퍼티 미생성 (테스트만 필요한 경우)
 ///
 /// ## 지원하는 타입
 ///
@@ -280,17 +287,20 @@ public protocol TestableDTO {
 /// ## 생성되는 멤버
 ///
 /// ```swift
-/// // Mock 생성
+/// // Mock 생성 (항상 랜덤 값)
 /// public static func mock() -> Self
 ///
-/// // Fixture 생성  
+/// // Fixture 생성 (항상 고정 값)
 /// public static func fixture() -> Self
 ///
-/// // 배열 생성
+/// // 배열 생성 (랜덤 값 배열)
 /// public static func mockArray(count: Int = defaultArrayCount) -> [Self]
 ///
 /// // 검증
 /// public func assertValid()
+///
+/// // OpenAPI 문서용 JSON (generateDocumentation: true인 경우)
+/// public static var jsonSample: String
 ///
 /// // Builder (includeBuilder: true인 경우)
 /// public static func builder() -> {TypeName}Builder
@@ -307,13 +317,17 @@ public protocol TestableDTO {
 /// }
 /// ```
 ///
-@attached(member, names: named(mock), named(fixture), named(builder), named(mockArray), named(assertValid), arbitrary)
+@attached(
+    member,
+    names: named(mock), named(fixture), named(builder), named(mockArray),
+    named(assertValid), named(jsonSample), arbitrary
+)
 @attached(extension, conformances: TestableDTO)
 public macro ResponseTestable(
-    mockStrategy: MockStrategy = .random,
     fixtureJSON: String? = nil,
     includeBuilder: Bool = true,
-    defaultArrayCount: Int = 5
+    defaultArrayCount: Int = 5,
+    generateDocumentation: Bool = true
 ) = #externalMacro(
     module: "AsyncNetworkMacrosImpl",
     type: "ResponseTestableMacroImpl"

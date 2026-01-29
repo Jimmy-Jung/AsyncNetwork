@@ -11,7 +11,7 @@ import Foundation
 
 // MARK: - Error Models
 
-@ResponseDocument(
+@ResponseTestable(
     fixtureJSON: """
     {
       "error": "Resource not found",
@@ -26,7 +26,7 @@ struct NotFoundError: Codable, Sendable, Error {
     let timestamp: String
 }
 
-@ResponseDocument(
+@ResponseTestable(
     fixtureJSON: """
     {
       "error": "Internal server error",
@@ -43,7 +43,7 @@ struct ServerError: Codable, Sendable, Error {
     let requestId: String
 }
 
-@ResponseDocument(
+@ResponseTestable(
     fixtureJSON: """
     {
       "error": "Invalid request",

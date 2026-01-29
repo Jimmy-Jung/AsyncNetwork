@@ -8,7 +8,7 @@
 import Foundation
 import AsyncNetwork
 
-@ResponseDocument(
+@ResponseTestable(
     fixtureJSON: """
     {
       "postId": 1,
@@ -17,10 +17,7 @@ import AsyncNetwork
       "email": "eliseo@example.com",
       "body": "laudantium enim quasi est quidem"
     }
-    """
-)
-@ResponseTestable(
-    mockStrategy: .random,
+    """,
     includeBuilder: true,
     defaultArrayCount: 10
 )

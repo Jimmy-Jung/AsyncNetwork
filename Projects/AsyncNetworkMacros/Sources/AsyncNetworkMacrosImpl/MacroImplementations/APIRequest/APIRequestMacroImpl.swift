@@ -94,7 +94,6 @@ struct AsyncNetworkMacrosPlugin: CompilerPlugin {
         APIRequestMacroImpl.self,
         APIDocumentMacroImpl.self,
         APITestableMacroImpl.self,
-        ResponseDocumentMacroImpl.self,
         ResponseTestableMacroImpl.self
     ]
 }

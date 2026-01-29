@@ -16,11 +16,10 @@ import Testing
 
 @Suite("@ResponseTestable Macro Tests")
 struct ResponseTestableMacroTests {
-    
     // MARK: - 배열 타입 Mock 생성 테스트
-    
+
     @Test("@ResponseTestable이 배열 프로퍼티에 대해 Mock 데이터를 생성하는지 확인")
-    func testArrayPropertyMockGeneration() {
+    func arrayPropertyMockGeneration() {
         // Given
         let source = """
         @ResponseTestable(mockStrategy: .random, includeBuilder: false, defaultArrayCount: 5)
@@ -28,14 +27,14 @@ struct ResponseTestableMacroTests {
             let items: [ItemDTO]
         }
         """
-        
+
         // When & Then - items가 랜덤 개수의 Mock을 생성하는지 확인
         assertMacroExpansion(
             source,
             expandedSource: """
             struct ResponseWithArray: Codable, Sendable {
                 let items: [ItemDTO]
-            
+
                 /// 랜덤 값으로 테스트 데이터 생성
                 ///
                 /// 매번 다른 랜덤 값을 생성합니다. (Int.random, UUID().uuidString 등)
@@ -47,25 +46,25 @@ struct ResponseTestableMacroTests {
                         items: (0..<Int.random(in: 2...5)).map { _ in ItemDTO.mock() }
                     )
                 }
-            
+
                 /// 고정 값으로 테스트 데이터 생성
                 public static func fixture() -> ResponseWithArray {
                     ResponseWithArray(
                         items: []
                     )
                 }
-            
+
                 /// 여러 개의 Mock 데이터 생성
                 public static func mockArray(count: Int = 5) -> [Self] {
                     (0..<count).map { _ in mock() }
                 }
-            
+
                 /// 데이터 검증
                 public func assertValid() {
                     // No validation rules
                 }
             }
-            
+
             extension ResponseWithArray: TestableDTO {
             }
             """,
@@ -74,11 +73,11 @@ struct ResponseTestableMacroTests {
             ]
         )
     }
-    
+
     // MARK: - 다양한 타입 테스트
-    
+
     @Test("@ResponseTestable이 모든 기본 타입을 올바르게 생성하는지 확인")
-    func testAllBasicTypes() {
+    func allBasicTypes() {
         // Given
         let source = """
         @ResponseTestable(mockStrategy: .random, includeBuilder: false)
@@ -102,7 +101,7 @@ struct ResponseTestableMacroTests {
             let data: Data
         }
         """
-        
+
         // When & Then - 각 타입이 올바른 Mock 값을 생성하는지 확인
         assertMacroExpansion(
             source,
@@ -125,7 +124,7 @@ struct ResponseTestableMacroTests {
                 let url: URL
                 let decimal: Decimal
                 let data: Data
-            
+
                 /// 랜덤 값으로 테스트 데이터 생성
                 ///
                 /// 매번 다른 랜덤 값을 생성합니다. (Int.random, UUID().uuidString 등)
@@ -153,7 +152,7 @@ struct ResponseTestableMacroTests {
                         data: Data()
                     )
                 }
-            
+
                 /// 고정 값으로 테스트 데이터 생성
                 public static func fixture() -> AllTypesDTO {
                     AllTypesDTO(
@@ -176,18 +175,18 @@ struct ResponseTestableMacroTests {
                         data: Data()
                     )
                 }
-            
+
                 /// 여러 개의 Mock 데이터 생성
                 public static func mockArray(count: Int = 5) -> [Self] {
                     (0..<count).map { _ in mock() }
                 }
-            
+
                 /// 데이터 검증
                 public func assertValid() {
                     // No validation rules
                 }
             }
-            
+
             extension AllTypesDTO: TestableDTO {
             }
             """,
@@ -196,11 +195,11 @@ struct ResponseTestableMacroTests {
             ]
         )
     }
-    
+
     // MARK: - Optional 타입 테스트
-    
+
     @Test("@ResponseTestable이 Optional 프로퍼티를 올바르게 처리하는지 확인")
-    func testOptionalProperties() {
+    func optionalProperties() {
         // Given
         let source = """
         @ResponseTestable(mockStrategy: .random, includeBuilder: false)
@@ -210,7 +209,7 @@ struct ResponseTestableMacroTests {
             let optionalId: Int?
         }
         """
-        
+
         // When & Then
         assertMacroExpansion(
             source,
@@ -219,7 +218,7 @@ struct ResponseTestableMacroTests {
                 let required: String
                 let optional: String?
                 let optionalId: Int?
-            
+
                 /// 랜덤 값으로 테스트 데이터 생성
                 ///
                 /// 매번 다른 랜덤 값을 생성합니다. (Int.random, UUID().uuidString 등)
@@ -233,7 +232,7 @@ struct ResponseTestableMacroTests {
                         optionalId: Bool.random() ? Int.random(in: 1...1000) : nil
                     )
                 }
-            
+
                 /// 고정 값으로 테스트 데이터 생성
                 public static func fixture() -> OptionalDTO {
                     OptionalDTO(
@@ -242,12 +241,12 @@ struct ResponseTestableMacroTests {
                         optionalId: nil
                     )
                 }
-            
+
                 /// 여러 개의 Mock 데이터 생성
                 public static func mockArray(count: Int = 5) -> [Self] {
                     (0..<count).map { _ in mock() }
                 }
-            
+
                 /// 데이터 검증
                 public func assertValid() {
                     assert(!required.isEmpty, "required must not be empty")
@@ -256,7 +255,7 @@ struct ResponseTestableMacroTests {
                     }
                 }
             }
-            
+
             extension OptionalDTO: TestableDTO {
             }
             """,
@@ -265,11 +264,11 @@ struct ResponseTestableMacroTests {
             ]
         )
     }
-    
+
     // MARK: - 특수 필드명 테스트
-    
+
     @Test("@ResponseTestable이 email 필드를 올바르게 생성하는지 확인")
-    func testEmailFieldGeneration() {
+    func emailFieldGeneration() {
         // Given
         let source = """
         @ResponseTestable(mockStrategy: .random, includeBuilder: false)
@@ -278,7 +277,7 @@ struct ResponseTestableMacroTests {
             let userEmail: String?
         }
         """
-        
+
         // When & Then
         assertMacroExpansion(
             source,
@@ -286,7 +285,7 @@ struct ResponseTestableMacroTests {
             struct UserDTO: Codable, Sendable {
                 let email: String
                 let userEmail: String?
-            
+
                 /// 랜덤 값으로 테스트 데이터 생성
                 ///
                 /// 매번 다른 랜덤 값을 생성합니다. (Int.random, UUID().uuidString 등)
@@ -299,7 +298,7 @@ struct ResponseTestableMacroTests {
                         userEmail: Bool.random() ? "mock\\(Int.random(in: 1...999))@example.com" : nil
                     )
                 }
-            
+
                 /// 고정 값으로 테스트 데이터 생성
                 public static func fixture() -> UserDTO {
                     UserDTO(
@@ -307,12 +306,12 @@ struct ResponseTestableMacroTests {
                         userEmail: nil
                     )
                 }
-            
+
                 /// 여러 개의 Mock 데이터 생성
                 public static func mockArray(count: Int = 5) -> [Self] {
                     (0..<count).map { _ in mock() }
                 }
-            
+
                 /// 데이터 검증
                 public func assertValid() {
                     assert(email.contains("@") && email.contains("."), "email must be valid email")
@@ -323,7 +322,7 @@ struct ResponseTestableMacroTests {
                     }
                 }
             }
-            
+
             extension UserDTO: TestableDTO {
             }
             """,
@@ -332,11 +331,11 @@ struct ResponseTestableMacroTests {
             ]
         )
     }
-    
+
     // MARK: - 딕셔너리 및 Set 타입 테스트
-    
+
     @Test("@ResponseTestable이 Dictionary와 Set을 올바르게 생성하는지 확인")
-    func testDictionaryAndSetTypes() {
+    func dictionaryAndSetTypes() {
         // Given
         let source = """
         @ResponseTestable(mockStrategy: .random, includeBuilder: false)
@@ -345,7 +344,7 @@ struct ResponseTestableMacroTests {
             let set: Set<String>
         }
         """
-        
+
         // When & Then
         assertMacroExpansion(
             source,
@@ -353,7 +352,7 @@ struct ResponseTestableMacroTests {
             struct CollectionDTO: Codable, Sendable {
                 let dict: [String: Int]
                 let set: Set<String>
-            
+
                 /// 랜덤 값으로 테스트 데이터 생성
                 ///
                 /// 매번 다른 랜덤 값을 생성합니다. (Int.random, UUID().uuidString 등)
@@ -366,7 +365,7 @@ struct ResponseTestableMacroTests {
                         set: Set((0..<Int.random(in: 2...5)).map { _ in String.mock() })
                     )
                 }
-            
+
                 /// 고정 값으로 테스트 데이터 생성
                 public static func fixture() -> CollectionDTO {
                     CollectionDTO(
@@ -374,18 +373,18 @@ struct ResponseTestableMacroTests {
                         set: Set()
                     )
                 }
-            
+
                 /// 여러 개의 Mock 데이터 생성
                 public static func mockArray(count: Int = 5) -> [Self] {
                     (0..<count).map { _ in mock() }
                 }
-            
+
                 /// 데이터 검증
                 public func assertValid() {
                     // No validation rules
                 }
             }
-            
+
             extension CollectionDTO: TestableDTO {
             }
             """,
@@ -394,11 +393,11 @@ struct ResponseTestableMacroTests {
             ]
         )
     }
-    
+
     // MARK: - Builder 패턴 테스트
-    
+
     @Test("@ResponseTestable이 Builder를 올바르게 생성하는지 확인")
-    func testBuilderGeneration() {
+    func builderGeneration() {
         // Given
         let source = """
         @ResponseTestable(mockStrategy: .random, includeBuilder: true, defaultArrayCount: 5)
@@ -407,7 +406,7 @@ struct ResponseTestableMacroTests {
             let name: String
         }
         """
-        
+
         // When & Then - Builder가 Sendable을 채택하는지 확인
         assertMacroExpansion(
             source,
@@ -415,7 +414,7 @@ struct ResponseTestableMacroTests {
             struct BuilderDTO: Codable, Sendable {
                 let id: Int
                 let name: String
-            
+
                 /// 랜덤 값으로 테스트 데이터 생성
                 ///
                 /// 매번 다른 랜덤 값을 생성합니다. (Int.random, UUID().uuidString 등)
@@ -428,7 +427,7 @@ struct ResponseTestableMacroTests {
                         name: "Mock \\(UUID().uuidString.prefix(8))"
                     )
                 }
-            
+
                 /// 고정 값으로 테스트 데이터 생성
                 public static func fixture() -> BuilderDTO {
                     BuilderDTO(
@@ -436,18 +435,18 @@ struct ResponseTestableMacroTests {
                         name: "Test String"
                     )
                 }
-            
+
                 /// 여러 개의 Mock 데이터 생성
                 public static func mockArray(count: Int = 5) -> [Self] {
                     (0..<count).map { _ in mock() }
                 }
-            
+
                 /// 데이터 검증
                 public func assertValid() {
                     assert(id > 0, "id must be positive")
                     assert(!name.isEmpty, "name must not be empty")
                 }
-            
+
                 /// Builder 패턴으로 유연한 데이터 생성
                 ///
                 /// Builder는 fixture() 값을 기본값으로 사용합니다.
@@ -465,7 +464,7 @@ struct ResponseTestableMacroTests {
                 public static func builder() -> BuilderDTOBuilder {
                     BuilderDTOBuilder()
                 }
-            
+
                 /// Builder 패턴
                 ///
                 /// 모든 프로퍼티는 fixture() 값으로 초기화됩니다.
@@ -476,19 +475,19 @@ struct ResponseTestableMacroTests {
                 public struct BuilderDTOBuilder: Sendable {
                     private var id: Int = 1
                     private var name: String = "Test String"
-            
-                    public func with(id: Int) -> Self {
-                        var copy = self
-                        copy.id = id
-                        return copy
-                    }
-                
-                    public func with(name: String) -> Self {
+
+                public func with(id: Int) -> Self {
+                    var copy = self
+                    copy.id = id
+                    return copy
+                }
+
+                public func with(name: String) -> Self {
                         var copy = self
                         copy.name = name
                         return copy
                     }
-            
+
                     /// Builder로 설정된 값들로 인스턴스 생성
                     public func build() -> BuilderDTO {
                         BuilderDTO(
@@ -498,7 +497,7 @@ struct ResponseTestableMacroTests {
                     }
                 }
             }
-            
+
             extension BuilderDTO: TestableDTO {
             }
             """,
@@ -507,28 +506,28 @@ struct ResponseTestableMacroTests {
             ]
         )
     }
-    
+
     // MARK: - fixtureJSON 에러 처리 테스트
-    
+
     @Test("@ResponseTestable이 잘못된 fixtureJSON에 대해 명확한 에러를 제공하는지 확인")
-    func testInvalidFixtureJSONErrorHandling() {
+    func invalidFixtureJSONErrorHandling() {
         // Given - 의도적으로 잘못된 JSON
         let source = """
-        @ResponseTestable(mockStrategy: .random, includeBuilder: false)
-        @ResponseDocument(
+        @ResponseTestable(
             fixtureJSON: \"""
             {
               "id": "invalid_not_int",
               "name": "Test"
             }
-            \"""
+            \""",
+            includeBuilder: false
         )
         struct ErrorDTO: Codable, Sendable {
             let id: Int
             let name: String
         }
         """
-        
+
         // When & Then - do-catch로 명확한 에러 메시지 제공
         assertMacroExpansion(
             source,
@@ -536,7 +535,7 @@ struct ResponseTestableMacroTests {
             struct ErrorDTO: Codable, Sendable {
                 let id: Int
                 let name: String
-            
+
                 /// 랜덤 값으로 테스트 데이터 생성
                 ///
                 /// 매번 다른 랜덤 값을 생성합니다. (Int.random, UUID().uuidString 등)
@@ -549,7 +548,7 @@ struct ResponseTestableMacroTests {
                         name: "Mock \\(UUID().uuidString.prefix(8))"
                     )
                 }
-            
+
                 /// 고정 값으로 테스트 데이터 생성
                 public static func fixture() -> ErrorDTO {
                     let json = "{\\n  \\"id\\": \\"invalid_not_int\\",\\n  \\"name\\": \\"Test\\"\\n}"
@@ -559,33 +558,45 @@ struct ResponseTestableMacroTests {
                         fatalError("[ResponseTestable] Invalid fixtureJSON for ErrorDTO: \\(error)")
                     }
                 }
-            
+
                 /// 여러 개의 Mock 데이터 생성
                 public static func mockArray(count: Int = 5) -> [Self] {
                     (0..<count).map { _ in mock() }
                 }
-            
+
                 /// 데이터 검증
                 public func assertValid() {
                     assert(id > 0, "id must be positive")
                     assert(!name.isEmpty, "name must not be empty")
                 }
+
+                /// JSON 샘플 문자열
+                ///
+                /// OpenAPI 문서 생성 시 사용되는 응답 예시입니다.
+                /// fixtureJSON과 동일한 내용을 포함합니다.
+                public static var jsonSample: String {
+                    \"""
+                    {
+                      "id": "invalid_not_int",
+                      "name": "Test"
+                    }
+                    \"""
+                }
             }
-            
+
             extension ErrorDTO: TestableDTO {
             }
             """,
             macros: [
-                "ResponseTestable": ResponseTestableMacroImpl.self,
-                "ResponseDocument": ResponseDocumentMacroImpl.self
+                "ResponseTestable": ResponseTestableMacroImpl.self
             ]
         )
     }
-    
+
     // MARK: - 중첩 DTO 테스트
-    
+
     @Test("@ResponseTestable이 중첩된 커스텀 타입을 올바르게 처리하는지 확인")
-    func testNestedCustomTypes() {
+    func nestedCustomTypes() {
         // Given
         let source = """
         @ResponseTestable(mockStrategy: .random, includeBuilder: false)
@@ -594,7 +605,7 @@ struct ResponseTestableMacroTests {
             let children: [ChildDTO]
         }
         """
-        
+
         // When & Then - child.mock() 및 배열 ChildDTO.mock() 호출
         assertMacroExpansion(
             source,
@@ -602,7 +613,7 @@ struct ResponseTestableMacroTests {
             struct ParentDTO: Codable, Sendable {
                 let child: ChildDTO
                 let children: [ChildDTO]
-            
+
                 /// 랜덤 값으로 테스트 데이터 생성
                 ///
                 /// 매번 다른 랜덤 값을 생성합니다. (Int.random, UUID().uuidString 등)
@@ -615,7 +626,7 @@ struct ResponseTestableMacroTests {
                         children: (0..<Int.random(in: 2...5)).map { _ in ChildDTO.mock() }
                     )
                 }
-            
+
                 /// 고정 값으로 테스트 데이터 생성
                 public static func fixture() -> ParentDTO {
                     ParentDTO(
@@ -623,18 +634,18 @@ struct ResponseTestableMacroTests {
                         children: []
                     )
                 }
-            
+
                 /// 여러 개의 Mock 데이터 생성
                 public static func mockArray(count: Int = 5) -> [Self] {
                     (0..<count).map { _ in mock() }
                 }
-            
+
                 /// 데이터 검증
                 public func assertValid() {
                     // No validation rules
                 }
             }
-            
+
             extension ParentDTO: TestableDTO {
             }
             """,

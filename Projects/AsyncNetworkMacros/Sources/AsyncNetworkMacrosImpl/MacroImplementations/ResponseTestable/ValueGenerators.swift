@@ -76,7 +76,8 @@ extension ResponseTestableMacroImpl {
                 // 빈 배열이 아닌지 확인
                 if !elementType.isEmpty {
                     let randomCount = "Int.random(in: 2...5)"
-                    mockValue = "(0..<\(randomCount)).map { _ in \(elementType).mock() }"
+                    let elementMockValue = generateMockValue(for: elementType, isOptional: false, propertyName: "")
+                    mockValue = "(0..<\(randomCount)).map { _ in \(elementMockValue) }"
                 } else {
                     mockValue = "[]"
                 }
@@ -88,7 +89,8 @@ extension ResponseTestableMacroImpl {
                 let elementType = String(cleanType.dropFirst(4).dropLast()).trimmingCharacters(in: .whitespaces)
                 if !elementType.isEmpty {
                     let randomCount = "Int.random(in: 2...5)"
-                    mockValue = "Set((0..<\(randomCount)).map { _ in \(elementType).mock() })"
+                    let elementMockValue = generateMockValue(for: elementType, isOptional: false, propertyName: "")
+                    mockValue = "Set((0..<\(randomCount)).map { _ in \(elementMockValue) })"
                 } else {
                     mockValue = "Set()"
                 }
@@ -139,10 +141,21 @@ extension ResponseTestableMacroImpl {
         default:
             if cleanType.hasPrefix("["), cleanType.hasSuffix("]") {
                 // 배열 타입: defaultArrayCount만큼 fixture()를 사용하여 고정값 생성
-                let elementType = String(cleanType.dropFirst().dropLast()) // [CourseDTO] -> CourseDTO
-                fixtureValue = "(0..<\(defaultArrayCount)).map { _ in \(elementType).fixture() }"
+                let elementType = String(cleanType.dropFirst().dropLast()).trimmingCharacters(in: .whitespaces)
+                if !elementType.isEmpty {
+                    let elementFixtureValue = generateFixtureValue(for: elementType, isOptional: false, defaultArrayCount: defaultArrayCount)
+                    fixtureValue = "(0..<\(defaultArrayCount)).map { _ in \(elementFixtureValue) }"
+                } else {
+                    fixtureValue = "[]"
+                }
             } else if cleanType.hasPrefix("Set<"), cleanType.hasSuffix(">") {
-                fixtureValue = "Set()"
+                let elementType = String(cleanType.dropFirst(4).dropLast()).trimmingCharacters(in: .whitespaces)
+                if !elementType.isEmpty {
+                    let elementFixtureValue = generateFixtureValue(for: elementType, isOptional: false, defaultArrayCount: defaultArrayCount)
+                    fixtureValue = "Set((0..<\(defaultArrayCount)).map { _ in \(elementFixtureValue) })"
+                } else {
+                    fixtureValue = "Set()"
+                }
             } else {
                 fixtureValue = "\(cleanType).fixture()"
             }

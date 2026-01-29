@@ -11,7 +11,7 @@ import Foundation
 
 // MARK: - Post Models
 
-@ResponseDocument(
+@ResponseTestable(
     fixtureJSON: """
     {
       "userId": 1,
@@ -28,7 +28,7 @@ struct Post: Codable, Identifiable, Sendable {
     let body: String
 }
 
-@ResponseDocument(
+@ResponseTestable(
     fixtureJSON: """
     {
       "title": "My Post Title",
@@ -45,7 +45,7 @@ struct PostBody: Codable, Sendable {
 
 // MARK: - User Models
 
-@ResponseDocument(
+@ResponseTestable(
     fixtureJSON: """
     {
       "id": 1,
@@ -83,7 +83,7 @@ struct User: Codable, Identifiable, Sendable {
     let company: Company?
 }
 
-@ResponseDocument(
+@ResponseTestable(
     fixtureJSON: """
     {
       "street": "Kulas Light",
@@ -105,7 +105,7 @@ struct Address: Codable, Sendable {
     let geo: Geo
 }
 
-@ResponseDocument(
+@ResponseTestable(
     fixtureJSON: """
     {
       "lat": "-37.3159",
@@ -118,7 +118,7 @@ struct Geo: Codable, Sendable {
     let lng: String
 }
 
-@ResponseDocument(
+@ResponseTestable(
     fixtureJSON: """
     {
       "name": "Romaguera-Crona",
@@ -133,7 +133,7 @@ struct Company: Codable, Sendable {
     let bs: String
 }
 
-@ResponseDocument(
+@ResponseTestable(
     fixtureJSON: """
     {
       "name": "Leanne Graham",
@@ -150,7 +150,7 @@ struct UserBody: Codable, Sendable {
 
 // MARK: - Comment Models
 
-@ResponseDocument(
+@ResponseTestable(
     fixtureJSON: """
     {
       "postId": 1,
@@ -169,7 +169,7 @@ struct Comment: Codable, Identifiable, Sendable {
     let body: String
 }
 
-@ResponseDocument(
+@ResponseTestable(
     fixtureJSON: """
     {
       "postId": 1,
@@ -188,7 +188,7 @@ struct CommentBody: Codable, Sendable {
 
 // MARK: - Album Models
 
-@ResponseDocument(
+@ResponseTestable(
     fixtureJSON: """
     {
       "userId": 1,
@@ -203,7 +203,7 @@ struct Album: Codable, Identifiable, Sendable {
     let title: String
 }
 
-@ResponseDocument(
+@ResponseTestable(
     fixtureJSON: """
     {
       "albumId": 1,
@@ -224,7 +224,7 @@ struct Photo: Codable, Identifiable, Sendable {
 
 // MARK: - Complex Order Models
 
-@ResponseDocument(
+@ResponseTestable(
     fixtureJSON: """
     {
       "id": 9001,
@@ -275,7 +275,7 @@ struct Order: Codable, Identifiable, Sendable {
     let estimatedDelivery: String?
 }
 
-@ResponseDocument(
+@ResponseTestable(
     fixtureJSON: """
     {
       "productId": 101,
@@ -296,7 +296,7 @@ struct OrderItem: Codable, Sendable {
     let options: [String: String]?
 }
 
-@ResponseDocument(
+@ResponseTestable(
     fixtureJSON: """
     {
       "recipientName": "홍길동",
@@ -321,7 +321,7 @@ struct ShippingAddress: Codable, Sendable {
     let instructions: String?
 }
 
-@ResponseDocument(
+@ResponseTestable(
     fixtureJSON: """
     {
       "type": "card",
@@ -336,7 +336,7 @@ struct PaymentMethod: Codable, Sendable {
     let cardBrand: String?
 }
 
-@ResponseDocument(
+@ResponseTestable(
     fixtureJSON: """
     {
       "items": [
@@ -376,7 +376,7 @@ struct CreateOrderBody: Codable, Sendable {
     let subscribeNewsletter: Bool
 }
 
-@ResponseDocument(
+@ResponseTestable(
     fixtureJSON: """
     {
       "productId": 101,
@@ -391,7 +391,7 @@ struct OrderItemInput: Codable, Sendable {
     let options: [String: String]?
 }
 
-@ResponseDocument(
+@ResponseTestable(
     fixtureJSON: """
     {
       "type": "card",

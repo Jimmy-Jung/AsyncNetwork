@@ -8,17 +8,14 @@
 import AsyncNetwork
 import Foundation
 
-@ResponseDocument(
+@ResponseTestable(
     fixtureJSON: """
     {
       "userId": 1,
       "id": 1,
       "title": "quidem molestiae enim"
     }
-    """
-)
-@ResponseTestable(
-    mockStrategy: .random,
+    """,
     includeBuilder: true,
     defaultArrayCount: 10
 )
@@ -28,7 +25,7 @@ struct AlbumDTO: Codable, Sendable {
     let title: String
 }
 
-@ResponseDocument(
+@ResponseTestable(
     fixtureJSON: """
     {
       "albumId": 1,
@@ -37,10 +34,7 @@ struct AlbumDTO: Codable, Sendable {
       "url": "https://via.placeholder.com/600/92c952",
       "thumbnailUrl": "https://via.placeholder.com/150/92c952"
     }
-    """
-)
-@ResponseTestable(
-    mockStrategy: .random,
+    """,
     includeBuilder: true,
     defaultArrayCount: 50
 )

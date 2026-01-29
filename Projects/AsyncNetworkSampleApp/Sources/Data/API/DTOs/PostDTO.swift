@@ -5,10 +5,10 @@
 //  Created by jimmy on 2026/01/06.
 //
 
-import Foundation
 import AsyncNetwork
+import Foundation
 
-@ResponseDocument(
+@ResponseTestable(
     fixtureJSON: """
     {
       "userId": 1,
@@ -16,10 +16,7 @@ import AsyncNetwork
       "title": "sunt aut facere",
       "body": "quia et suscipit"
     }
-    """
-)
-@ResponseTestable(
-    mockStrategy: .random,
+    """,
     includeBuilder: true,
     defaultArrayCount: 10
 )
