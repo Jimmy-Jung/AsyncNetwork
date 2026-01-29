@@ -29,7 +29,7 @@ public enum APIDocumentMacroError: CustomStringConvertible, Error, DiagnosticMes
     /// class MyRequest { }  // ❌ 에러 발생
     /// ```
     case onlyApplicableToStruct
-    
+
     /// @APIRequest 매크로가 선언되지 않은 경우
     ///
     /// @APIDocument는 반드시 @APIRequest와 함께 사용해야 합니다.
@@ -203,7 +203,8 @@ public struct APIDocumentMacroImpl: MemberMacro, ExtensionMacro {
         let documentArgs = try parseAPIDocumentArguments(from: node, context: context)
 
         // 5. PropertyWrapper 스캔 (headers, parameters)
-        let properties = scanPropertyWrappers(from: structDecl)
+        let scanner = PropertyWrapperScanner()
+        let properties = scanner.scan(from: structDecl)
 
         // 6. metadata 생성
         let metadata = generateMetadata(
@@ -376,7 +377,91 @@ public struct APIDocumentMacroImpl: MemberMacro, ExtensionMacro {
             throw APIRequestMacroError.missingArguments
         }
 
-        return try parseArguments(arguments)
+        // 직접 파싱 (APIRequestArgumentParser는 MacroContext 필요)
+        let expressionParser = ExpressionParser()
+        let pathParser = PathParser()
+
+        var responseType: String?
+        var title = ""
+        var description = ""
+        var baseURL: String?
+        var isBaseURLLiteral = false
+        var path: String?
+        var method: String?
+        var tags: [String] = []
+        var testScenarios: [String] = []
+        var errorExamples: [String: String] = [:]
+        var includeRetryTests = true
+        var includePerformanceTests = false
+
+        for argument in arguments {
+            let label = argument.label?.text ?? ""
+            let expr = argument.expression
+
+            switch label {
+            case "response":
+                responseType = try? expressionParser.extractTypeName(from: expr)
+            case "title":
+                title = (try? expressionParser.extractString(from: expr)) ?? ""
+            case "description":
+                description = (try? expressionParser.extractString(from: expr)) ?? ""
+            case "baseURL":
+                if let literal = try? expressionParser.extractString(from: expr) {
+                    baseURL = literal
+                    isBaseURLLiteral = true
+                } else {
+                    baseURL = expressionParser.extractStringOrExpression(from: expr)
+                    isBaseURLLiteral = false
+                }
+            case "path":
+                path = try? expressionParser.extractString(from: expr)
+            case "method":
+                method = try? expressionParser.extractEnumCase(from: expr)
+            case "tags":
+                tags = expressionParser.extractStringArray(from: expr)
+            case "testScenarios":
+                testScenarios = expressionParser.extractEnumCaseArray(from: expr)
+            case "errorExamples":
+                errorExamples = expressionParser.extractStringDictionary(from: expr)
+            case "includeRetryTests":
+                includeRetryTests = (try? expressionParser.extractBoolean(from: expr)) ?? true
+            case "includePerformanceTests":
+                includePerformanceTests = (try? expressionParser.extractBoolean(from: expr)) ?? false
+            default:
+                break
+            }
+        }
+
+        guard let responseType = responseType else {
+            throw MacroError.missingRequiredArgument("response")
+        }
+        guard let baseURL = baseURL else {
+            throw MacroError.missingRequiredArgument("baseURL")
+        }
+        guard let path = path else {
+            throw MacroError.missingRequiredArgument("path")
+        }
+        guard let method = method else {
+            throw MacroError.missingRequiredArgument("method")
+        }
+
+        let optionalPathParameters = pathParser.extractOptionalParameters(from: path)
+
+        return MacroArguments(
+            responseType: responseType,
+            title: title,
+            description: description,
+            baseURL: baseURL,
+            isBaseURLLiteral: isBaseURLLiteral,
+            path: path,
+            method: method,
+            tags: tags,
+            optionalPathParameters: optionalPathParameters,
+            testScenarios: testScenarios,
+            errorExamples: errorExamples,
+            includeRetryTests: includeRetryTests,
+            includePerformanceTests: includePerformanceTests
+        )
     }
 
     /// @APIDocument의 인자를 파싱합니다.
@@ -409,6 +494,7 @@ public struct APIDocumentMacroImpl: MemberMacro, ExtensionMacro {
             return DocumentArguments(title: "", description: "", tags: [])
         }
 
+        let expressionParser = ExpressionParser()
         var title = ""
         var description = ""
         var tags: [String] = []
@@ -419,11 +505,11 @@ public struct APIDocumentMacroImpl: MemberMacro, ExtensionMacro {
 
             switch label {
             case "title":
-                title = extractStringLiteral(from: expr) ?? ""
+                title = (try? expressionParser.extractString(from: expr)) ?? ""
             case "description":
-                description = extractStringLiteral(from: expr) ?? ""
+                description = (try? expressionParser.extractString(from: expr)) ?? ""
             case "tags":
-                tags = extractArray(from: expr)
+                tags = expressionParser.extractStringArray(from: expr)
             default:
                 break
             }
@@ -565,53 +651,4 @@ public struct APIDocumentMacroImpl: MemberMacro, ExtensionMacro {
         }
         """
     }
-}
-
-// MARK: - Supporting Types
-
-/// @APIDocument 매크로 인자를 담는 구조체
-///
-/// `@APIDocument`의 세 가지 파라미터(title, description, tags)를
-/// 타입 안전하게 표현합니다.
-///
-/// ## 사용 예시
-/// ```swift
-/// let args = DocumentArguments(
-///     title: "Get all posts",
-///     description: "포스트 목록을 조회합니다",
-///     tags: ["Posts", "Read"]
-/// )
-/// ```
-struct DocumentArguments {
-    /// API 엔드포인트의 제목
-    ///
-    /// OpenAPI의 `summary` 필드로 매핑됩니다.
-    /// 간결하고 명확한 동사+명사 형태를 권장합니다.
-    ///
-    /// 예시: "Get all posts", "Create user", "Delete comment"
-    let title: String
-    
-    /// API 엔드포인트의 상세 설명
-    ///
-    /// OpenAPI의 `description` 필드로 매핑됩니다.
-    /// 다중 라인 문자열 및 Markdown 문법을 지원합니다.
-    ///
-    /// 예시:
-    /// ```
-    /// """
-    /// 사용자 정보를 조회합니다.
-    ///
-    /// ## 권한
-    /// - 인증 필요: Yes
-    /// """
-    /// ```
-    let description: String
-    
-    /// API 엔드포인트를 분류하는 태그 목록
-    ///
-    /// OpenAPI의 `tags` 배열로 매핑됩니다.
-    /// Swagger UI에서 섹션으로 그룹화됩니다.
-    ///
-    /// 예시: ["Users", "Admin", "v1"]
-    let tags: [String]
 }

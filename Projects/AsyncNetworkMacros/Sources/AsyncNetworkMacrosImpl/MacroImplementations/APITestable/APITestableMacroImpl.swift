@@ -154,7 +154,70 @@ public struct APITestableMacroImpl: MemberMacro {
             throw APIRequestMacroError.missingArguments
         }
 
-        return try parseArguments(arguments)
+        // 직접 파싱
+        let expressionParser = ExpressionParser()
+        let pathParser = PathParser()
+
+        var responseType: String?
+        var baseURL: String?
+        var isBaseURLLiteral = false
+        var path: String?
+        var method: String?
+
+        for argument in arguments {
+            let label = argument.label?.text ?? ""
+            let expr = argument.expression
+
+            switch label {
+            case "response":
+                responseType = try? expressionParser.extractTypeName(from: expr)
+            case "baseURL":
+                if let literal = try? expressionParser.extractString(from: expr) {
+                    baseURL = literal
+                    isBaseURLLiteral = true
+                } else {
+                    baseURL = expressionParser.extractStringOrExpression(from: expr)
+                    isBaseURLLiteral = false
+                }
+            case "path":
+                path = try? expressionParser.extractString(from: expr)
+            case "method":
+                method = try? expressionParser.extractEnumCase(from: expr)
+            default:
+                break
+            }
+        }
+
+        guard let responseType = responseType else {
+            throw MacroError.missingRequiredArgument("response")
+        }
+        guard let baseURL = baseURL else {
+            throw MacroError.missingRequiredArgument("baseURL")
+        }
+        guard let path = path else {
+            throw MacroError.missingRequiredArgument("path")
+        }
+        guard let method = method else {
+            throw MacroError.missingRequiredArgument("method")
+        }
+
+        let optionalPathParameters = pathParser.extractOptionalParameters(from: path)
+
+        return MacroArguments(
+            responseType: responseType,
+            title: "",
+            description: "",
+            baseURL: baseURL,
+            isBaseURLLiteral: isBaseURLLiteral,
+            path: path,
+            method: method,
+            tags: [],
+            optionalPathParameters: optionalPathParameters,
+            testScenarios: [],
+            errorExamples: [:],
+            includeRetryTests: true,
+            includePerformanceTests: false
+        )
     }
 
     /// @APITestable의 인자를 파싱합니다.
@@ -186,7 +249,7 @@ public struct APITestableMacroImpl: MemberMacro {
 
         return TestableArguments(scenarios: scenarios, errorExamples: errorExamples)
     }
-    
+
     /// scenarios 배열을 파싱합니다.
     private static func extractTestScenariosInternal(from expr: ExprSyntax) -> [String] {
         guard let arrayExpr = expr.as(ArrayExprSyntax.self) else {
@@ -304,7 +367,7 @@ public struct APITestableMacroImpl: MemberMacro {
     ) -> DeclSyntax {
         // 타입 문자열 정규화
         let trimmedType = responseType.trimmingCharacters(in: .whitespaces)
-        
+
         // 배열 타입이거나 EmptyResponse인지 확인
         let isArrayType = trimmedType.hasPrefix("[") && trimmedType.hasSuffix("]") && !trimmedType.contains("?")
         let isEmptyResponse = trimmedType == "EmptyResponse"
@@ -315,7 +378,7 @@ public struct APITestableMacroImpl: MemberMacro {
         } else if isArrayType {
             // 배열 타입일 경우, 내부 타입을 추출하여 fixture() 배열 생성
             let innerType = String(trimmedType.dropFirst().dropLast()).trimmingCharacters(in: .whitespaces)
-            
+
             // 중첩 배열 체크
             if innerType.hasPrefix("[") {
                 // 중첩 배열은 빈 배열로 처리
@@ -550,9 +613,9 @@ public struct APITestableMacroImpl: MemberMacro {
         guard let code = Int(statusCode) else {
             return "invalidStatusCode"
         }
-        
+
         switch code {
-        case 200...299:
+        case 200 ... 299:
             return "success"
         case 400:
             return "clientError"
@@ -590,14 +653,7 @@ public struct APITestableMacroImpl: MemberMacro {
             .replacingOccurrences(of: "\n", with: "\\n")
             .replacingOccurrences(of: "\r", with: "\\r")
             .replacingOccurrences(of: "\t", with: "\\t")
-            .replacingOccurrences(of: "\u{08}", with: "\\b")  // Backspace
-            .replacingOccurrences(of: "\u{0C}", with: "\\f")  // Form feed
+            .replacingOccurrences(of: "\u{08}", with: "\\b") // Backspace
+            .replacingOccurrences(of: "\u{0C}", with: "\\f") // Form feed
     }
-}
-
-// MARK: - Supporting Types
-
-struct TestableArguments {
-    let scenarios: [String]
-    let errorExamples: [String: String]
 }

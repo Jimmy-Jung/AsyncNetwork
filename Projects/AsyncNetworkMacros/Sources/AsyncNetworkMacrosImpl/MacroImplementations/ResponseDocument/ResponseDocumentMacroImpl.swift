@@ -118,10 +118,11 @@ public struct ResponseDocumentMacroImpl: MemberMacro {
             return nil
         }
 
+        let expressionParser = ExpressionParser()
         for argument in arguments {
             let label = argument.label?.text ?? ""
             if label == "fixtureJSON" {
-                return extractStringLiteral(from: argument.expression)
+                return try? expressionParser.extractString(from: argument.expression)
             }
         }
 
@@ -153,20 +154,6 @@ public struct ResponseDocumentMacroImpl: MemberMacro {
             context.diagnose(diagnostic)
             throw ResponseDocumentMacroError.invalidJSON(error.localizedDescription)
         }
-    }
-
-    /// 문자열 리터럴을 추출합니다.
-    private static func extractStringLiteral(from expr: ExprSyntax) -> String? {
-        if let stringLiteral = expr.as(StringLiteralExprSyntax.self) {
-            var result = ""
-            for segment in stringLiteral.segments {
-                if let stringSegment = segment.as(StringSegmentSyntax.self) {
-                    result += stringSegment.content.text
-                }
-            }
-            return result.isEmpty ? nil : result
-        }
-        return nil
     }
 
     /// jsonSample 프로퍼티를 생성합니다.

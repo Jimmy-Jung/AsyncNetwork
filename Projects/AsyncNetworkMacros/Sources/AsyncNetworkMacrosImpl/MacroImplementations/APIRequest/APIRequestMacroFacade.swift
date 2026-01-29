@@ -147,7 +147,8 @@ public struct APIRequestMacroFacade {
             if let wrapperAttribute = variableDecl.propertyWrapperAttribute,
                let wrapperName = wrapperAttribute.name,
                wrapperName == "HeaderField" || wrapperName == "CustomHeader",
-               let keyArg = wrapperAttribute.argument(labeled: "key") {
+               let keyArg = wrapperAttribute.argument(labeled: "key")
+            {
                 // 문자열 리터럴 시도
                 if let literal = try? expressionParser.extractString(from: keyArg) {
                     headerKey = literal

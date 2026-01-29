@@ -31,10 +31,12 @@ public struct ResponseTestableMacroImpl: MemberMacro, ExtensionMacro {
         let typeName = structDecl.name.text
 
         // 2. 매크로 인자 파싱
-        let args = try parseTestableDTOArguments(from: node)
+        let parser = TestableDTOArgumentParser()
+        let args = try parser.parse(from: node)
 
         // 3. @ResponseDocument에서 fixtureJSON 추출 (있으면)
-        let documentFixtureJSON = extractFixtureJSONFromResponseDocument(structDecl: structDecl)
+        let extractor = FixtureJSONExtractor()
+        let documentFixtureJSON = extractor.extract(from: structDecl)
 
         // ResponseTestable의 fixtureJSON이 없으면 ResponseDocument의 것을 사용
         let fixtureJSON = args.fixtureJSON ?? documentFixtureJSON
@@ -324,7 +326,7 @@ public struct ResponseTestableMacroImpl: MemberMacro, ExtensionMacro {
             if cleanType.hasPrefix("["), cleanType.hasSuffix("]"), !cleanType.contains(":") {
                 // 배열 타입 (딕셔너리 제외)
                 let elementType = String(cleanType.dropFirst().dropLast()).trimmingCharacters(in: .whitespaces)
-                
+
                 // 빈 배열이 아닌지 확인
                 if !elementType.isEmpty {
                     let randomCount = "Int.random(in: 2...5)"
@@ -470,124 +472,5 @@ public struct ResponseTestableMacroImpl: MemberMacro, ExtensionMacro {
         }
 
         return properties
-    }
-}
-
-// MARK: - Supporting Types
-
-struct TestableDTOArguments {
-    let mockStrategy: String
-    let fixtureJSON: String?
-    let includeBuilder: Bool
-    let defaultArrayCount: Int
-}
-
-// MARK: - Argument Parsing
-
-func parseTestableDTOArguments(from node: AttributeSyntax) throws -> TestableDTOArguments {
-    guard let arguments = node.arguments?.as(LabeledExprListSyntax.self) else {
-        // 기본값 사용
-        return TestableDTOArguments(
-            mockStrategy: "random",
-            fixtureJSON: nil,
-            includeBuilder: true,
-            defaultArrayCount: 5
-        )
-    }
-
-    var mockStrategy = "random"
-    var fixtureJSON: String?
-    var includeBuilder = true
-    var defaultArrayCount = 5
-
-    for argument in arguments {
-        let label = argument.label?.text ?? ""
-        let expr = argument.expression
-
-        switch label {
-        case "mockStrategy":
-            if let memberAccess = expr.as(MemberAccessExprSyntax.self) {
-                mockStrategy = memberAccess.declName.baseName.text
-            }
-        case "fixtureJSON":
-            fixtureJSON = extractStringLiteralLocal(from: expr)
-        case "includeBuilder":
-            if let boolLiteral = expr.as(BooleanLiteralExprSyntax.self) {
-                includeBuilder = boolLiteral.literal.text == "true"
-            }
-        case "defaultArrayCount":
-            if let intLiteral = expr.as(IntegerLiteralExprSyntax.self) {
-                defaultArrayCount = Int(intLiteral.literal.text) ?? 5
-            }
-        default:
-            break
-        }
-    }
-
-    return TestableDTOArguments(
-        mockStrategy: mockStrategy,
-        fixtureJSON: fixtureJSON,
-        includeBuilder: includeBuilder,
-        defaultArrayCount: defaultArrayCount
-    )
-}
-
-// Local string extraction helper (to avoid dependency on ArgumentParser.swift)
-private func extractStringLiteralLocal(from expr: ExprSyntax) -> String? {
-    if let stringLiteral = expr.as(StringLiteralExprSyntax.self) {
-        var result = ""
-        for segment in stringLiteral.segments {
-            if let stringSegment = segment.as(StringSegmentSyntax.self) {
-                result += stringSegment.content.text
-            }
-        }
-        return result.isEmpty ? nil : result
-    }
-    return nil
-}
-
-/// @ResponseDocument 속성에서 fixtureJSON을 추출합니다
-private func extractFixtureJSONFromResponseDocument(structDecl: StructDeclSyntax) -> String? {
-    for attribute in structDecl.attributes {
-        guard let customAttribute = attribute.as(AttributeSyntax.self) else {
-            continue
-        }
-
-        let attributeName = customAttribute.attributeName.trimmedDescription
-
-        // @ResponseDocument 찾기
-        if attributeName == "ResponseDocument" {
-            guard let arguments = customAttribute.arguments?.as(LabeledExprListSyntax.self) else {
-                continue
-            }
-
-            // fixtureJSON 인자 찾기
-            for argument in arguments {
-                if argument.label?.text == "fixtureJSON" {
-                    return extractStringLiteralLocal(from: argument.expression)
-                }
-            }
-        }
-    }
-
-    return nil
-}
-
-// MARK: - Errors
-
-enum TestableDTOMacroError: Error, CustomStringConvertible {
-    case notAStruct
-    case notCodable
-    case invalidFixtureJSON
-
-    var description: String {
-        switch self {
-        case .notAStruct:
-            return "@ResponseTestable can only be applied to struct declarations"
-        case .notCodable:
-            return "@ResponseTestable requires the type to conform to Codable"
-        case .invalidFixtureJSON:
-            return "fixtureJSON must be a valid JSON string"
-        }
     }
 }

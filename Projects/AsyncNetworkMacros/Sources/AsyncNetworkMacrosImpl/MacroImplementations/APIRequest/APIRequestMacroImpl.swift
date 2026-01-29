@@ -108,7 +108,8 @@ public struct APIRequestMacroImpl: MemberMacro, ExtensionMacro {
     }
 
     // MARK: - Deprecated Methods (Moved to Facade and Generators)
-    // 
+
+    //
     // ⚠️ The following methods were moved to dedicated classes for better separation of concerns:
     // - Validation → MacroContext, APIRequestArgumentParser
     // - Property Generation → PropertyGenerator, PathGenerator
@@ -137,6 +138,6 @@ struct AsyncNetworkMacrosPlugin: CompilerPlugin {
         APIDocumentMacroImpl.self,
         APITestableMacroImpl.self,
         ResponseDocumentMacroImpl.self,
-        ResponseTestableMacroImpl.self
+        ResponseTestableMacroImpl.self,
     ]
 }
