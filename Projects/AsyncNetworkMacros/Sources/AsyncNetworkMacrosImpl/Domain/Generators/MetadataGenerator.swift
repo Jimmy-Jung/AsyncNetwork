@@ -95,7 +95,7 @@ extension MetadataGenerator {
         }
 
         guard !parameterProperties.isEmpty else {
-            return "[String]()"
+            return "[]"
         }
 
         let parameterNames = parameterProperties.map { #""\#($0.name)""# }
