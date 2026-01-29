@@ -249,7 +249,6 @@ public struct APITestableMacroImpl: MemberMacro {
         return scenarios
     }
 
-    /// errorExamples 딕셔너리를 파싱합니다.
     private static func extractErrorExamplesInternal(from expr: ExprSyntax) -> [String: String] {
         guard let dictExpr = expr.as(DictionaryExprSyntax.self) else {
             return [:]
@@ -281,7 +280,6 @@ public struct APITestableMacroImpl: MemberMacro {
         return examples
     }
 
-    /// 기존 멤버를 수집합니다.
     private static func collectExistingMembers(
         from structDecl: StructDeclSyntax
     ) -> Set<String> {
@@ -311,7 +309,6 @@ public struct APITestableMacroImpl: MemberMacro {
         return members
     }
 
-    /// MockScenario enum 생성 (기존 코드 재사용)
     private static func generateMockScenarioEnum(
         scenarios: [String],
         errorExamples: [String: String]
@@ -341,7 +338,6 @@ public struct APITestableMacroImpl: MemberMacro {
         """
     }
 
-    /// mockResponse() 메서드 생성 (개선된 버전)
     private static func generateMockResponseMethod(
         typeName _: String,
         responseType: String,
@@ -591,7 +587,6 @@ public struct APITestableMacroImpl: MemberMacro {
         """
     }
 
-    /// 상태 코드에 해당하는 케이스 이름 반환 (개선된 버전)
     private static func getCaseNameForStatusCode(_ statusCode: String) -> String {
         guard let code = Int(statusCode) else {
             return "invalidStatusCode"
@@ -628,7 +623,6 @@ public struct APITestableMacroImpl: MemberMacro {
         }
     }
 
-    /// JSON escape 처리 (개선된 버전)
     private static func escapeJSON(_ json: String) -> String {
         return json
             .replacingOccurrences(of: "\\", with: "\\\\")

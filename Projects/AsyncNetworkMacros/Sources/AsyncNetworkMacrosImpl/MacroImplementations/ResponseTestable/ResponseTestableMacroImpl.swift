@@ -4,9 +4,6 @@ import SwiftSyntax
 import SwiftSyntaxBuilder
 import SwiftSyntaxMacros
 
-/// @ResponseTestable 매크로 구현
-///
-/// Codable DTO의 테스트 데이터 생성 및 검증 로직을 자동 생성합니다.
 public struct ResponseTestableMacroImpl: MemberMacro, ExtensionMacro {
     // MARK: - MemberMacro Implementation
 
@@ -16,37 +13,23 @@ public struct ResponseTestableMacroImpl: MemberMacro, ExtensionMacro {
         conformingTo _: [TypeSyntax],
         in _: some MacroExpansionContext
     ) throws -> [DeclSyntax] {
-        // 1. struct 검증
         guard let structDecl = declaration.as(StructDeclSyntax.self) else {
             throw TestableDTOMacroError.notAStruct
         }
 
         let typeName = structDecl.name.text
-
-        // 2. 매크로 인자 파싱
         let parser = TestableDTOArgumentParser()
         let args = try parser.parse(from: node)
 
-        // 3. @ResponseDocument에서 fixtureJSON 추출 (있으면)
         let extractor = FixtureJSONExtractor()
         let documentFixtureJSON = extractor.extract(from: structDecl)
-
-        // ResponseTestable의 fixtureJSON이 없으면 ResponseDocument의 것을 사용
         let fixtureJSON = args.fixtureJSON ?? documentFixtureJSON
-
-        // 4. 프로퍼티 추출
         let properties = extractProperties(from: structDecl)
 
-        // 5. 멤버 생성
         var members: [DeclSyntax] = []
 
-        // mock() 메서드
         members.append(generateMockMethod(typeName: typeName, properties: properties, strategy: args.mockStrategy))
-
-        // fixture() 메서드
         members.append(generateFixtureMethod(typeName: typeName, properties: properties, fixtureJSON: fixtureJSON))
-
-        // mockArray() 메서드
         members.append(generateMockArrayMethod(defaultCount: args.defaultArrayCount))
 
         // assertValid() 메서드

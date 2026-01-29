@@ -6,7 +6,6 @@ import SwiftSyntaxMacros
 
 // MARK: - ResponseDocumentMacroError
 
-/// ResponseDocument 매크로 에러 타입
 public enum ResponseDocumentMacroError: CustomStringConvertible, Error, DiagnosticMessage {
     case onlyApplicableToStruct
     case missingFixtureJSON
@@ -41,9 +40,6 @@ public enum ResponseDocumentMacroError: CustomStringConvertible, Error, Diagnost
 
 // MARK: - ResponseDocumentMacroImpl
 
-/// @ResponseDocument 매크로 구현
-///
-/// OpenAPI 문서화를 위한 JSON 샘플을 생성합니다.
 public struct ResponseDocumentMacroImpl: MemberMacro {
     // MARK: - MemberMacro Implementation
 
@@ -85,7 +81,6 @@ public struct ResponseDocumentMacroImpl: MemberMacro {
 
     // MARK: - Helper Methods
 
-    /// 구조체 선언을 검증합니다.
     private static func validateStructDeclaration(
         _ declaration: some DeclGroupSyntax,
         node: AttributeSyntax,
@@ -102,7 +97,6 @@ public struct ResponseDocumentMacroImpl: MemberMacro {
         return structDecl
     }
 
-    /// fixtureJSON 파라미터를 추출합니다.
     private static func extractFixtureJSON(
         from node: AttributeSyntax,
         context _: some MacroExpansionContext
@@ -122,7 +116,6 @@ public struct ResponseDocumentMacroImpl: MemberMacro {
         return nil
     }
 
-    /// JSON 유효성을 검증합니다.
     private static func validateJSON(
         _ json: String,
         node: AttributeSyntax,
@@ -149,7 +142,6 @@ public struct ResponseDocumentMacroImpl: MemberMacro {
         }
     }
 
-    /// jsonSample 프로퍼티를 생성합니다.
     private static func generateJSONSampleProperty(json: String) -> DeclSyntax {
         // 들여쓰기 추가 (빈 줄 제외)
         // Note: multi-line string literal 내부에서는 escape 처리가 자동으로 이루어지므로
