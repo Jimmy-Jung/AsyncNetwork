@@ -440,13 +440,14 @@ AsyncNetwork은 세 가지 주요 모듈로 구성됩니다:
 
 #### 분리된 매크로 시스템 (v1.2.0+)
 
-AsyncNetwork은 세 가지 분리된 매크로를 제공합니다:
+AsyncNetwork은 네 가지 분리된 매크로를 제공합니다:
 
-| 매크로 | 역할 | 필수 여부 |
-|-------|------|----------|
-| `@APIRequest` | 네트워크 요청 필수 프로퍼티 생성 | 필수 |
-| `@APIDocument` | 문서화 메타데이터 생성 | 선택 |
-| `@APITestable` | 테스트 시나리오 및 Mock 응답 | 선택 |
+| 매크로 | 역할 | 필수 여부 | 버전 |
+|-------|------|----------|------|
+| `@APIRequest` | 네트워크 요청 필수 프로퍼티 생성 | 필수 | v1.0.0+ |
+| `@APIDocument` | 문서화 메타데이터 생성 | 선택 | v1.2.0+ |
+| `@APITestable` | 테스트 시나리오 및 Mock 응답 | 선택 | v1.2.0+ |
+| `@ResponseTestable` | 응답 DTO Mock 데이터 및 테스트 헬퍼 생성 | 선택 | v1.2.6+ |
 
 ```swift
 // 기본 사용 (필수)
@@ -487,6 +488,26 @@ struct GetPostsDocumentedRequest {}
 )
 struct GetPostByIdRequest {
     @PathParameter var id: Int
+}
+
+// 응답 DTO 테스트 헬퍼 추가 (선택)
+@ResponseTestable(
+    fixtureJSON: """
+    {
+        "id": 1,
+        "title": "Sample Post",
+        "body": "This is a sample post body.",
+        "userId": 1
+    }
+    """,
+    includeBuilder: true,
+    defaultArrayCount: 5
+)
+struct Post: Codable, Sendable {
+    let id: Int
+    let title: String
+    let body: String
+    let userId: Int
 }
 ```
 
@@ -1122,6 +1143,163 @@ monitor.onStatusChange { status in
 monitor.startMonitoring()  // 모니터링 시작
 monitor.stopMonitoring()   // 모니터링 중지
 ```
+
+### 8️⃣ @ResponseTestable - 응답 DTO 테스트 자동화
+
+`@ResponseTestable` 매크로는 응답 DTO(Data Transfer Object)에 테스트 헬퍼 메서드를 자동으로 생성합니다.
+
+#### 기본 사용법
+
+```swift
+import AsyncNetwork
+
+@ResponseTestable(
+    fixtureJSON: """
+    {
+        "id": 1,
+        "name": "John Doe",
+        "email": "john@example.com"
+    }
+    """,
+    includeBuilder: true,
+    defaultArrayCount: 5
+)
+struct UserDTO: Codable, Sendable {
+    let id: Int
+    let name: String
+    let email: String
+}
+
+// 자동 생성된 테스트 헬퍼 메서드
+let randomUser = UserDTO.mock()        // 랜덤 값으로 생성
+let fixedUser = UserDTO.fixture()      // fixtureJSON 기반 고정 값
+let customUser = UserDTO.builder()     // 빌더 패턴으로 커스터마이징
+    .with(name: "Jane Doe")
+    .with(email: "jane@example.com")
+    .build()
+
+let users = UserDTO.mockArray(count: 10)  // 랜덤 배열 생성
+
+// 유효성 검증
+try UserDTO.assertValid()  // 모든 프로퍼티가 올바르게 생성되는지 확인
+```
+
+#### 지원하는 타입
+
+`@ResponseTestable`은 다음 타입들을 자동으로 지원합니다:
+
+- **기본 타입**: `String`, `Int`, `Bool`, `Double`, `Float`, `Date`, `URL`, `UUID`
+- **숫자 타입**: `Int8`, `Int16`, `Int32`, `Int64`, `UInt`, `UInt8`, `UInt16`, `UInt32`, `UInt64`, `Decimal`
+- **Optional 타입**: 위의 모든 타입의 Optional 버전
+- **배열 타입**: 위의 모든 타입의 배열 (`[String]`, `[Int]` 등)
+- **중첩 타입**: 다른 `@ResponseTestable` DTO를 포함하는 타입
+
+#### 중첩 DTO 예제
+
+```swift
+@ResponseTestable
+struct AddressDTO: Codable, Sendable {
+    let street: String
+    let city: String
+    let zipCode: String
+}
+
+@ResponseTestable(
+    fixtureJSON: """
+    {
+        "id": 1,
+        "name": "John Doe",
+        "address": {
+            "street": "123 Main St",
+            "city": "Seoul",
+            "zipCode": "12345"
+        }
+    }
+    """
+)
+struct UserWithAddressDTO: Codable, Sendable {
+    let id: Int
+    let name: String
+    let address: AddressDTO
+}
+
+// 중첩 타입도 자동으로 처리
+let user = UserWithAddressDTO.mock()
+print(user.address.city)  // 자동 생성된 값
+```
+
+#### 테스트에서 활용
+
+```swift
+import Testing
+@testable import YourApp
+
+@Test("UserDTO Mock 생성 테스트")
+func testUserDTOMock() throws {
+    // Given
+    let user = UserDTO.mock()
+    
+    // Then
+    #expect(user.id > 0)
+    #expect(!user.name.isEmpty)
+    #expect(user.email.contains("@"))
+}
+
+@Test("UserDTO Fixture 테스트")
+func testUserDTOFixture() throws {
+    // Given
+    let user = UserDTO.fixture()
+    
+    // Then
+    #expect(user.id == 1)
+    #expect(user.name == "John Doe")
+    #expect(user.email == "john@example.com")
+}
+
+@Test("UserDTO Builder 테스트")
+func testUserDTOBuilder() throws {
+    // Given & When
+    let user = UserDTO.builder()
+        .with(id: 999)
+        .with(name: "Custom Name")
+        .build()
+    
+    // Then
+    #expect(user.id == 999)
+    #expect(user.name == "Custom Name")
+}
+
+@Test("UserDTO 배열 생성 테스트")
+func testUserDTOArray() throws {
+    // Given & When
+    let users = UserDTO.mockArray(count: 10)
+    
+    // Then
+    #expect(users.count == 10)
+    #expect(users.allSatisfy { $0.id > 0 })
+}
+
+@Test("UserDTO 유효성 검증")
+func testUserDTOValidation() throws {
+    // When & Then
+    try UserDTO.assertValid()  // 모든 프로퍼티가 올바르게 생성되면 통과
+}
+```
+
+#### 매크로 파라미터
+
+| 파라미터 | 타입 | 기본값 | 설명 |
+|---------|------|--------|------|
+| `fixtureJSON` | `String?` | `nil` | 고정 값을 위한 JSON 문자열 |
+| `includeBuilder` | `Bool` | `true` | 빌더 패턴 생성 여부 |
+| `defaultArrayCount` | `Int` | `5` | `mockArray()` 기본 개수 |
+| `generateDocumentation` | `Bool` | `true` | 문서화 주석 생성 여부 |
+
+#### 제약사항
+
+- DTO는 반드시 `Codable`과 `Sendable`을 준수해야 합니다
+- `fixtureJSON`을 제공할 경우, 유효한 JSON 문자열이어야 합니다
+- 커스텀 타입을 사용할 경우, 해당 타입도 `@ResponseTestable`을 적용하거나 자체 `mock()` 메서드를 구현해야 합니다
 
 ## 🧪 테스트
 
