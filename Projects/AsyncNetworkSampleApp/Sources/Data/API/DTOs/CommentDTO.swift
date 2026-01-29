@@ -5,8 +5,8 @@
 //  Created by jimmy on 2026/01/06.
 //
 
-import Foundation
 import AsyncNetwork
+import Foundation
 
 @ResponseTestable(
     fixtureJSON: """
