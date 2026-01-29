@@ -138,13 +138,13 @@ let posts: [Post] = try await service.request(
 ```
 https://github.com/Jimmy-Jung/AsyncNetwork.git
 ```
-3. Version: `1.2.0` 이상 선택
+3. Version: `1.2.4` 이상 선택
 
 #### Package.swift에 추가
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/Jimmy-Jung/AsyncNetwork.git", from: "1.2.0")
+    .package(url: "https://github.com/Jimmy-Jung/AsyncNetwork.git", from: "1.2.4")
 ]
 ```
 

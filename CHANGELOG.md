@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [Unreleased]
+## [1.2.4] - 2026-01-29
 
 ### 🔒 Security
 
@@ -40,6 +40,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - All 242 tests passed successfully
 - No linter errors detected
 - All special character edge cases now properly handled
+
+### 📦 Sample Code
+
+#### Course Example Implementation
+- **Added CourseDTO and CourseRequests example code**
+  - CourseDTO: Codable DTO for course data with test support
+  - CourseRequests: Complete API request examples using all macros
+  - GetCoursesRequest: GET request with query parameters and documentation
+  - GetCourseDetailRequest: GET request with path parameters
+  - CreateCourseRequest: POST request with request body
+  - UpdateCourseRequest: PUT request with both path and body parameters
+  - DeleteCourseRequest: DELETE request with path parameter
+  - Test files: CourseDTOTests and CourseRequestsTests
+
+---
+
+## [Unreleased]
+
+### Planned Features
+
+- [ ] WebSocket 지원
+- [ ] Multipart/Form-Data 업로드
+- [ ] 다운로드 진행률 추적
+- [ ] HTTP/2 Server Push 지원
 
 ---
 
@@ -520,6 +544,7 @@ AsyncNetwork 1.0.0 정식 출시! 순수 Foundation 기반의 현대적인 Swift
 
 ---
 
+[1.2.4]: https://github.com/Jimmy-Jung/AsyncNetwork/releases/tag/1.2.4
 [1.2.2]: https://github.com/Jimmy-Jung/AsyncNetwork/releases/tag/1.2.2
 [1.2.1]: https://github.com/Jimmy-Jung/AsyncNetwork/releases/tag/1.2.1
 [1.2.0]: https://github.com/Jimmy-Jung/AsyncNetwork/releases/tag/1.2.0
