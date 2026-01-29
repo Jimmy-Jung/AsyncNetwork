@@ -11,6 +11,44 @@ import AsyncViewModel
 import Network
 import Testing
 
+// MARK: - MockNetworkMonitor (테스트용)
+
+/// 테스트용 NetworkMonitoring Mock
+private final class MockNetworkMonitor: NetworkMonitoring, @unchecked Sendable {
+    var isConnected: Bool = true
+    var connectionType: ConnectionType = .wifi
+    var status: NetworkStatus = .connected(.wifi)
+    var isExpensive: Bool = false
+    var isConstrained: Bool = false
+    
+    private var callbacks: [@Sendable (NetworkStatus) -> Void] = []
+    
+    init(
+        isConnected: Bool = true,
+        connectionType: ConnectionType = .wifi,
+        isExpensive: Bool = false,
+        isConstrained: Bool = false
+    ) {
+        self.isConnected = isConnected
+        self.connectionType = connectionType
+        self.status = isConnected ? .connected(connectionType) : .disconnected
+        self.isExpensive = isExpensive
+        self.isConstrained = isConstrained
+    }
+    
+    func startMonitoring() {}
+    func stopMonitoring() {}
+    
+    func onStatusChange(_ callback: @escaping @Sendable (NetworkStatus) -> Void) {
+        callbacks.append(callback)
+    }
+    
+    func simulateStatusChange(_ status: NetworkStatus) {
+        self.status = status
+        callbacks.forEach { $0(status) }
+    }
+}
+
 /// SettingsViewModel 테스트
 @Suite("SettingsViewModel")
 @MainActor
@@ -21,9 +59,9 @@ struct SettingsViewModelTests {
     func initialStateHasDefaultValues() async {
         let viewModel = SettingsViewModel(networkMonitor: MockNetworkMonitor())
 
-        #expect(viewModel.state.retryPolicyPreset == .patient)
-        #expect(viewModel.state.loggingLevel == .verbose)
-        #expect(viewModel.state.networkStatus == .connected(.wifi))
+        #expect(viewModel.state.retryPolicyPreset == RetryPolicyPreset.patient)
+        #expect(viewModel.state.loggingLevel == LoggingLevel.verbose)
+        #expect(viewModel.state.networkStatus == NetworkStatus.connected(.wifi))
         #expect(viewModel.state.isExpensive == false)
         #expect(viewModel.state.isConstrained == false)
         #expect(viewModel.state.etagCacheUsage.currentCount == 0)
@@ -37,7 +75,7 @@ struct SettingsViewModelTests {
         let viewModel = SettingsViewModel(networkMonitor: MockNetworkMonitor())
         let store = AsyncTestStore(viewModel: viewModel)
         
-        store.send(.refreshETagCacheUsageTapped)
+        store.send(SettingsViewModel.Input.refreshETagCacheUsageTapped)
         
         // waitForEffects()가 Effect가 완료될 때까지 대기
         try await store.waitForEffects()
@@ -55,7 +93,7 @@ struct SettingsViewModelTests {
         let viewModel = SettingsViewModel(networkMonitor: MockNetworkMonitor())
         let store = AsyncTestStore(viewModel: viewModel)
         
-        store.send(.clearETagCacheTapped)
+        store.send(SettingsViewModel.Input.clearETagCacheTapped)
         try await store.waitForEffects()
 
         // clearETagCache 후 사용량이 0으로 초기화되어야 함
@@ -67,7 +105,7 @@ struct SettingsViewModelTests {
         let viewModel = SettingsViewModel(networkMonitor: MockNetworkMonitor())
         let store = AsyncTestStore(viewModel: viewModel)
 
-        store.send(.invalidateAllETagsTapped)
+        store.send(SettingsViewModel.Input.invalidateAllETagsTapped)
         try await store.waitForEffects()
 
         // invalidateAllETags 후 사용량이 0으로 초기화되어야 함
@@ -84,10 +122,10 @@ struct SettingsViewModelTests {
         let viewModel = SettingsViewModel(networkMonitor: MockNetworkMonitor())
         let store = AsyncTestStore(viewModel: viewModel)
 
-        store.send(.retryPolicyPresetSelected(.quick))
+        store.send(SettingsViewModel.Input.retryPolicyPresetSelected(RetryPolicyPreset.quick))
         try await store.waitForEffects()
 
-        #expect(store.state.retryPolicyPreset == .quick)
+        #expect(store.state.retryPolicyPreset == RetryPolicyPreset.quick)
     }
 
     @Test("모든 RetryPolicyPreset을 순회하며 변경할 수 있다")
@@ -98,7 +136,7 @@ struct SettingsViewModelTests {
         let presets: [RetryPolicyPreset] = [.quick, .patient]
 
         for preset in presets {
-            store.send(.retryPolicyPresetSelected(preset))
+            store.send(SettingsViewModel.Input.retryPolicyPresetSelected(preset))
             try await store.waitForEffects()
 
             #expect(store.state.retryPolicyPreset == preset)
@@ -112,10 +150,10 @@ struct SettingsViewModelTests {
         let viewModel = SettingsViewModel(networkMonitor: MockNetworkMonitor())
         let store = AsyncTestStore(viewModel: viewModel)
 
-        store.send(.loggingLevelSelected(.error))
+        store.send(SettingsViewModel.Input.loggingLevelSelected(LoggingLevel.error))
         try await store.waitForEffects()
 
-        #expect(store.state.loggingLevel == .error)
+        #expect(store.state.loggingLevel == LoggingLevel.error)
     }
 
     @Test("모든 LoggingLevel을 순회하며 변경할 수 있다")
@@ -126,7 +164,7 @@ struct SettingsViewModelTests {
         let levels: [LoggingLevel] = [.info, .error, .none]
 
         for level in levels {
-            store.send(.loggingLevelSelected(level))
+            store.send(SettingsViewModel.Input.loggingLevelSelected(level))
             try await store.waitForEffects()
 
             #expect(store.state.loggingLevel == level)
@@ -146,10 +184,10 @@ struct SettingsViewModelTests {
         let viewModel = SettingsViewModel(networkMonitor: mockMonitor)
         let store = AsyncTestStore(viewModel: viewModel)
 
-        store.send(.viewDidAppear)
+        store.send(SettingsViewModel.Input.viewDidAppear)
         try await store.waitForEffects()
 
-        #expect(store.state.networkStatus == .connected(.cellular))
+        #expect(store.state.networkStatus == NetworkStatus.connected(.cellular))
         #expect(store.state.isExpensive == true)
         #expect(store.state.isConstrained == true)
     }
@@ -162,10 +200,10 @@ struct SettingsViewModelTests {
         let viewModel = SettingsViewModel(networkMonitor: mockMonitor)
         let store = AsyncTestStore(viewModel: viewModel)
 
-        store.send(.viewDidAppear)
+        store.send(SettingsViewModel.Input.viewDidAppear)
         try await store.waitForEffects()
 
-        #expect(store.state.networkStatus == .disconnected)
+        #expect(store.state.networkStatus == NetworkStatus.disconnected)
         #expect(store.state.isExpensive == false)
         #expect(store.state.isConstrained == false)
     }
@@ -178,17 +216,17 @@ struct SettingsViewModelTests {
         let store = AsyncTestStore(viewModel: viewModel)
 
         // 설정 변경
-        store.send(.retryPolicyPresetSelected(.quick))
+        store.send(SettingsViewModel.Input.retryPolicyPresetSelected(RetryPolicyPreset.quick))
         try await store.waitForEffects()
 
-        store.send(.loggingLevelSelected(.none))
+        store.send(SettingsViewModel.Input.loggingLevelSelected(LoggingLevel.none))
         try await store.waitForEffects()
 
         // 초기화
-        store.send(.resetToDefaultsTapped)
+        store.send(SettingsViewModel.Input.resetToDefaultsTapped)
         try await store.waitForEffects()
 
-        #expect(store.state.retryPolicyPreset == .patient)
-        #expect(store.state.loggingLevel == .verbose)
+        #expect(store.state.retryPolicyPreset == RetryPolicyPreset.patient)
+        #expect(store.state.loggingLevel == LoggingLevel.verbose)
     }
 }

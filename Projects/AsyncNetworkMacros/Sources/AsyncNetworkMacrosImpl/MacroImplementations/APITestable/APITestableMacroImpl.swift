@@ -1,10 +1,3 @@
-//
-//  APITestableMacroImpl.swift
-//  AsyncNetworkMacrosImpl
-//
-//  Created by jimmy on 2026/01/12.
-//
-
 import Foundation
 import SwiftCompilerPlugin
 import SwiftDiagnostics
@@ -13,7 +6,6 @@ import SwiftSyntaxMacros
 
 // MARK: - APITestableMacroError
 
-/// APITestable 매크로 에러 타입
 public enum APITestableMacroError: CustomStringConvertible, Error, DiagnosticMessage {
     case onlyApplicableToStruct
     case missingAPIRequest
@@ -49,9 +41,6 @@ public enum APITestableMacroError: CustomStringConvertible, Error, DiagnosticMes
 
 // MARK: - APITestableMacroImpl
 
-/// @APITestable 매크로 구현
-///
-/// @APIRequest와 함께 사용하여 테스트 Mock 응답을 생성합니다.
 public struct APITestableMacroImpl: MemberMacro {
     // MARK: - MemberMacro Implementation
 
@@ -109,7 +98,6 @@ public struct APITestableMacroImpl: MemberMacro {
 
     // MARK: - Helper Methods
 
-    /// 구조체 선언을 검증합니다.
     private static func validateStructDeclaration(
         _ declaration: some DeclGroupSyntax,
         node: AttributeSyntax,
@@ -126,21 +114,18 @@ public struct APITestableMacroImpl: MemberMacro {
         return structDecl
     }
 
-    /// declaration에서 @APIRequest 어트리뷰트를 찾습니다.
     private static func findAPIRequestAttribute(
         from declaration: some DeclGroupSyntax
     ) -> AttributeSyntax? {
         for attribute in declaration.attributes {
             if let customAttribute = attribute.as(AttributeSyntax.self),
-               customAttribute.attributeName.trimmedDescription == "APIRequest"
-            {
+               customAttribute.attributeName.trimmedDescription == "APIRequest" {
                 return customAttribute
             }
         }
         return nil
     }
 
-    /// @APIRequest의 인자를 파싱합니다.
     private static func parseAPIRequestArguments(
         from attribute: AttributeSyntax,
         context: some MacroExpansionContext
@@ -154,10 +139,72 @@ public struct APITestableMacroImpl: MemberMacro {
             throw APIRequestMacroError.missingArguments
         }
 
-        return try parseArguments(arguments)
+        // 직접 파싱
+        let expressionParser = ExpressionParser()
+        let pathParser = PathParser()
+
+        var responseType: String?
+        var baseURL: String?
+        var isBaseURLLiteral = false
+        var path: String?
+        var method: String?
+
+        for argument in arguments {
+            let label = argument.label?.text ?? ""
+            let expr = argument.expression
+
+            switch label {
+            case "response":
+                responseType = try? expressionParser.extractTypeName(from: expr)
+            case "baseURL":
+                if let literal = try? expressionParser.extractString(from: expr) {
+                    baseURL = literal
+                    isBaseURLLiteral = true
+                } else {
+                    baseURL = expressionParser.extractStringOrExpression(from: expr)
+                    isBaseURLLiteral = false
+                }
+            case "path":
+                path = try? expressionParser.extractString(from: expr)
+            case "method":
+                method = try? expressionParser.extractEnumCase(from: expr)
+            default:
+                break
+            }
+        }
+
+        guard let responseType = responseType else {
+            throw MacroError.missingRequiredArgument("response")
+        }
+        guard let baseURL = baseURL else {
+            throw MacroError.missingRequiredArgument("baseURL")
+        }
+        guard let path = path else {
+            throw MacroError.missingRequiredArgument("path")
+        }
+        guard let method = method else {
+            throw MacroError.missingRequiredArgument("method")
+        }
+
+        let optionalPathParameters = pathParser.extractOptionalParameters(from: path)
+
+        return MacroArguments(
+            responseType: responseType,
+            title: "",
+            description: "",
+            baseURL: baseURL,
+            isBaseURLLiteral: isBaseURLLiteral,
+            path: path,
+            method: method,
+            tags: [],
+            optionalPathParameters: optionalPathParameters,
+            testScenarios: [],
+            errorExamples: [:],
+            includeRetryTests: true,
+            includePerformanceTests: false
+        )
     }
 
-    /// @APITestable의 인자를 파싱합니다.
     private static func parseAPITestableArguments(
         from node: AttributeSyntax,
         context _: some MacroExpansionContext
@@ -176,9 +223,9 @@ public struct APITestableMacroImpl: MemberMacro {
 
             switch label {
             case "scenarios":
-                scenarios = extractTestScenarios(from: expr)
+                scenarios = extractTestScenariosInternal(from: expr)
             case "errorExamples":
-                errorExamples = extractErrorExamples(from: expr)
+                errorExamples = extractErrorExamplesInternal(from: expr)
             default:
                 break
             }
@@ -187,7 +234,52 @@ public struct APITestableMacroImpl: MemberMacro {
         return TestableArguments(scenarios: scenarios, errorExamples: errorExamples)
     }
 
-    /// 기존 멤버를 수집합니다.
+    private static func extractTestScenariosInternal(from expr: ExprSyntax) -> [String] {
+        guard let arrayExpr = expr.as(ArrayExprSyntax.self) else {
+            return []
+        }
+
+        var scenarios: [String] = []
+        for element in arrayExpr.elements {
+            if let memberAccess = element.expression.as(MemberAccessExprSyntax.self) {
+                scenarios.append(memberAccess.declName.baseName.text)
+            }
+        }
+
+        return scenarios
+    }
+
+    private static func extractErrorExamplesInternal(from expr: ExprSyntax) -> [String: String] {
+        guard let dictExpr = expr.as(DictionaryExprSyntax.self) else {
+            return [:]
+        }
+
+        var examples: [String: String] = [:]
+
+        for element in dictExpr.content.as(DictionaryElementListSyntax.self) ?? [] {
+            // Key (status code)
+            guard let keyString = element.key.as(StringLiteralExprSyntax.self),
+                  let keySegment = keyString.segments.first?.as(StringSegmentSyntax.self)
+            else {
+                continue
+            }
+            let key = keySegment.content.text
+
+            // Value (JSON)
+            if let valueString = element.value.as(StringLiteralExprSyntax.self) {
+                var json = ""
+                for segment in valueString.segments {
+                    if let stringSegment = segment.as(StringSegmentSyntax.self) {
+                        json += stringSegment.content.text
+                    }
+                }
+                examples[key] = json
+            }
+        }
+
+        return examples
+    }
+
     private static func collectExistingMembers(
         from structDecl: StructDeclSyntax
     ) -> Set<String> {
@@ -217,7 +309,6 @@ public struct APITestableMacroImpl: MemberMacro {
         return members
     }
 
-    /// MockScenario enum 생성 (기존 코드 재사용)
     private static func generateMockScenarioEnum(
         scenarios: [String],
         errorExamples: [String: String]
@@ -247,26 +338,35 @@ public struct APITestableMacroImpl: MemberMacro {
         """
     }
 
-    /// mockResponse() 메서드 생성 (기존 코드 재사용)
     private static func generateMockResponseMethod(
         typeName _: String,
         responseType: String,
         scenarios: [String],
         errorExamples: [String: String]
     ) -> DeclSyntax {
+        // 타입 문자열 정규화
+        let trimmedType = responseType.trimmingCharacters(in: .whitespaces)
+
         // 배열 타입이거나 EmptyResponse인지 확인
-        let isArrayType = responseType.hasPrefix("[") && responseType.hasSuffix("]")
-        let isEmptyResponse = responseType == "EmptyResponse"
+        let isArrayType = trimmedType.hasPrefix("[") && trimmedType.hasSuffix("]") && !trimmedType.contains("?")
+        let isEmptyResponse = trimmedType == "EmptyResponse"
 
         let fixtureCall: String
         if isEmptyResponse {
             fixtureCall = "let response = EmptyResponse()"
         } else if isArrayType {
             // 배열 타입일 경우, 내부 타입을 추출하여 fixture() 배열 생성
-            let innerType = String(responseType.dropFirst().dropLast())
-            fixtureCall = "let response = [\(innerType).fixture()]"
+            let innerType = String(trimmedType.dropFirst().dropLast()).trimmingCharacters(in: .whitespaces)
+
+            // 중첩 배열 체크
+            if innerType.hasPrefix("[") {
+                // 중첩 배열은 빈 배열로 처리
+                fixtureCall = "let response: \(trimmedType) = []"
+            } else {
+                fixtureCall = "let response = [\(innerType).fixture()]"
+            }
         } else {
-            fixtureCall = "let response = \(responseType).fixture()"
+            fixtureCall = "let response = \(trimmedType).fixture()"
         }
 
         var cases = """
@@ -403,6 +503,60 @@ public struct APITestableMacroImpl: MemberMacro {
                     )
                     return (errorData, httpResponse, nil)
                 """
+            case "forbidden":
+                cases += """
+
+                case .forbidden:
+                    let errorData = Data(\"\"\"
+                    {
+                        "error": "Forbidden",
+                        "code": "FORBIDDEN"
+                    }
+                    \"\"\".utf8)
+                    let httpResponse = HTTPURLResponse(
+                        url: url,
+                        statusCode: 403,
+                        httpVersion: nil,
+                        headerFields: ["Content-Type": "application/json"]
+                    )
+                    return (errorData, httpResponse, nil)
+                """
+            case "tooManyRequests":
+                cases += """
+
+                case .tooManyRequests:
+                    let errorData = Data(\"\"\"
+                    {
+                        "error": "Too Many Requests",
+                        "message": "Rate limit exceeded"
+                    }
+                    \"\"\".utf8)
+                    let httpResponse = HTTPURLResponse(
+                        url: url,
+                        statusCode: 429,
+                        httpVersion: nil,
+                        headerFields: ["Content-Type": "application/json"]
+                    )
+                    return (errorData, httpResponse, nil)
+                """
+            case "serviceUnavailable":
+                cases += """
+
+                case .serviceUnavailable:
+                    let errorData = Data(\"\"\"
+                    {
+                        "error": "Service Unavailable",
+                        "message": "Service is temporarily unavailable"
+                    }
+                    \"\"\".utf8)
+                    let httpResponse = HTTPURLResponse(
+                        url: url,
+                        statusCode: 503,
+                        httpVersion: nil,
+                        headerFields: ["Content-Type": "application/json"]
+                    )
+                    return (errorData, httpResponse, nil)
+                """
             default:
                 cases += """
 
@@ -433,18 +587,42 @@ public struct APITestableMacroImpl: MemberMacro {
         """
     }
 
-    /// 상태 코드에 해당하는 케이스 이름 반환
     private static func getCaseNameForStatusCode(_ statusCode: String) -> String {
-        switch statusCode {
-        case "404": return "notFound"
-        case "500": return "serverError"
-        case "401": return "unauthorized"
-        case "400": return "clientError"
-        default: return "serverError"
+        guard let code = Int(statusCode) else {
+            return "invalidStatusCode"
+        }
+
+        switch code {
+        case 200 ... 299:
+            return "success"
+        case 400:
+            return "clientError"
+        case 401:
+            return "unauthorized"
+        case 403:
+            return "forbidden"
+        case 404:
+            return "notFound"
+        case 429:
+            return "tooManyRequests"
+        case 500:
+            return "serverError"
+        case 502:
+            return "badGateway"
+        case 503:
+            return "serviceUnavailable"
+        case 504:
+            return "gatewayTimeout"
+        default:
+            if code >= 400 && code < 500 {
+                return "clientError"
+            } else if code >= 500 {
+                return "serverError"
+            }
+            return "unexpectedStatusCode"
         }
     }
 
-    /// JSON escape 처리
     private static func escapeJSON(_ json: String) -> String {
         return json
             .replacingOccurrences(of: "\\", with: "\\\\")
@@ -452,12 +630,7 @@ public struct APITestableMacroImpl: MemberMacro {
             .replacingOccurrences(of: "\n", with: "\\n")
             .replacingOccurrences(of: "\r", with: "\\r")
             .replacingOccurrences(of: "\t", with: "\\t")
+            .replacingOccurrences(of: "\u{08}", with: "\\b") // Backspace
+            .replacingOccurrences(of: "\u{0C}", with: "\\f") // Form feed
     }
-}
-
-// MARK: - Supporting Types
-
-struct TestableArguments {
-    let scenarios: [String]
-    let errorExamples: [String: String]
 }

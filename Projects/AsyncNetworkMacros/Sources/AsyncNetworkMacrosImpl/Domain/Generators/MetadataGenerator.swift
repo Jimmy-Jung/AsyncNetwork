@@ -1,114 +1,118 @@
-//
-//  MetadataGenerator.swift
-//  AsyncNetworkMacrosImpl
-//
-//  Created by jimmy on 2026/01/13.
-//
-
 import SwiftSyntax
 
-/// EndpointMetadata 생성기
-///
-/// 이 클래스는 `@APIRequest` 매크로에서 `metadata` 프로퍼티를 생성합니다.
-/// 메타데이터는 API 문서화 및 디버깅을 위한 정보를 포함합니다.
-///
-/// ## 생성 예시
-/// ```swift
-/// public var metadata: EndpointMetadata {
-///     EndpointMetadata(
-///         title: "Get Post",
-///         description: "Retrieve a post by ID",
-///         method: "GET",
-///         path: "/posts/{id}",
-///         tags: ["Posts"],
-///         parameters: [
-///             .path(name: "id", type: "Int", required: true),
-///             .query(name: "page", type: "Int", required: false)
-///         ]
-///     )
-/// }
-/// ```
 public struct MetadataGenerator: CodeGenerator {
+    private let typeName: String
     private let args: MacroArguments
     private let properties: [PropertyInfo]
 
     public init(
+        typeName: String,
         args: MacroArguments,
         properties: [PropertyInfo]
     ) {
+        self.typeName = typeName
         self.args = args
         self.properties = properties
     }
 
-    // MARK: - CodeGenerator
-
     public func generate() -> [DeclSyntax] {
-        return [generateMetadata()]
+        [createMetadataProperty()]
     }
+}
 
-    // MARK: - Private Methods
-
-    /// EndpointMetadata 생성
-    private func generateMetadata() -> DeclSyntax {
-        let parametersArray = generateParametersArray()
-
-        let titleEscaped = args.title.replacingOccurrences(of: "\"", with: "\\\"")
-        let descriptionEscaped = args.description.replacingOccurrences(of: "\"", with: "\\\"")
-        let tagsArray = args.tags.map { "\"\($0)\"" }.joined(separator: ", ")
+extension MetadataGenerator {
+    private func createMetadataProperty() -> DeclSyntax {
+        let metadata = buildMetadataComponents()
 
         return """
-        public var metadata: EndpointMetadata {
+        public static var metadata: EndpointMetadata {
             EndpointMetadata(
-                title: "\(raw: titleEscaped)",
-                description: "\(raw: descriptionEscaped)",
-                method: "\(raw: args.method.uppercased())",
+                id: "\(raw: typeName)",
+                title: "\(raw: metadata.title)",
+                description: "\(raw: metadata.description)",
+                method: "\(raw: metadata.method)",
                 path: "\(raw: args.path)",
-                tags: [\(raw: tagsArray)],
-                parameters: \(raw: parametersArray)
+                baseURLString: \(raw: args.baseURL),
+                headers: \(raw: metadata.headers),
+                tags: [\(raw: metadata.tags)],
+                parameters: \(raw: metadata.parameters),
+                responseTypeName: "\(raw: args.responseType)"
             )
         }
         """
     }
 
-    /// parameters 배열 생성
-    private func generateParametersArray() -> String {
-        var parameters: [String] = []
+    private func buildMetadataComponents() -> MetadataComponents {
+        MetadataComponents(
+            title: StringEscaper.escape(args.title),
+            description: StringEscaper.escape(args.description),
+            method: args.method.uppercased(),
+            headers: buildHeadersDictionary(),
+            tags: buildTagsArray(),
+            parameters: buildParametersArray()
+        )
+    }
+}
 
-        for property in properties {
-            guard let wrapperType = property.wrapperType else {
-                continue
-            }
+extension MetadataGenerator {
+    private func buildHeadersDictionary() -> String {
+        let headerProperties = properties.filter { $0.isHeader }
 
-            let name = property.name
-            let type = property.type.replacingOccurrences(of: "?", with: "")
-            let required = property.isRequired
-
-            switch wrapperType {
-            case "PathParameter":
-                parameters.append(".path(name: \"\(name)\", type: \"\(type)\", required: \(required))")
-
-            case "QueryParameter":
-                parameters.append(".query(name: \"\(name)\", type: \"\(type)\", required: \(required))")
-
-            case "HeaderField", "CustomHeader":
-                if let headerKey = property.headerKey {
-                    parameters.append(".header(name: \"\(headerKey)\", type: \"\(type)\", required: \(required))")
-                } else {
-                    parameters.append(".header(name: \"\(name)\", type: \"\(type)\", required: \(required))")
-                }
-
-            case "RequestBody":
-                parameters.append(".body(type: \"\(type)\")")
-
-            default:
-                break
-            }
+        guard !headerProperties.isEmpty else {
+            return "[:]"
         }
 
-        if parameters.isEmpty {
+        let entries = headerProperties.compactMap(formatHeaderEntry)
+        return "[\(entries.joined(separator: ", "))]"
+    }
+
+    private func formatHeaderEntry(_ property: PropertyInfo) -> String? {
+        guard let headerKey = property.headerKey,
+              let defaultValue = property.defaultValue
+        else {
+            return nil
+        }
+
+        let escapedValue = StringEscaper.escape(defaultValue)
+        return #""\#(headerKey)": "\#(escapedValue)""#
+    }
+
+    private func buildTagsArray() -> String {
+        args.tags
+            .map { #""\#($0)""# }
+            .joined(separator: ", ")
+    }
+
+    private func buildParametersArray() -> String {
+        let parameterProperties = properties.filter { property in
+            ["PathParameter", "QueryParameter"].contains(property.wrapperType)
+        }
+
+        guard !parameterProperties.isEmpty else {
             return "[]"
         }
 
-        return "[\n        " + parameters.joined(separator: ",\n        ") + "\n    ]"
+        let parameterNames = parameterProperties.map { #""\#($0.name)""# }
+        return "[\(parameterNames.joined(separator: ", "))]"
+    }
+}
+
+private struct MetadataComponents {
+    let title: String
+    let description: String
+    let method: String
+    let headers: String
+    let tags: String
+    let parameters: String
+}
+
+private enum StringEscaper {
+    static func escape(_ string: String) -> String {
+        string
+            .replacingOccurrences(of: "\\", with: "\\\\")
+            .replacingOccurrences(of: "\"", with: "\\\"")
+            .replacingOccurrences(of: "\n", with: "\\n")
+            .replacingOccurrences(of: "\r", with: "\\r")
+            .replacingOccurrences(of: "\t", with: "\\t")
     }
 }

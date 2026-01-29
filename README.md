@@ -79,9 +79,15 @@ func fetchPosts() async throws -> [Post] {
     method: .get
 )
 struct GetPostsRequest {
-    @QueryParameter var userId: Int
-    @QueryParameter var page: Int
-    @HeaderField(key: .authorization) var authorization: String
+    @QueryParameter var userId: Int  // ✅ 필수 파라미터 (Non-optional)
+    @QueryParameter var page: Int    // ✅ 필수 파라미터 (Non-optional)
+    @HeaderField(key: .authorization) var authorization: String?
+    
+    init(userId: Int, page: Int, authorization: String?) {
+        self.userId = userId
+        self.page = page
+        self.authorization = authorization
+    }
 }
 
 // 사용
@@ -138,13 +144,13 @@ let posts: [Post] = try await service.request(
 ```
 https://github.com/Jimmy-Jung/AsyncNetwork.git
 ```
-3. Version: `1.2.0` 이상 선택
+3. Version: `1.2.4` 이상 선택
 
 #### Package.swift에 추가
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/Jimmy-Jung/AsyncNetwork.git", from: "1.2.0")
+    .package(url: "https://github.com/Jimmy-Jung/AsyncNetwork.git", from: "1.2.4")
 ]
 ```
 
@@ -226,6 +232,10 @@ print("총 \(posts.count)개의 게시글")
 
 ### 2️⃣ Query Parameters
 
+@QueryParameter는 타입 레벨에서 필수/비필수를 구분합니다:
+- **Non-optional 타입** (`Int`, `String` 등): 필수 파라미터 (항상 쿼리에 추가)
+- **Optional 타입** (`Int?`, `String?` 등): 비필수 파라미터 (nil이면 쿼리에서 제외)
+
 ```swift
 @APIRequest(
     response: [Post].self,
@@ -234,18 +244,20 @@ print("총 \(posts.count)개의 게시글")
     method: .get
 )
 struct GetPostsByUserRequest {
-    @QueryParameter var userId: Int?               // Optional: nil이면 쿼리에서 제외
-    @QueryParameter(key: "_limit") var limit: Int? // 커스텀 키 사용
+    @QueryParameter var userId: Int                // ✅ 필수 파라미터 (Non-optional)
+    @QueryParameter(key: "_limit") var limit: Int? // ✅ 비필수 파라미터 (Optional)
+    @QueryParameter(key: "_page") var page: Int?   // ✅ 비필수 파라미터 (Optional)
     
-    init(userId: Int? = nil, limit: Int? = nil) {
+    init(userId: Int, limit: Int? = nil, page: Int? = nil) {
         self.userId = userId
         self.limit = limit
+        self.page = page
     }
 }
 
 // 사용
 let posts: [Post] = try await service.request(
-    GetPostsByUserRequest(userId: 1, limit: 10)
+    GetPostsByUserRequest(userId: 1, limit: 10)  // page 생략
 )
 // 결과: GET /posts?userId=1&_limit=10
 ```
@@ -365,7 +377,7 @@ AsyncNetwork은 세 가지 주요 모듈로 구성됩니다:
 2. **AsyncNetworkMacros**: `@APIRequest` 매크로 구현 (Clean Architecture 기반)
 3. **AsyncNetwork**: Core + Macros를 통합한 Umbrella 모듈 (권장)
 
-대부분의 경우 `import AsyncNetwork`만으로 모든 기능을 사용할 수 있습니다.
+대부분의 경우 `import AsyncNetwork`만으로 모든 기능을 사용합니다.
 
 #### 분리된 매크로 시스템 (v1.2.0+)
 
@@ -519,7 +531,7 @@ sequenceDiagram
 
 ### RequestInterceptor
 
-요청/응답을 가로채서 로깅, 인증 토큰 추가 등을 수행할 수 있습니다.
+요청/응답을 가로채서 로깅, 인증 토큰 추가 등을 수행합니다.
 
 ```swift
 import Foundation
@@ -598,7 +610,7 @@ let service = NetworkService(
 
 ### RetryPolicy
 
-네트워크 실패 시 재시도 정책을 커스터마이징할 수 있습니다.
+네트워크 실패 시 재시도 정책을 커스터마이징합니다.
 
 ```swift
 import AsyncNetwork
@@ -678,7 +690,7 @@ let patient = RetryConfiguration.patient  // maxRetries: 1, baseDelay: 2.0
 
 ### Response Processing Pipeline
 
-Chain of Responsibility 패턴으로 확장 가능한 응답 처리 파이프라인을 구축할 수 있습니다.
+Chain of Responsibility 패턴으로 확장 가능한 응답 처리 파이프라인을 구축합니다.
 
 ```swift
 import AsyncNetwork
@@ -709,7 +721,7 @@ let service = NetworkService(
 
 ### 6️⃣ 복합 Property Wrappers
 
-여러 Property Wrapper를 조합하여 복잡한 요청을 간결하게 표현할 수 있습니다.
+여러 Property Wrapper를 조합하여 복잡한 요청을 간결하게 표현합니다.
 
 ```swift
 @APIRequest(
@@ -797,7 +809,7 @@ try await service.request(DeletePostRequest(id: 123))
 
 ### Network Reachability (네트워크 연결 감지)
 
-실시간으로 네트워크 연결 상태를 모니터링하고 오프라인 상태를 처리할 수 있습니다.
+실시간으로 네트워크 연결 상태를 모니터링하고 오프라인 상태를 처리합니다.
 
 #### SwiftUI에서 사용
 
@@ -910,7 +922,7 @@ struct NetworkStatusIndicator: View {
 
 #### 콜백으로 상태 변경 감지
 
-NetworkMonitor는 콜백 기반으로 설계되어 있어, 상태 변경을 감지할 수 있습니다.
+NetworkMonitor는 콜백 기반으로 설계되어 있어, 상태 변경을 감지합니다.
 
 ```swift
 import AsyncNetwork

@@ -1,10 +1,3 @@
-//
-//  ResponseDocumentMacroImpl.swift
-//  AsyncNetworkMacrosImpl
-//
-//  Created by jimmy on 2026/01/12.
-//
-
 import Foundation
 import SwiftCompilerPlugin
 import SwiftDiagnostics
@@ -13,10 +6,11 @@ import SwiftSyntaxMacros
 
 // MARK: - ResponseDocumentMacroError
 
-/// ResponseDocument 매크로 에러 타입
 public enum ResponseDocumentMacroError: CustomStringConvertible, Error, DiagnosticMessage {
     case onlyApplicableToStruct
     case missingFixtureJSON
+    case emptyFixtureJSON
+    case invalidJSON(String)
 
     public var description: String {
         switch self {
@@ -24,6 +18,10 @@ public enum ResponseDocumentMacroError: CustomStringConvertible, Error, Diagnost
             return "@ResponseDocument can only be applied to a struct"
         case .missingFixtureJSON:
             return "@ResponseDocument requires 'fixtureJSON' parameter"
+        case .emptyFixtureJSON:
+            return "fixtureJSON parameter cannot be empty"
+        case let .invalidJSON(reason):
+            return "Invalid JSON in fixtureJSON parameter: \(reason)"
         }
     }
 
@@ -42,9 +40,6 @@ public enum ResponseDocumentMacroError: CustomStringConvertible, Error, Diagnost
 
 // MARK: - ResponseDocumentMacroImpl
 
-/// @ResponseDocument 매크로 구현
-///
-/// OpenAPI 문서화를 위한 JSON 샘플을 생성합니다.
 public struct ResponseDocumentMacroImpl: MemberMacro {
     // MARK: - MemberMacro Implementation
 
@@ -67,13 +62,25 @@ public struct ResponseDocumentMacroImpl: MemberMacro {
             throw ResponseDocumentMacroError.missingFixtureJSON
         }
 
-        // 3. jsonSample 프로퍼티 생성
+        // 3. 빈 문자열 검증
+        guard !fixtureJSON.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            let diagnostic = Diagnostic(
+                node: node,
+                message: ResponseDocumentMacroError.emptyFixtureJSON
+            )
+            context.diagnose(diagnostic)
+            throw ResponseDocumentMacroError.emptyFixtureJSON
+        }
+
+        // 4. JSON 유효성 검증
+        try validateJSON(fixtureJSON, node: node, context: context)
+
+        // 5. jsonSample 프로퍼티 생성
         return [generateJSONSampleProperty(json: fixtureJSON)]
     }
 
     // MARK: - Helper Methods
 
-    /// 구조체 선언을 검증합니다.
     private static func validateStructDeclaration(
         _ declaration: some DeclGroupSyntax,
         node: AttributeSyntax,
@@ -90,7 +97,6 @@ public struct ResponseDocumentMacroImpl: MemberMacro {
         return structDecl
     }
 
-    /// fixtureJSON 파라미터를 추출합니다.
     private static func extractFixtureJSON(
         from node: AttributeSyntax,
         context _: some MacroExpansionContext
@@ -99,26 +105,56 @@ public struct ResponseDocumentMacroImpl: MemberMacro {
             return nil
         }
 
+        let expressionParser = ExpressionParser()
         for argument in arguments {
             let label = argument.label?.text ?? ""
             if label == "fixtureJSON" {
-                return extractStringLiteral(from: argument.expression)
+                return try? expressionParser.extractString(from: argument.expression)
             }
         }
 
         return nil
     }
 
-    /// jsonSample 프로퍼티를 생성합니다.
+    private static func validateJSON(
+        _ json: String,
+        node: AttributeSyntax,
+        context: some MacroExpansionContext
+    ) throws {
+        guard let data = json.data(using: .utf8) else {
+            let diagnostic = Diagnostic(
+                node: node,
+                message: ResponseDocumentMacroError.invalidJSON("Cannot convert to UTF-8 data")
+            )
+            context.diagnose(diagnostic)
+            throw ResponseDocumentMacroError.invalidJSON("Cannot convert to UTF-8 data")
+        }
+
+        do {
+            _ = try JSONSerialization.jsonObject(with: data, options: [])
+        } catch {
+            let diagnostic = Diagnostic(
+                node: node,
+                message: ResponseDocumentMacroError.invalidJSON(error.localizedDescription)
+            )
+            context.diagnose(diagnostic)
+            throw ResponseDocumentMacroError.invalidJSON(error.localizedDescription)
+        }
+    }
+
     private static func generateJSONSampleProperty(json: String) -> DeclSyntax {
-        // JSON 포맷 유지 (보기 좋게)
+        // 들여쓰기 추가 (빈 줄 제외)
+        // Note: multi-line string literal 내부에서는 escape 처리가 자동으로 이루어지므로
+        // 별도의 escape 처리가 필요하지 않습니다.
         let indented = json
             .components(separatedBy: .newlines)
-            .map { "    " + $0 }
+            .map { $0.isEmpty ? $0 : "    " + $0 }
             .joined(separator: "\n")
 
         return """
         /// JSON 샘플 문자열
+        ///
+        /// OpenAPI 문서 생성 시 사용되는 응답 예시입니다.
         public static var jsonSample: String {
             \"\"\"
         \(raw: indented)

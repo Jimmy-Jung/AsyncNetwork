@@ -7,6 +7,7 @@
 
 import AsyncNetwork
 import Foundation
+@testable import AsyncNetworkSampleApp
 
 /// 테스트용 NetworkMonitoringService Mock
 /// ObservableObject로 DefaultNetworkMonitoringService와 동일한 인터페이스 제공

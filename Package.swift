@@ -62,7 +62,8 @@ let package = Package(
         .testTarget(
             name: "AsyncNetworkTests",
             dependencies: ["AsyncNetworkCore"],
-            path: "Projects/AsyncNetwork/Tests"
+            path: "Projects/AsyncNetwork/Tests",
+            exclude: ["README.md"]
         ),
 
         // MARK: - Macro Public Interface

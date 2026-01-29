@@ -1,19 +1,9 @@
-//
-//  ResponseTestableMacroImpl.swift
-//  AsyncNetworkMacrosImpl
-//
-//  Created by jimmy on 2026/01/12.
-//
-
 import Foundation
 import SwiftCompilerPlugin
 import SwiftSyntax
 import SwiftSyntaxBuilder
 import SwiftSyntaxMacros
 
-/// @ResponseTestable 매크로 구현
-///
-/// Codable DTO의 테스트 데이터 생성 및 검증 로직을 자동 생성합니다.
 public struct ResponseTestableMacroImpl: MemberMacro, ExtensionMacro {
     // MARK: - MemberMacro Implementation
 
@@ -23,35 +13,23 @@ public struct ResponseTestableMacroImpl: MemberMacro, ExtensionMacro {
         conformingTo _: [TypeSyntax],
         in _: some MacroExpansionContext
     ) throws -> [DeclSyntax] {
-        // 1. struct 검증
         guard let structDecl = declaration.as(StructDeclSyntax.self) else {
             throw TestableDTOMacroError.notAStruct
         }
 
         let typeName = structDecl.name.text
+        let parser = TestableDTOArgumentParser()
+        let args = try parser.parse(from: node)
 
-        // 2. 매크로 인자 파싱
-        let args = try parseTestableDTOArguments(from: node)
-
-        // 3. @ResponseDocument에서 fixtureJSON 추출 (있으면)
-        let documentFixtureJSON = extractFixtureJSONFromResponseDocument(structDecl: structDecl)
-
-        // ResponseTestable의 fixtureJSON이 없으면 ResponseDocument의 것을 사용
+        let extractor = FixtureJSONExtractor()
+        let documentFixtureJSON = extractor.extract(from: structDecl)
         let fixtureJSON = args.fixtureJSON ?? documentFixtureJSON
-
-        // 4. 프로퍼티 추출
         let properties = extractProperties(from: structDecl)
 
-        // 5. 멤버 생성
         var members: [DeclSyntax] = []
 
-        // mock() 메서드
         members.append(generateMockMethod(typeName: typeName, properties: properties, strategy: args.mockStrategy))
-
-        // fixture() 메서드
         members.append(generateFixtureMethod(typeName: typeName, properties: properties, fixtureJSON: fixtureJSON))
-
-        // mockArray() 메서드
         members.append(generateMockArrayMethod(defaultCount: args.defaultArrayCount))
 
         // assertValid() 메서드
@@ -123,19 +101,25 @@ public struct ResponseTestableMacroImpl: MemberMacro, ExtensionMacro {
         fixtureJSON: String?
     ) -> DeclSyntax {
         if let json = fixtureJSON {
-            // JSON을 올바르게 escape
+            // JSON을 올바르게 escape (순서 중요: \\ 먼저!)
             let escaped = json
                 .replacingOccurrences(of: "\\", with: "\\\\")
                 .replacingOccurrences(of: "\"", with: "\\\"")
                 .replacingOccurrences(of: "\n", with: "\\n")
                 .replacingOccurrences(of: "\r", with: "\\r")
                 .replacingOccurrences(of: "\t", with: "\\t")
+                .replacingOccurrences(of: "\u{0008}", with: "\\b")
+                .replacingOccurrences(of: "\u{000C}", with: "\\f")
 
             return """
             /// 고정 값으로 테스트 데이터 생성
             public static func fixture() -> \(raw: typeName) {
                 let json = \"\(raw: escaped)\"
-                return try! JSONDecoder().decode(\(raw: typeName).self, from: Data(json.utf8))
+                do {
+                    return try JSONDecoder().decode(\(raw: typeName).self, from: Data(json.utf8))
+                } catch {
+                    fatalError("[ResponseTestable] Invalid fixtureJSON for \(raw: typeName): \\(error)")
+                }
             }
             """
         } else {
@@ -245,7 +229,7 @@ public struct ResponseTestableMacroImpl: MemberMacro, ExtensionMacro {
         /// - fixtureJSON이 없으면 타입별 기본값 사용 (Int: 1, String: "Test String" 등)
         /// - with() 메서드로 원하는 값만 커스터마이징 가능
         /// - 예측 가능한 고정값으로 안정적인 테스트 작성
-        public struct \(raw: typeName)Builder {
+        public struct \(raw: typeName)Builder: Sendable {
             \(raw: propertiesCode)
 
             \(raw: methodsCode)
@@ -267,10 +251,26 @@ public struct ResponseTestableMacroImpl: MemberMacro, ExtensionMacro {
         var mockValue: String
 
         switch cleanType {
-        case "Int", "Int8", "Int16", "Int32", "Int64":
+        case "Int":
             mockValue = "Int.random(in: 1...1000)"
-        case "UInt", "UInt8", "UInt16", "UInt32", "UInt64":
+        case "Int8":
+            mockValue = "Int8.random(in: 1...127)"
+        case "Int16":
+            mockValue = "Int16.random(in: 1...1000)"
+        case "Int32":
+            mockValue = "Int32.random(in: 1...1000)"
+        case "Int64":
+            mockValue = "Int64.random(in: 1...1000)"
+        case "UInt":
             mockValue = "UInt.random(in: 1...1000)"
+        case "UInt8":
+            mockValue = "UInt8.random(in: 1...255)"
+        case "UInt16":
+            mockValue = "UInt16.random(in: 1...1000)"
+        case "UInt32":
+            mockValue = "UInt32.random(in: 1...1000)"
+        case "UInt64":
+            mockValue = "UInt64.random(in: 1...1000)"
         case "String":
             // 특수 필드명 처리
             if propertyName.lowercased().contains("email") {
@@ -284,18 +284,44 @@ public struct ResponseTestableMacroImpl: MemberMacro, ExtensionMacro {
             mockValue = "Bool.random()"
         case "Double":
             mockValue = "Double.random(in: 0...100)"
-        case "Float", "CGFloat":
+        case "Float":
             mockValue = "Float.random(in: 0...100)"
+        case "CGFloat":
+            mockValue = "CGFloat.random(in: 0...100)"
         case "Date":
             mockValue = "Date()"
         case "UUID":
             mockValue = "UUID()"
         case "URL":
             mockValue = "URL(string: \"https://example.com\")!"
+        case "Decimal":
+            mockValue = "Decimal(Double.random(in: 0...100))"
+        case "Data":
+            mockValue = "Data()"
         default:
-            if cleanType.hasPrefix("[") && cleanType.hasSuffix("]") {
-                // 배열 타입
-                mockValue = "[]"
+            if cleanType.hasPrefix("["), cleanType.hasSuffix("]"), !cleanType.contains(":") {
+                // 배열 타입 (딕셔너리 제외)
+                let elementType = String(cleanType.dropFirst().dropLast()).trimmingCharacters(in: .whitespaces)
+
+                // 빈 배열이 아닌지 확인
+                if !elementType.isEmpty {
+                    let randomCount = "Int.random(in: 2...5)"
+                    mockValue = "(0..<\(randomCount)).map { _ in \(elementType).mock() }"
+                } else {
+                    mockValue = "[]"
+                }
+            } else if cleanType.hasPrefix("["), cleanType.contains(":"), cleanType.hasSuffix("]") {
+                // 딕셔너리 타입
+                mockValue = "[:]"
+            } else if cleanType.hasPrefix("Set<"), cleanType.hasSuffix(">") {
+                // Set 타입
+                let elementType = String(cleanType.dropFirst(4).dropLast()).trimmingCharacters(in: .whitespaces)
+                if !elementType.isEmpty {
+                    let randomCount = "Int.random(in: 2...5)"
+                    mockValue = "Set((0..<\(randomCount)).map { _ in \(elementType).mock() })"
+                } else {
+                    mockValue = "Set()"
+                }
             } else {
                 // 커스텀 타입 - mock() 재귀 호출
                 mockValue = "\(cleanType).mock()"
@@ -322,17 +348,25 @@ public struct ResponseTestableMacroImpl: MemberMacro, ExtensionMacro {
             fixtureValue = "\"Test String\""
         case "Bool":
             fixtureValue = "true"
-        case "Double", "Float", "CGFloat":
+        case "Double", "Float":
             fixtureValue = "0.0"
+        case "CGFloat":
+            fixtureValue = "CGFloat(0.0)"
         case "Date":
             fixtureValue = "Date(timeIntervalSince1970: 1704556800)" // 2024-01-06
         case "UUID":
-            fixtureValue = "UUID(uuidString: \"00000000-0000-0000-0000-000000000001\")!"
+            fixtureValue = "UUID()"
         case "URL":
             fixtureValue = "URL(string: \"https://example.com\")!"
+        case "Decimal":
+            fixtureValue = "Decimal(0)"
+        case "Data":
+            fixtureValue = "Data()"
         default:
-            if cleanType.hasPrefix("[") && cleanType.hasSuffix("]") {
+            if cleanType.hasPrefix("["), cleanType.hasSuffix("]") {
                 fixtureValue = "[]"
+            } else if cleanType.hasPrefix("Set<"), cleanType.hasSuffix(">") {
+                fixtureValue = "Set()"
             } else {
                 fixtureValue = "\(cleanType).fixture()"
             }
@@ -352,20 +386,29 @@ public struct ResponseTestableMacroImpl: MemberMacro, ExtensionMacro {
         switch cleanType {
         case "Int", "Int8", "Int16", "Int32", "Int64":
             if prop.name.lowercased().contains("id") {
-                return "assert(\(prop.name) > 0, \"\(prop.name) must be positive\")"
+                if prop.isOptional {
+                    return """
+                    if let \(prop.name) = \(prop.name) {
+                            assert(\(prop.name) > 0, "\(prop.name) must be positive")
+                        }
+                    """
+                } else {
+                    return "assert(\(prop.name) > 0, \"\(prop.name) must be positive\")"
+                }
             }
         case "String":
             if prop.name.lowercased().contains("email") {
                 if prop.isOptional {
                     return """
                     if let \(prop.name) = \(prop.name) {
-                            assert(\(prop.name).contains("@"), "\(prop.name) must contain @")
+                            assert(\(prop.name).contains("@") && \(prop.name).contains("."), "\(prop.name) must be valid email")
+                            assert(!\(prop.name).starts(with: "@") && !\(prop.name).starts(with: "."), "\(prop.name) format invalid")
                         }
                     """
                 } else {
                     return """
-                    assert(\(prop.name).contains("@"), "\(prop.name) must contain @")
-                        assert(\(prop.name).contains("."), "\(prop.name) must contain .")
+                    assert(\(prop.name).contains("@") && \(prop.name).contains("."), "\(prop.name) must be valid email")
+                        assert(!\(prop.name).starts(with: "@") && !\(prop.name).starts(with: "."), "\(prop.name) format invalid")
                     """
                 }
             } else if !prop.name.lowercased().contains("optional") {
@@ -405,124 +448,5 @@ public struct ResponseTestableMacroImpl: MemberMacro, ExtensionMacro {
         }
 
         return properties
-    }
-}
-
-// MARK: - Supporting Types
-
-struct TestableDTOArguments {
-    let mockStrategy: String
-    let fixtureJSON: String?
-    let includeBuilder: Bool
-    let defaultArrayCount: Int
-}
-
-// MARK: - Argument Parsing
-
-func parseTestableDTOArguments(from node: AttributeSyntax) throws -> TestableDTOArguments {
-    guard let arguments = node.arguments?.as(LabeledExprListSyntax.self) else {
-        // 기본값 사용
-        return TestableDTOArguments(
-            mockStrategy: "random",
-            fixtureJSON: nil,
-            includeBuilder: true,
-            defaultArrayCount: 5
-        )
-    }
-
-    var mockStrategy = "random"
-    var fixtureJSON: String?
-    var includeBuilder = true
-    var defaultArrayCount = 5
-
-    for argument in arguments {
-        let label = argument.label?.text ?? ""
-        let expr = argument.expression
-
-        switch label {
-        case "mockStrategy":
-            if let memberAccess = expr.as(MemberAccessExprSyntax.self) {
-                mockStrategy = memberAccess.declName.baseName.text
-            }
-        case "fixtureJSON":
-            fixtureJSON = extractStringLiteralLocal(from: expr)
-        case "includeBuilder":
-            if let boolLiteral = expr.as(BooleanLiteralExprSyntax.self) {
-                includeBuilder = boolLiteral.literal.text == "true"
-            }
-        case "defaultArrayCount":
-            if let intLiteral = expr.as(IntegerLiteralExprSyntax.self) {
-                defaultArrayCount = Int(intLiteral.literal.text) ?? 5
-            }
-        default:
-            break
-        }
-    }
-
-    return TestableDTOArguments(
-        mockStrategy: mockStrategy,
-        fixtureJSON: fixtureJSON,
-        includeBuilder: includeBuilder,
-        defaultArrayCount: defaultArrayCount
-    )
-}
-
-// Local string extraction helper (to avoid dependency on ArgumentParser.swift)
-private func extractStringLiteralLocal(from expr: ExprSyntax) -> String? {
-    if let stringLiteral = expr.as(StringLiteralExprSyntax.self) {
-        var result = ""
-        for segment in stringLiteral.segments {
-            if let stringSegment = segment.as(StringSegmentSyntax.self) {
-                result += stringSegment.content.text
-            }
-        }
-        return result.isEmpty ? nil : result
-    }
-    return nil
-}
-
-/// @ResponseDocument 속성에서 fixtureJSON을 추출합니다
-private func extractFixtureJSONFromResponseDocument(structDecl: StructDeclSyntax) -> String? {
-    for attribute in structDecl.attributes {
-        guard let customAttribute = attribute.as(AttributeSyntax.self) else {
-            continue
-        }
-
-        let attributeName = customAttribute.attributeName.trimmedDescription
-
-        // @ResponseDocument 찾기
-        if attributeName == "ResponseDocument" {
-            guard let arguments = customAttribute.arguments?.as(LabeledExprListSyntax.self) else {
-                continue
-            }
-
-            // fixtureJSON 인자 찾기
-            for argument in arguments {
-                if argument.label?.text == "fixtureJSON" {
-                    return extractStringLiteralLocal(from: argument.expression)
-                }
-            }
-        }
-    }
-
-    return nil
-}
-
-// MARK: - Errors
-
-enum TestableDTOMacroError: Error, CustomStringConvertible {
-    case notAStruct
-    case notCodable
-    case invalidFixtureJSON
-
-    var description: String {
-        switch self {
-        case .notAStruct:
-            return "@ResponseTestable can only be applied to struct declarations"
-        case .notCodable:
-            return "@ResponseTestable requires the type to conform to Codable"
-        case .invalidFixtureJSON:
-            return "fixtureJSON must be a valid JSON string"
-        }
     }
 }
