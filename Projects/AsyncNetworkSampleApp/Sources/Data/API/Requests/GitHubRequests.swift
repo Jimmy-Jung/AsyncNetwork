@@ -56,8 +56,4 @@ let gitHubBaseURL = "https://api.github.com"
 )
 struct GetGitHubUserRequest {
     @PathParameter var username: String
-    
-    init(username: String) {
-        self.username = username
-    }
 }

@@ -33,14 +33,14 @@ struct PhotoNotFoundError: Codable, Sendable, Error {
     title: "Get albums for a user",
     description: """
     특정 사용자의 모든 앨범을 가져옵니다.
-    
+
     파라미터:
     • userId: 앨범을 조회할 User의 ID (필수)
-    
+
     기능:
     • userId 기준 필터링
     • 페이지네이션 지원
-    
+
     응답 형식:
     Album 객체의 배열을 반환합니다.
     """,
@@ -64,10 +64,10 @@ struct PhotoNotFoundError: Codable, Sendable, Error {
     ]
 )
 struct GetAlbumsForUserRequest {
-    @QueryParameter var userId: Int?
+    @QueryParameter var userId: Int
     @QueryParameter(key: "_limit") var limit: Int?
-    
-    init(userId: Int? = nil, limit: Int? = nil) {
+
+    init(userId: Int, limit: Int? = nil) {
         self.userId = userId
         self.limit = limit
     }
@@ -88,10 +88,10 @@ struct GetAlbumsForUserRequest {
     title: "Get an album by ID",
     description: """
     특정 ID를 가진 앨범을 가져옵니다.
-    
+
     파라미터:
     • id: Album의 고유 식별자
-    
+
     에러 처리:
     • 404: 앨범을 찾을 수 없음
     """,
@@ -110,10 +110,6 @@ struct GetAlbumsForUserRequest {
 )
 struct GetAlbumByIdRequest {
     @PathParameter var id: Int
-    
-    init(id: Int) {
-        self.id = id
-    }
 }
 
 // MARK: - Get Photos for Album
@@ -128,15 +124,15 @@ struct GetAlbumByIdRequest {
     title: "Get photos for an album",
     description: """
     특정 앨범의 모든 사진을 가져옵니다.
-    
+
     파라미터:
     • albumId: 사진을 조회할 Album의 ID (필수)
-    
+
     기능:
     • albumId 기준 필터링
     • 페이지네이션 지원
     • 썸네일 URL 포함
-    
+
     응답 형식:
     Photo 객체의 배열을 반환합니다. 각 객체는 원본 이미지 URL과 썸네일 URL을 포함합니다.
     """,
@@ -160,10 +156,10 @@ struct GetAlbumByIdRequest {
     ]
 )
 struct GetPhotosForAlbumRequest {
-    @QueryParameter(key: "albumId") var albumId: Int?
+    @QueryParameter(key: "albumId") var albumId: Int
     @QueryParameter(key: "_limit") var limit: Int?
-    
-    init(albumId: Int? = nil, limit: Int? = nil) {
+
+    init(albumId: Int, limit: Int? = nil) {
         self.albumId = albumId
         self.limit = limit
     }
@@ -184,13 +180,13 @@ struct GetPhotosForAlbumRequest {
     title: "Get a photo by ID",
     description: """
     특정 ID를 가진 사진을 가져옵니다.
-    
+
     파라미터:
     • id: Photo의 고유 식별자
-    
+
     응답:
     원본 이미지 URL과 썸네일 URL을 포함한 Photo 객체
-    
+
     에러 처리:
     • 404: 사진을 찾을 수 없음
     """,
@@ -209,8 +205,4 @@ struct GetPhotosForAlbumRequest {
 )
 struct GetPhotoByIdRequest {
     @PathParameter var id: Int
-    
-    init(id: Int) {
-        self.id = id
-    }
 }
