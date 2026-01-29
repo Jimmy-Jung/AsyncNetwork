@@ -38,7 +38,13 @@ public struct ResponseTestableMacroImpl: MemberMacro, ExtensionMacro {
         // builder() 메서드 및 Builder 타입 (옵션)
         if args.includeBuilder {
             members.append(generateBuilderMethod(typeName: typeName))
-            members.append(generateBuilderType(typeName: typeName, properties: properties))
+            members.append(
+                generateBuilderType(
+                    typeName: typeName,
+                    properties: properties,
+                    defaultArrayCount: args.defaultArrayCount
+                )
+            )
         }
 
         return members
@@ -163,7 +169,9 @@ public struct ResponseTestableMacroImpl: MemberMacro, ExtensionMacro {
             }
         }
 
-        let validationCode = validations.isEmpty ? "// No validation rules" : validations.joined(separator: "\n        ")
+        let validationCode = validations.isEmpty
+            ? "// No validation rules"
+            : validations.joined(separator: "\n        ")
 
         return """
         /// 데이터 검증
@@ -197,14 +205,17 @@ public struct ResponseTestableMacroImpl: MemberMacro, ExtensionMacro {
     }
 
     /// Builder 타입 생성
-    private static func generateBuilderType(typeName: String, properties: [PropertyInfo]) -> DeclSyntax {
+    private static func generateBuilderType(
+        typeName: String,
+        properties: [PropertyInfo],
+        defaultArrayCount _: Int
+    ) -> DeclSyntax {
         var builderProperties: [String] = []
         var withMethods: [String] = []
         var buildParams: [String] = []
 
         for prop in properties {
-            let fixtureValue = generateFixtureValue(for: prop.type, isOptional: prop.isOptional)
-            builderProperties.append("private var \(prop.name): \(prop.type) = \(fixtureValue)")
+            builderProperties.append("private var \(prop.name): \(prop.type)")
 
             withMethods.append("""
             public func with(\(prop.name): \(prop.type)) -> Self {
@@ -232,6 +243,11 @@ public struct ResponseTestableMacroImpl: MemberMacro, ExtensionMacro {
         public struct \(raw: typeName)Builder: Sendable {
             \(raw: propertiesCode)
 
+            public init() {
+                let fixture = \(raw: typeName).fixture()
+                \(raw: properties.map { "self.\($0.name) = fixture.\($0.name)" }.joined(separator: "\n        "))
+            }
+
             \(raw: methodsCode)
 
             /// Builder로 설정된 값들로 인스턴스 생성
@@ -242,185 +258,6 @@ public struct ResponseTestableMacroImpl: MemberMacro, ExtensionMacro {
             }
         }
         """
-    }
-
-    /// Mock 값 생성
-    private static func generateMockValue(for type: String, isOptional: Bool, propertyName: String = "") -> String {
-        let cleanType = type.replacingOccurrences(of: "?", with: "").trimmingCharacters(in: .whitespaces)
-
-        var mockValue: String
-
-        switch cleanType {
-        case "Int":
-            mockValue = "Int.random(in: 1...1000)"
-        case "Int8":
-            mockValue = "Int8.random(in: 1...127)"
-        case "Int16":
-            mockValue = "Int16.random(in: 1...1000)"
-        case "Int32":
-            mockValue = "Int32.random(in: 1...1000)"
-        case "Int64":
-            mockValue = "Int64.random(in: 1...1000)"
-        case "UInt":
-            mockValue = "UInt.random(in: 1...1000)"
-        case "UInt8":
-            mockValue = "UInt8.random(in: 1...255)"
-        case "UInt16":
-            mockValue = "UInt16.random(in: 1...1000)"
-        case "UInt32":
-            mockValue = "UInt32.random(in: 1...1000)"
-        case "UInt64":
-            mockValue = "UInt64.random(in: 1...1000)"
-        case "String":
-            // 특수 필드명 처리
-            if propertyName.lowercased().contains("email") {
-                mockValue = "\"mock\\(Int.random(in: 1...999))@example.com\""
-            } else if propertyName.lowercased().contains("url") {
-                mockValue = "\"https://example.com/\\(UUID().uuidString.prefix(8))\""
-            } else {
-                mockValue = "\"Mock \\(UUID().uuidString.prefix(8))\""
-            }
-        case "Bool":
-            mockValue = "Bool.random()"
-        case "Double":
-            mockValue = "Double.random(in: 0...100)"
-        case "Float":
-            mockValue = "Float.random(in: 0...100)"
-        case "CGFloat":
-            mockValue = "CGFloat.random(in: 0...100)"
-        case "Date":
-            mockValue = "Date()"
-        case "UUID":
-            mockValue = "UUID()"
-        case "URL":
-            mockValue = "URL(string: \"https://example.com\")!"
-        case "Decimal":
-            mockValue = "Decimal(Double.random(in: 0...100))"
-        case "Data":
-            mockValue = "Data()"
-        default:
-            if cleanType.hasPrefix("["), cleanType.hasSuffix("]"), !cleanType.contains(":") {
-                // 배열 타입 (딕셔너리 제외)
-                let elementType = String(cleanType.dropFirst().dropLast()).trimmingCharacters(in: .whitespaces)
-
-                // 빈 배열이 아닌지 확인
-                if !elementType.isEmpty {
-                    let randomCount = "Int.random(in: 2...5)"
-                    mockValue = "(0..<\(randomCount)).map { _ in \(elementType).mock() }"
-                } else {
-                    mockValue = "[]"
-                }
-            } else if cleanType.hasPrefix("["), cleanType.contains(":"), cleanType.hasSuffix("]") {
-                // 딕셔너리 타입
-                mockValue = "[:]"
-            } else if cleanType.hasPrefix("Set<"), cleanType.hasSuffix(">") {
-                // Set 타입
-                let elementType = String(cleanType.dropFirst(4).dropLast()).trimmingCharacters(in: .whitespaces)
-                if !elementType.isEmpty {
-                    let randomCount = "Int.random(in: 2...5)"
-                    mockValue = "Set((0..<\(randomCount)).map { _ in \(elementType).mock() })"
-                } else {
-                    mockValue = "Set()"
-                }
-            } else {
-                // 커스텀 타입 - mock() 재귀 호출
-                mockValue = "\(cleanType).mock()"
-            }
-        }
-
-        if isOptional {
-            return "Bool.random() ? \(mockValue) : nil"
-        } else {
-            return mockValue
-        }
-    }
-
-    /// Fixture 값 생성
-    private static func generateFixtureValue(for type: String, isOptional: Bool) -> String {
-        let cleanType = type.replacingOccurrences(of: "?", with: "").trimmingCharacters(in: .whitespaces)
-
-        var fixtureValue: String
-
-        switch cleanType {
-        case "Int", "Int8", "Int16", "Int32", "Int64", "UInt", "UInt8", "UInt16", "UInt32", "UInt64":
-            fixtureValue = "1"
-        case "String":
-            fixtureValue = "\"Test String\""
-        case "Bool":
-            fixtureValue = "true"
-        case "Double", "Float":
-            fixtureValue = "0.0"
-        case "CGFloat":
-            fixtureValue = "CGFloat(0.0)"
-        case "Date":
-            fixtureValue = "Date(timeIntervalSince1970: 1704556800)" // 2024-01-06
-        case "UUID":
-            fixtureValue = "UUID()"
-        case "URL":
-            fixtureValue = "URL(string: \"https://example.com\")!"
-        case "Decimal":
-            fixtureValue = "Decimal(0)"
-        case "Data":
-            fixtureValue = "Data()"
-        default:
-            if cleanType.hasPrefix("["), cleanType.hasSuffix("]") {
-                fixtureValue = "[]"
-            } else if cleanType.hasPrefix("Set<"), cleanType.hasSuffix(">") {
-                fixtureValue = "Set()"
-            } else {
-                fixtureValue = "\(cleanType).fixture()"
-            }
-        }
-
-        if isOptional {
-            return "nil"
-        } else {
-            return fixtureValue
-        }
-    }
-
-    /// 검증 로직 생성
-    private static func generateValidation(for prop: PropertyInfo) -> String? {
-        let cleanType = prop.type.replacingOccurrences(of: "?", with: "").trimmingCharacters(in: CharacterSet.whitespaces)
-
-        switch cleanType {
-        case "Int", "Int8", "Int16", "Int32", "Int64":
-            if prop.name.lowercased().contains("id") {
-                if prop.isOptional {
-                    return """
-                    if let \(prop.name) = \(prop.name) {
-                            assert(\(prop.name) > 0, "\(prop.name) must be positive")
-                        }
-                    """
-                } else {
-                    return "assert(\(prop.name) > 0, \"\(prop.name) must be positive\")"
-                }
-            }
-        case "String":
-            if prop.name.lowercased().contains("email") {
-                if prop.isOptional {
-                    return """
-                    if let \(prop.name) = \(prop.name) {
-                            assert(\(prop.name).contains("@") && \(prop.name).contains("."), "\(prop.name) must be valid email")
-                            assert(!\(prop.name).starts(with: "@") && !\(prop.name).starts(with: "."), "\(prop.name) format invalid")
-                        }
-                    """
-                } else {
-                    return """
-                    assert(\(prop.name).contains("@") && \(prop.name).contains("."), "\(prop.name) must be valid email")
-                        assert(!\(prop.name).starts(with: "@") && !\(prop.name).starts(with: "."), "\(prop.name) format invalid")
-                    """
-                }
-            } else if !prop.name.lowercased().contains("optional") {
-                if !prop.isOptional {
-                    return "assert(!\(prop.name).isEmpty, \"\(prop.name) must not be empty\")"
-                }
-            }
-        default:
-            break
-        }
-
-        return nil
     }
 
     /// 프로퍼티 추출
