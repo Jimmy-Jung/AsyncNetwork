@@ -321,7 +321,7 @@ public struct ResponseTestableMacroImpl: MemberMacro, ExtensionMacro {
     /// fixtureJSON 검증 (컴파일 타임 경고)
     private static func validateFixtureJSON(
         _ json: String,
-        typeName: String,
+        typeName _: String,
         properties: [PropertyInfo],
         context: some MacroExpansionContext,
         node: AttributeSyntax
@@ -329,7 +329,7 @@ public struct ResponseTestableMacroImpl: MemberMacro, ExtensionMacro {
         // 1. JSON 파싱 가능 여부 확인
         guard let jsonData = json.data(using: .utf8) else {
             emitWarning(
-                "fixtureJSON encoding failed",
+                "fixtureJSON 인코딩 실패",
                 context: context,
                 node: node
             )
@@ -339,7 +339,7 @@ public struct ResponseTestableMacroImpl: MemberMacro, ExtensionMacro {
         do {
             guard let jsonObject = try JSONSerialization.jsonObject(with: jsonData) as? [String: Any] else {
                 emitWarning(
-                    "fixtureJSON is not a valid JSON object",
+                    "fixtureJSON이 유효한 JSON 객체가 아닙니다",
                     context: context,
                     node: node
                 )
@@ -369,7 +369,7 @@ public struct ResponseTestableMacroImpl: MemberMacro, ExtensionMacro {
             if !missingFields.isEmpty {
                 let fields = missingFields.joined(separator: ", ")
                 emitWarning(
-                    "fixtureJSON is missing required fields: \(fields)",
+                    "fixtureJSON에 필수 필드가 누락되었습니다: \(fields)",
                     context: context,
                     node: node
                 )
@@ -378,7 +378,7 @@ public struct ResponseTestableMacroImpl: MemberMacro, ExtensionMacro {
             if !extraFields.isEmpty {
                 let fields = extraFields.joined(separator: ", ")
                 emitWarning(
-                    "fixtureJSON contains extra fields not in struct: \(fields)",
+                    "fixtureJSON에 struct에 없는 추가 필드가 포함되어 있습니다: \(fields)",
                     context: context,
                     node: node
                 )
@@ -393,7 +393,7 @@ public struct ResponseTestableMacroImpl: MemberMacro, ExtensionMacro {
 
                 if expectedTypeHint != actualTypeHint, expectedTypeHint != "Any" {
                     emitWarning(
-                        "Field '\(prop.name)' type mismatch: expected \(expectedTypeHint) but got \(actualTypeHint)",
+                        "필드 '\(prop.name)'의 타입이 일치하지 않습니다: \(expectedTypeHint) 타입이 필요하지만 \(actualTypeHint) 타입이 제공되었습니다",
                         context: context,
                         node: node
                     )
@@ -402,7 +402,7 @@ public struct ResponseTestableMacroImpl: MemberMacro, ExtensionMacro {
 
         } catch {
             emitWarning(
-                "fixtureJSON parsing failed: \(error.localizedDescription)",
+                "fixtureJSON 파싱 실패: \(error.localizedDescription)",
                 context: context,
                 node: node
             )
