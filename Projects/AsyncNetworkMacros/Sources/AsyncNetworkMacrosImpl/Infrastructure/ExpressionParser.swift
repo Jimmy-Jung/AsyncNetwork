@@ -132,15 +132,15 @@ public enum ExpressionParserError: Error, CustomStringConvertible {
     public var description: String {
         switch self {
         case let .invalidTypeName(expr):
-            return "Invalid type name: \(expr)"
+            return "유효하지 않은 타입 이름: \(expr)"
         case let .expectedStringLiteral(expr):
-            return "Expected string literal, got: \(expr)"
+            return "문자열 리터럴이 필요하지만 다른 값이 제공되었습니다: \(expr)"
         case .emptyString:
-            return "String literal is empty"
+            return "문자열 리터럴이 비어있습니다"
         case let .expectedEnumCase(expr):
-            return "Expected enum case, got: \(expr)"
+            return "열거형 케이스가 필요하지만 다른 값이 제공되었습니다: \(expr)"
         case let .expectedBoolean(expr):
-            return "Expected boolean, got: \(expr)"
+            return "불린 값이 필요하지만 다른 값이 제공되었습니다: \(expr)"
         }
     }
 }

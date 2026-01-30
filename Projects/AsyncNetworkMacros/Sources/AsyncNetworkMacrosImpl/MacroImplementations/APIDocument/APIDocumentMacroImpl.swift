@@ -13,12 +13,12 @@ public enum APIDocumentMacroError: CustomStringConvertible, Error, DiagnosticMes
     public var description: String {
         switch self {
         case .onlyApplicableToStruct:
-            return "@APIDocument can only be applied to a struct"
+            return "@APIDocument는 struct에만 적용할 수 있습니다"
         case .missingAPIRequest:
             return """
-            @APIDocument requires @APIRequest to be declared first.
+            @APIDocument는 @APIRequest를 먼저 선언해야 합니다.
 
-            Usage:
+            사용법:
             @APIRequest(...)
             @APIDocument(...)
             struct YourRequest { }
@@ -87,11 +87,11 @@ public struct APIDocumentMacroImpl: MemberMacro, ExtensionMacro {
     }
 
     public static func expansion(
-        of node: AttributeSyntax,
-        attachedTo declaration: some DeclGroupSyntax,
+        of _: AttributeSyntax,
+        attachedTo _: some DeclGroupSyntax,
         providingExtensionsOf type: some TypeSyntaxProtocol,
         conformingTo _: [TypeSyntax],
-        in context: some MacroExpansionContext
+        in _: some MacroExpansionContext
     ) throws -> [ExtensionDeclSyntax] {
         let ext: DeclSyntax =
             """
@@ -144,7 +144,7 @@ public struct APIDocumentMacroImpl: MemberMacro, ExtensionMacro {
 
     private static func parseAPIRequestArguments(
         attribute: AttributeSyntax,
-        context: some MacroExpansionContext
+        context _: some MacroExpansionContext
     ) throws -> MacroArguments {
         guard let arguments = attribute.arguments?.as(LabeledExprListSyntax.self) else {
             throw APIRequestMacroError.missingArguments
@@ -236,7 +236,7 @@ public struct APIDocumentMacroImpl: MemberMacro, ExtensionMacro {
 
     private static func parseAPIDocumentArguments(
         node: AttributeSyntax,
-        context: some MacroExpansionContext
+        context _: some MacroExpansionContext
     ) -> DocumentArguments {
         guard let arguments = node.arguments?.as(LabeledExprListSyntax.self) else {
             return DocumentArguments(title: "", description: "", tags: [])
@@ -289,7 +289,8 @@ public struct APIDocumentMacroImpl: MemberMacro, ExtensionMacro {
             .filter { $0.wrapperType == "HeaderField" || $0.wrapperType == "CustomHeader" }
             .compactMap { info -> String? in
                 guard let key = info.headerKey,
-                      let defaultValue = info.defaultValue else {
+                      let defaultValue = info.defaultValue
+                else {
                     return nil
                 }
                 let escapedKey = escapeForStringLiteral(key)

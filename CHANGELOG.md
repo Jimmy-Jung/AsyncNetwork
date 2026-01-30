@@ -7,6 +7,57 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [Unreleased]
+
+### 🔧 Improvements
+
+#### @ResponseTestable Macro - Compile-time JSON Validation
+- **Added compile-time validation for fixtureJSON structure**
+  - Detects missing required fields and emits warnings
+  - Detects extra fields not in struct definition
+  - Detects basic type mismatches (Number, String, Boolean, Array, Object)
+  - Optional fields are allowed to be missing in fixtureJSON
+  - Warnings are emitted at compile-time, allowing early detection of JSON structure errors
+  
+- **Benefits**
+  - Prevents runtime crashes due to invalid fixtureJSON
+  - Early detection of JSON structure issues during development
+  - Better developer experience with clear warning messages
+  
+- **Example Warning Messages**
+  ```
+  ⚠️ fixtureJSON is missing required fields: name, email
+  ⚠️ fixtureJSON contains extra fields not in struct: unknownField
+  ⚠️ Field 'id' type mismatch: expected Number but got String
+  ```
+
+- **Limitations**
+  - Only validates top-level fields (nested DTO structures are not deeply validated)
+  - Type hints are basic (cannot distinguish Int vs Double, both are "Number")
+  - Nested DTOs must each have correct fixtureJSON definitions
+
+### 🧪 Tests
+
+#### @ResponseTestable Macro - Validation Tests
+- **Added 5 new test cases for JSON validation**
+  - `missingRequiredFields()`: Validates warning for missing required fields
+  - `extraFields()`: Validates warning for extra fields
+  - `typeMismatch()`: Validates warning for type mismatches
+  - `validJSON()`: Validates no warnings for correct JSON
+  - `optionalFieldsAllowed()`: Validates optional fields can be omitted
+
+### 📚 Documentation
+
+#### @ResponseTestable Macro - JSON Validation Guide
+- **Added comprehensive documentation: `docs/ResponseTestable-JSON-Validation.md`**
+  - Problem description with real-world example
+  - Validation features explanation
+  - Code change details
+  - Validation limitations and workarounds
+  - Best practices and migration guide
+
+---
+
 ## [1.2.4] - 2026-01-29
 
 ### 🔒 Security

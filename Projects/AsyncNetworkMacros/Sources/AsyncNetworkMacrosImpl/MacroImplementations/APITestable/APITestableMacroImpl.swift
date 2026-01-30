@@ -13,12 +13,12 @@ public enum APITestableMacroError: CustomStringConvertible, Error, DiagnosticMes
     public var description: String {
         switch self {
         case .onlyApplicableToStruct:
-            return "@APITestable can only be applied to a struct"
+            return "@APITestable은 struct에만 적용할 수 있습니다"
         case .missingAPIRequest:
             return """
-            @APITestable requires @APIRequest to be declared first.
+            @APITestable은 @APIRequest를 먼저 선언해야 합니다.
 
-            Usage:
+            사용법:
             @APIRequest(...)
             @APITestable(...)
             struct YourRequest { }
@@ -119,7 +119,8 @@ public struct APITestableMacroImpl: MemberMacro {
     ) -> AttributeSyntax? {
         for attribute in declaration.attributes {
             if let customAttribute = attribute.as(AttributeSyntax.self),
-               customAttribute.attributeName.trimmedDescription == "APIRequest" {
+               customAttribute.attributeName.trimmedDescription == "APIRequest"
+            {
                 return customAttribute
             }
         }

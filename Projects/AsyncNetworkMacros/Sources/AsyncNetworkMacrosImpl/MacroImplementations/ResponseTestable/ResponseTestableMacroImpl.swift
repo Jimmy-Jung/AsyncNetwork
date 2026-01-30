@@ -1,5 +1,6 @@
 import Foundation
 import SwiftCompilerPlugin
+import SwiftDiagnostics
 import SwiftSyntax
 import SwiftSyntaxBuilder
 import SwiftSyntaxMacros
@@ -11,7 +12,7 @@ public struct ResponseTestableMacroImpl: MemberMacro, ExtensionMacro {
         of node: AttributeSyntax,
         providingMembersOf declaration: some DeclGroupSyntax,
         conformingTo _: [TypeSyntax],
-        in _: some MacroExpansionContext
+        in context: some MacroExpansionContext
     ) throws -> [DeclSyntax] {
         guard let structDecl = declaration.as(StructDeclSyntax.self) else {
             throw TestableDTOMacroError.notAStruct
@@ -25,6 +26,11 @@ public struct ResponseTestableMacroImpl: MemberMacro, ExtensionMacro {
         let documentFixtureJSON = extractor.extract(from: structDecl)
         let fixtureJSON = args.fixtureJSON ?? documentFixtureJSON
         let properties = extractProperties(from: structDecl)
+
+        // JSON 검증 (경고만 발생, 빌드는 계속)
+        if let json = fixtureJSON {
+            validateFixtureJSON(json, typeName: typeName, properties: properties, context: context, node: node)
+        }
 
         var members: [DeclSyntax] = []
 
@@ -310,5 +316,149 @@ public struct ResponseTestableMacroImpl: MemberMacro, ExtensionMacro {
         }
 
         return properties
+    }
+
+    /// fixtureJSON 검증 (컴파일 타임 경고)
+    private static func validateFixtureJSON(
+        _ json: String,
+        typeName _: String,
+        properties: [PropertyInfo],
+        context: some MacroExpansionContext,
+        node: AttributeSyntax
+    ) {
+        // 1. JSON 파싱 가능 여부 확인
+        guard let jsonData = json.data(using: .utf8) else {
+            emitWarning(
+                "fixtureJSON 인코딩 실패",
+                context: context,
+                node: node
+            )
+            return
+        }
+
+        do {
+            guard let jsonObject = try JSONSerialization.jsonObject(with: jsonData) as? [String: Any] else {
+                emitWarning(
+                    "fixtureJSON이 유효한 JSON 객체가 아닙니다",
+                    context: context,
+                    node: node
+                )
+                return
+            }
+
+            // 2. 필수 필드 존재 확인
+            var missingFields: [String] = []
+            var extraFields: [String] = []
+
+            let propertyNames = Set(properties.map(\.name))
+            let jsonKeys = Set(jsonObject.keys)
+
+            for prop in properties where !prop.isOptional {
+                if !jsonKeys.contains(prop.name) {
+                    missingFields.append(prop.name)
+                }
+            }
+
+            for key in jsonKeys {
+                if !propertyNames.contains(key) {
+                    extraFields.append(key)
+                }
+            }
+
+            // 3. 경고 발생
+            if !missingFields.isEmpty {
+                let fields = missingFields.joined(separator: ", ")
+                emitWarning(
+                    "fixtureJSON에 필수 필드가 누락되었습니다: \(fields)",
+                    context: context,
+                    node: node
+                )
+            }
+
+            if !extraFields.isEmpty {
+                let fields = extraFields.joined(separator: ", ")
+                emitWarning(
+                    "fixtureJSON에 struct에 없는 추가 필드가 포함되어 있습니다: \(fields)",
+                    context: context,
+                    node: node
+                )
+            }
+
+            // 4. 타입 힌트 검증 (기본적인 타입 불일치 감지)
+            for prop in properties {
+                guard let value = jsonObject[prop.name] else { continue }
+
+                let expectedTypeHint = getTypeHint(from: prop.type)
+                let actualTypeHint = getValueTypeHint(from: value)
+
+                if expectedTypeHint != actualTypeHint, expectedTypeHint != "Any" {
+                    emitWarning(
+                        "필드 '\(prop.name)'의 타입이 일치하지 않습니다: \(expectedTypeHint) 타입이 필요하지만 \(actualTypeHint) 타입이 제공되었습니다",
+                        context: context,
+                        node: node
+                    )
+                }
+            }
+
+        } catch {
+            emitWarning(
+                "fixtureJSON 파싱 실패: \(error.localizedDescription)",
+                context: context,
+                node: node
+            )
+        }
+    }
+
+    /// 경고 발생
+    private static func emitWarning(
+        _ message: String,
+        context: some MacroExpansionContext,
+        node: AttributeSyntax
+    ) {
+        let diagnostic = Diagnostic(
+            node: Syntax(node),
+            message: TestableDTOMacroError.jsonValidationFailed(message)
+        )
+        context.diagnose(diagnostic)
+    }
+
+    /// 타입에서 힌트 추출 (간단한 분류)
+    private static func getTypeHint(from type: String) -> String {
+        let cleanType = type.replacingOccurrences(of: "?", with: "").trimmingCharacters(in: .whitespaces)
+
+        if cleanType.contains("Int") {
+            return "Number"
+        } else if cleanType.contains("Double") || cleanType.contains("Float") {
+            return "Number"
+        } else if cleanType.contains("String") {
+            return "String"
+        } else if cleanType.contains("Bool") {
+            return "Boolean"
+        } else if cleanType.hasPrefix("[") {
+            return "Array"
+        } else if cleanType.contains("Dictionary") || cleanType.hasPrefix("{") {
+            return "Object"
+        } else {
+            return "Object" // DTO는 Object로 간주
+        }
+    }
+
+    /// 값에서 타입 힌트 추출
+    private static func getValueTypeHint(from value: Any) -> String {
+        if value is NSNull {
+            return "Null"
+        } else if value is Int || value is Double || value is Float || value is NSNumber {
+            return "Number"
+        } else if value is String {
+            return "String"
+        } else if value is Bool {
+            return "Boolean"
+        } else if value is [Any] {
+            return "Array"
+        } else if value is [String: Any] {
+            return "Object"
+        } else {
+            return "Unknown"
+        }
     }
 }
