@@ -4,6 +4,7 @@ public enum TestableDTOMacroError: Error, DiagnosticMessage {
     case notAStruct
     case invalidFixtureJSON(String)
     case emptyFixtureJSON
+    case jsonValidationFailed(String)
 
     public var message: String {
         switch self {
@@ -13,6 +14,8 @@ public enum TestableDTOMacroError: Error, DiagnosticMessage {
             return "Invalid fixtureJSON: \(reason)"
         case .emptyFixtureJSON:
             return "fixtureJSON cannot be empty"
+        case let .jsonValidationFailed(details):
+            return "fixtureJSON validation failed: \(details). Please check that the JSON structure matches the struct definition and all nested types have valid fixture data."
         }
     }
 
@@ -21,6 +24,11 @@ public enum TestableDTOMacroError: Error, DiagnosticMessage {
     }
 
     public var severity: DiagnosticSeverity {
-        .error
+        switch self {
+        case .jsonValidationFailed:
+            return .warning
+        default:
+            return .error
+        }
     }
 }
