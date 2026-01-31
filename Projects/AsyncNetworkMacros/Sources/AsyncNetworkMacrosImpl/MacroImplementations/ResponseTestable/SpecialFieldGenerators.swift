@@ -11,7 +11,7 @@ import Foundation
 // MARK: - Protocol
 
 /// 특수 필드에 대한 Mock/Fixture 값 생성 전략
-protocol SpecialFieldGenerator {
+protocol SpecialFieldGenerator: Sendable {
     /// 이 Generator가 특정 필드에 적용 가능한지 확인
     func matches(propertyName: String, type: String) -> Bool
     
@@ -99,7 +99,7 @@ struct IDFieldGenerator: SpecialFieldGenerator {
 
 // MARK: - Special Field Generator Registry
 
-struct SpecialFieldGeneratorRegistry {
+struct SpecialFieldGeneratorRegistry: Sendable {
     private let generators: [SpecialFieldGenerator]
     
     init() {

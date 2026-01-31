@@ -47,6 +47,9 @@ extension ResponseTestableMacroImpl {
 }
 
 extension ResponseTestableMacroImpl {
+    /// 특수 필드 Generator Registry (싱글톤 패턴)
+    private static let specialFieldRegistry = SpecialFieldGeneratorRegistry()
+    
     /// Mock 값 생성
     static func generateMockValue(
         for type: String,
@@ -57,8 +60,7 @@ extension ResponseTestableMacroImpl {
         let cleanType = cleanTypeName(type)
         
         // 특수 필드 Generator 시도
-        let registry = SpecialFieldGeneratorRegistry()
-        if let specialValue = registry.generateMockValue(for: propertyName, type: cleanType) {
+        if let specialValue = specialFieldRegistry.generateMockValue(for: propertyName, type: cleanType) {
             return isOptional ? "Bool.random() ? \(specialValue) : nil" : specialValue
         }
 
@@ -148,8 +150,7 @@ extension ResponseTestableMacroImpl {
         let cleanType = cleanTypeName(type)
         
         // 특수 필드 Generator 시도
-        let registry = SpecialFieldGeneratorRegistry()
-        if let specialValue = registry.generateFixtureValue(for: propertyName, type: cleanType) {
+        if let specialValue = specialFieldRegistry.generateFixtureValue(for: propertyName, type: cleanType) {
             return isOptional ? "nil" : specialValue
         }
 
