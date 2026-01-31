@@ -161,25 +161,36 @@ public struct ResponseTestableMacroImpl: MemberMacro, ExtensionMacro {
         properties: [PropertyInfo],
         defaultArrayCount: Int
     ) -> DeclSyntax {
+        let builderComponents = generateBuilderComponents(
+            typeName: typeName,
+            properties: properties,
+            defaultArrayCount: defaultArrayCount
+        )
+        
+        return composeBuilderType(
+            typeName: typeName,
+            components: builderComponents
+        )
+    }
+    
+    // MARK: - Builder Component Generation
+    
+    /// Builder 구성 요소 생성
+    private static func generateBuilderComponents(
+        typeName: String,
+        properties: [PropertyInfo],
+        defaultArrayCount: Int
+    ) -> BuilderComponents {
         var builderProperties: [String] = []
         var withMethods: [String] = []
         var buildParams: [String] = []
         var initAssignments: [String] = []
 
         for prop in properties {
-            builderProperties.append("private var \(prop.name): \(prop.type)")
-
-            withMethods.append("""
-            public func with(\(prop.name): \(prop.type)) -> Self {
-                    var copy = self
-                    copy.\(prop.name) = \(prop.name)
-                    return copy
-                }
-            """)
-
-            buildParams.append("\(prop.name): \(prop.name)")
+            builderProperties.append(generateBuilderProperty(for: prop))
+            withMethods.append(generateWithMethod(for: prop))
+            buildParams.append(generateBuildParameter(for: prop))
             
-            // fixture 값으로 초기화 (고정 값)
             let fixtureValue = generateFixtureValue(
                 for: prop.type,
                 isOptional: prop.isOptional,
@@ -190,10 +201,44 @@ public struct ResponseTestableMacroImpl: MemberMacro, ExtensionMacro {
             initAssignments.append("self.\(prop.name) = \(fixtureValue)")
         }
 
-        let propertiesCode = builderProperties.joined(separator: "\n    ")
-        let methodsCode = withMethods.joined(separator: "\n    \n    ")
-        let buildCode = buildParams.joined(separator: ",\n                ")
-        let initCode = initAssignments.joined(separator: "\n        ")
+        return BuilderComponents(
+            properties: builderProperties,
+            withMethods: withMethods,
+            buildParams: buildParams,
+            initAssignments: initAssignments
+        )
+    }
+    
+    /// Builder 프로퍼티 생성
+    private static func generateBuilderProperty(for prop: PropertyInfo) -> String {
+        "private var \(prop.name): \(prop.type)"
+    }
+    
+    /// with() 메서드 생성
+    private static func generateWithMethod(for prop: PropertyInfo) -> String {
+        """
+        public func with(\(prop.name): \(prop.type)) -> Self {
+                var copy = self
+                copy.\(prop.name) = \(prop.name)
+                return copy
+            }
+        """
+    }
+    
+    /// build() 메서드의 파라미터 생성
+    private static func generateBuildParameter(for prop: PropertyInfo) -> String {
+        "\(prop.name): \(prop.name)"
+    }
+    
+    /// Builder 타입 조립
+    private static func composeBuilderType(
+        typeName: String,
+        components: BuilderComponents
+    ) -> DeclSyntax {
+        let propertiesCode = components.properties.joined(separator: "\n    ")
+        let methodsCode = components.withMethods.joined(separator: "\n    \n    ")
+        let buildCode = components.buildParams.joined(separator: ",\n                ")
+        let initCode = components.initAssignments.joined(separator: "\n        ")
 
         return """
         /// Builder 패턴
@@ -219,6 +264,16 @@ public struct ResponseTestableMacroImpl: MemberMacro, ExtensionMacro {
             }
         }
         """
+    }
+    
+    // MARK: - Helper Types
+    
+    /// Builder 구성 요소를 담는 구조체
+    private struct BuilderComponents {
+        let properties: [String]
+        let withMethods: [String]
+        let buildParams: [String]
+        let initAssignments: [String]
     }
 
     /// 프로퍼티 추출
