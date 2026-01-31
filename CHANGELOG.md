@@ -9,6 +9,95 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### 💥 Breaking Changes
+
+#### @APITestable Macro - Removed
+
+- **Completely removed `@APITestable` macro**
+  - `APITestableMacro.swift` removed
+  - `APITestableMacroImpl.swift` removed
+  - `TestScenario` enum removed
+  - No longer generates `MockScenario` or `mockResponse()` methods
+
+**Reason for removal**: The `@APITestable` macro depended on `.fixture()` method which has been removed from `@ResponseTestable`. Without `.fixture()`, the mock response generation becomes unreliable. For testing, use:
+- MockURLProtocol with custom response data
+- Direct use of `.mock()` for test data
+- Builder pattern for specific test scenarios
+
+#### @ResponseTestable Macro - Extremely Simplified API
+
+- **Removed `includeBuilder` parameter**
+  - Builder pattern is now always generated
+  - No need to specify `includeBuilder: true`
+  - Simplifies to just `@ResponseTestable` in most cases
+
+- **Removed `fixture()` method and `fixtureJSON` parameter**
+  - `fixture()` method removed from generated code
+  - `fixtureJSON` parameter removed from macro
+  - `generateDocumentation` parameter removed
+  - `jsonSample` property no longer generated
+  - Simplified to only `mock()` and `builder()` methods
+
+- **Builder now based on `mock()` instead of `fixture()`**
+  - Builder starts with random values from `mock()`
+  - More flexible for testing different scenarios
+  - No need to maintain complex fixtureJSON structures
+
+### 🎯 Improvements
+
+#### Zero-Parameter Usage
+- **Minimal configuration**: Most cases just need `@ResponseTestable`
+- **Builder always available**: No opt-in required
+- **Two methods only**: `mock()` for random data, `builder()` for customization
+- **No more fixtureJSON validation errors**: Eliminates compile-time warnings
+- **Better for nested DTOs**: Automatically calls `.mock()` on nested types
+- **More practical**: Builder with random defaults is more useful than fixture-based builder
+
+### 📝 Migration Guide
+
+**Before (v1.2.0):**
+```swift
+@ResponseTestable(
+    fixtureJSON: """{ "id": 1, "name": "Test" }""",
+    includeBuilder: true,
+    defaultArrayCount: 5
+)
+struct UserDTO: Codable, Sendable {
+    let id: Int
+    let name: String
+}
+
+let fixed = UserDTO.fixture()
+let custom = UserDTO.builder()
+    .with(id: 999)
+    .build()
+```
+
+**After (v1.3.1):**
+```swift
+@ResponseTestable
+struct UserDTO: Codable, Sendable {
+    let id: Int
+    let name: String
+}
+
+// Use builder() instead of fixture()
+let custom = UserDTO.builder()
+    .with(id: 1)
+    .with(name: "Test")
+    .build()
+```
+
+### 📚 Documentation
+
+- Updated `docs/ResponseTestable-Simplified.md` with zero-parameter usage
+- Removed complex fixture validation documentation
+- Simplified test patterns and examples
+
+---
+
+## [1.2.7] - 2026-01-29
+
 ### 🔧 Improvements
 
 #### @ResponseTestable Macro - Compile-time JSON Validation
