@@ -51,73 +51,6 @@ public struct ExpressionParser {
         }
         return memberAccess.declName.baseName.text
     }
-
-    // MARK: - Array Extraction
-
-    public func extractStringArray(from expr: ExprSyntax) -> [String] {
-        guard let arrayExpr = expr.as(ArrayExprSyntax.self) else {
-            return []
-        }
-
-        var result: [String] = []
-        for element in arrayExpr.elements {
-            if let stringValue = try? extractString(from: element.expression) {
-                result.append(stringValue)
-            }
-        }
-
-        return result
-    }
-
-    public func extractEnumCaseArray(from expr: ExprSyntax) -> [String] {
-        guard let arrayExpr = expr.as(ArrayExprSyntax.self) else {
-            return []
-        }
-
-        var result: [String] = []
-        for element in arrayExpr.elements {
-            if let enumCase = try? extractEnumCase(from: element.expression) {
-                result.append(enumCase)
-            }
-        }
-
-        return result
-    }
-
-    // MARK: - Dictionary Extraction
-
-    public func extractStringDictionary(from expr: ExprSyntax) -> [String: String] {
-        guard let dictExpr = expr.as(DictionaryExprSyntax.self),
-              let elements = dictExpr.content.as(DictionaryElementListSyntax.self)
-        else {
-            return [:]
-        }
-
-        var result: [String: String] = [:]
-
-        for element in elements {
-            guard let keyString = try? extractString(from: element.key) else {
-                continue
-            }
-
-            guard let valueString = try? extractString(from: element.value) else {
-                continue
-            }
-
-            result[keyString] = valueString
-        }
-
-        return result
-    }
-
-    // MARK: - Boolean Extraction
-
-    public func extractBoolean(from expr: ExprSyntax) throws -> Bool {
-        guard let boolLiteral = expr.as(BooleanLiteralExprSyntax.self) else {
-            throw ExpressionParserError.expectedBoolean(expr.description)
-        }
-        return boolLiteral.literal.text == "true"
-    }
 }
 
 // MARK: - ExpressionParserError
@@ -127,7 +60,6 @@ public enum ExpressionParserError: Error, CustomStringConvertible {
     case expectedStringLiteral(String)
     case emptyString
     case expectedEnumCase(String)
-    case expectedBoolean(String)
 
     public var description: String {
         switch self {
@@ -139,8 +71,6 @@ public enum ExpressionParserError: Error, CustomStringConvertible {
             return "문자열 리터럴이 비어있습니다"
         case let .expectedEnumCase(expr):
             return "열거형 케이스가 필요하지만 다른 값이 제공되었습니다: \(expr)"
-        case let .expectedBoolean(expr):
-            return "불린 값이 필요하지만 다른 값이 제공되었습니다: \(expr)"
         }
     }
 }

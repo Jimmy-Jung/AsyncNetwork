@@ -60,11 +60,17 @@ struct LessonDTOTests {
 
     // MARK: - Fixture Tests
 
-    @Test("LessonDTO.fixture()가 일관된 데이터를 반환하는지 확인")
+    @Test("LessonDTO.builder()가 일관된 데이터를 생성하는지 확인")
     func lessonDTOFixture() {
         // When
-        let fixture1 = LessonDTO.fixture()
-        let fixture2 = LessonDTO.fixture()
+        let fixture1 = LessonDTO.builder()
+            .with(id: "lesson-001")
+            .with(title: "Introduction to Variables")
+            .build()
+        let fixture2 = LessonDTO.builder()
+            .with(id: "lesson-001")
+            .with(title: "Introduction to Variables")
+            .build()
 
         // Then
         #expect(fixture1.id == fixture2.id)

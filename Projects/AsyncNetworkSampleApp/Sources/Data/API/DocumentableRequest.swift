@@ -1,15 +1,16 @@
 //
-//  EndpointMetadata.swift
-//  AsyncNetwork
+//  DocumentableRequest.swift
+//  AsyncNetworkSampleApp
 //
-//  Created by jimmy on 2026/01/11.
+//  Created by jimmy on 2026/02/01.
 //
 
+import AsyncNetwork
 import Foundation
 
-/// API 엔드포인트 메타데이터
+/// API 문서화 메타데이터
 ///
-/// `@APIRequest` 매크로가 각 Request 타입에 `static var metadata` 프로퍼티를 생성합니다.
+/// API Playground UI, 문서 생성 등에 사용됩니다.
 public struct EndpointMetadata: Sendable, Equatable, Identifiable, Hashable {
     public let id: String
     public let title: String
@@ -21,7 +22,7 @@ public struct EndpointMetadata: Sendable, Equatable, Identifiable, Hashable {
     public let tags: [String]
     public let parameters: [String]
     public let responseTypeName: String
-
+    
     public init(
         id: String,
         title: String,
@@ -29,9 +30,9 @@ public struct EndpointMetadata: Sendable, Equatable, Identifiable, Hashable {
         method: String,
         path: String,
         baseURLString: String,
-        headers: [String: String] = [:],
-        tags: [String] = [],
-        parameters: [String] = [],
+        headers: [String: String],
+        tags: [String],
+        parameters: [String],
         responseTypeName: String
     ) {
         self.id = id
@@ -45,4 +46,15 @@ public struct EndpointMetadata: Sendable, Equatable, Identifiable, Hashable {
         self.parameters = parameters
         self.responseTypeName = responseTypeName
     }
+}
+
+/// 문서화 가능한 API 요청 프로토콜
+///
+/// API Playground UI 또는 문서 생성이 필요한 경우 이 프로토콜을 채택합니다.
+/// Sample앱 전용으로, AsyncNetwork 코어와는 독립적입니다.
+public protocol DocumentableRequest: APIRequest {
+    /// 엔드포인트 메타데이터
+    ///
+    /// API Playground UI에서 API 목록 표시, 문서 생성 등에 사용됩니다.
+    static var metadata: EndpointMetadata { get }
 }

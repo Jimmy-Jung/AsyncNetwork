@@ -18,7 +18,7 @@
 /// - `baseURLString`: API 베이스 URL (문자열 리터럴 또는 표현식)
 /// - `path`: API 엔드포인트 경로 (정적 또는 동적)
 /// - `method`: HTTP 메서드 (GET, POST, PUT, DELETE 등)
-/// - `metadata`: API 문서화를 위한 메타데이터 (선택적)
+/// - `headers`: HTTP 헤더 (HeaderField가 있을 때만)
 ///
 /// ## 기본 사용법
 ///
@@ -62,22 +62,6 @@
 ///     // ✅ 자동 생성
 ///     public var method: HTTPMethod {
 ///         .get
-///     }
-///
-///     // ✅ 자동 생성 (문서화용)
-///     public static var metadata: EndpointMetadata {
-///         EndpointMetadata(
-///             id: "GetPostsRequest",
-///             title: "",
-///             description: "",
-///             method: "GET",
-///             path: "/posts",
-///             baseURLString: "https://jsonplaceholder.typicode.com",
-///             headers: [:],
-///             tags: [],
-///             parameters: ["userId", "page"],
-///             responseTypeName: "[Post]"
-///         )
 ///     }
 /// }
 ///
@@ -281,47 +265,18 @@
 ///
 /// `@APIRequest`는 다른 매크로들과 함께 사용할 수 있습니다:
 ///
-/// ### @APIDocument - API 문서화 메타데이터
+/// ### @ResponseTestable - Response 테스트 데이터 생성
 ///
 /// ```swift
-/// @APIRequest(
-///     response: Post.self,
-///     baseURL: "https://api.example.com",
-///     path: "/posts/{id}",
-///     method: .get
-/// )
-/// @APIDocument(
-///     title: "게시글 조회",
-///     description: "ID로 단일 게시글을 조회합니다",
-///     tags: ["Posts", "Read"]
-/// )
-/// struct GetPostRequest {
-///     @PathParameter var id: Int
-/// }
-/// ```
-///
-/// ### @APITestable - 테스트 Mock 응답 자동 생성
-///
-/// ```swift
-/// @APIRequest(
-///     response: Post.self,
-///     baseURL: "https://api.example.com",
-///     path: "/posts/{id}",
-///     method: .get
-/// )
-/// @APITestable(
-///     scenarios: [.success, .notFound, .serverError],
-///     errorExamples: [
-///         "404": """{"error": "Post not found", "code": "POST_NOT_FOUND"}""",
-///         "500": """{"error": "Internal server error", "code": "INTERNAL_ERROR"}"""
-///     ]
-/// )
-/// struct GetPostRequest {
-///     @PathParameter var id: Int
+/// @ResponseTestable
+/// struct Post: Codable {
+///     let id: Int
+///     let title: String
+///     let body: String
 /// }
 ///
 /// // 테스트에서 사용:
-/// let mockResponse = GetPostRequest.mockResponse(for: .notFound)
+/// let mockPost = Post.mock()
 /// ```
 ///
 /// ## 에러 응답 매핑
@@ -432,9 +387,7 @@
 ///
 /// ## 관련 매크로
 ///
-/// - `@APIDocument`: API 문서화 메타데이터 추가
-/// - `@APITestable`: 테스트 Mock 응답 자동 생성
-/// - `@ResponseTestable`: 응답 타입 테스트 데이터 생성 및 문서화 (통합됨)
+/// - `@ResponseTestable`: 응답 타입 테스트 데이터 생성 및 문서화
 ///
 /// ## 성능 고려사항
 ///
@@ -447,8 +400,8 @@
     named(baseURLString),
     named(path),
     named(method),
-    named(task),
-    named(metadata))
+    named(headers),
+    named(task))
 @attached(extension, conformances: APIRequest)
 public macro APIRequest(
     response: Any.Type,

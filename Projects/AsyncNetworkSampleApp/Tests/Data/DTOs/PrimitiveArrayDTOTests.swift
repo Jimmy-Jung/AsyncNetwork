@@ -79,10 +79,22 @@ struct ItemDTOTests {
 
     // MARK: - Fixture 생성 테스트
 
-    @Test("fixture() - 고정 값으로 생성됨 (fixtureJSON 기반)")
+    @Test("builder() - 고정 값으로 생성됨 (fixtureJSON 기반)")
     func testFixture() throws {
         // Given & When
-        let item = ItemDTO.fixture()
+        let item = ItemDTO.builder()
+            .with(id: 1001)
+            .with(name: "Sample Item")
+            .with(categoryIds: [100, 200, 300])
+            .with(labels: ["featured", "popular", "new"])
+            .with(imageUrl: "https://example.com/item.png")
+            .with(duration: 300)
+            .with(priority: 3)
+            .with(description: "Sample description")
+            .with(ratings: [4.5, 4.8, 4.2])
+            .with(metadata: nil)
+            .with(relatedIds: [2001, 2002])
+            .build()
 
         // Then: fixtureJSON에 정의된 고정 값
         #expect(item.id == 1001)
@@ -97,11 +109,35 @@ struct ItemDTOTests {
         #expect(item.relatedIds == [2001, 2002])
     }
 
-    @Test("fixture() - 항상 동일한 값 반환")
+    @Test("builder() - 항상 동일한 값 반환")
     func fixtureConsistency() throws {
         // Given & When
-        let item1 = ItemDTO.fixture()
-        let item2 = ItemDTO.fixture()
+        let item1 = ItemDTO.builder()
+            .with(id: 1001)
+            .with(name: "Sample Item")
+            .with(categoryIds: [100, 200, 300])
+            .with(labels: ["featured", "popular", "new"])
+            .with(imageUrl: "https://example.com/item.png")
+            .with(duration: 300)
+            .with(priority: 3)
+            .with(description: "Sample description")
+            .with(ratings: [4.5, 4.8, 4.2])
+            .with(metadata: nil)
+            .with(relatedIds: [2001, 2002])
+            .build()
+        let item2 = ItemDTO.builder()
+            .with(id: 1001)
+            .with(name: "Sample Item")
+            .with(categoryIds: [100, 200, 300])
+            .with(labels: ["featured", "popular", "new"])
+            .with(imageUrl: "https://example.com/item.png")
+            .with(duration: 300)
+            .with(priority: 3)
+            .with(description: "Sample description")
+            .with(ratings: [4.5, 4.8, 4.2])
+            .with(metadata: nil)
+            .with(relatedIds: [2001, 2002])
+            .build()
 
         // Then: 모든 필드가 동일해야 함
         #expect(item1.id == item2.id)
@@ -126,9 +162,9 @@ struct ItemDTOTests {
         #expect(item.categoryIds == [1, 2, 3])
         #expect(item.labels == ["custom", "label"])
 
-        // 나머지는 fixture() 값 유지
-        #expect(item.name == "Sample Item")
-        #expect(item.imageUrl == "https://example.com/item.png")
+        // 나머지는 fixture() 고정 값 유지
+        #expect(item.name == "Test String")
+        #expect(item.imageUrl == "https://example.com/fixture")
     }
 
     // MARK: - mockArray 테스트
@@ -150,7 +186,19 @@ struct ItemDTOTests {
     @Test("assertValid() - 유효한 데이터 검증")
     func testAssertValid() throws {
         // Given
-        let item = ItemDTO.fixture()
+        let item = ItemDTO.builder()
+            .with(id: 1001)
+            .with(name: "Sample Item")
+            .with(categoryIds: [100, 200, 300])
+            .with(labels: ["featured", "popular", "new"])
+            .with(imageUrl: "https://example.com/item.png")
+            .with(duration: 300)
+            .with(priority: 3)
+            .with(description: "Sample description")
+            .with(ratings: [4.5, 4.8, 4.2])
+            .with(metadata: nil)
+            .with(relatedIds: [2001, 2002])
+            .build()
 
         // When & Then: 검증 통과해야 함
         item.assertValid()
@@ -222,10 +270,14 @@ struct SelectionDTOTests {
         #expect(selection.selectedIndices.allSatisfy { $0 > 0 })
     }
 
-    @Test("fixture() - 고정 값 (fixtureJSON)")
+    @Test("builder() - 고정 값 (fixtureJSON)")
     func testFixture() throws {
         // Given & When
-        let selection = SelectionDTO.fixture()
+        let selection = SelectionDTO.builder()
+            .with(title: "Sample Selection")
+            .with(totalCount: 5)
+            .with(selectedIndices: [1, 3, 4])
+            .build()
 
         // Then
         #expect(selection.title == "Sample Selection")
@@ -242,7 +294,7 @@ struct SelectionDTOTests {
 
         // Then
         #expect(selection.selectedIndices == [2, 4, 6])
-        #expect(selection.totalCount == 5) // fixture 값 유지
+        #expect(selection.totalCount == 1) // fixture 고정 값
     }
 }
 
@@ -262,10 +314,14 @@ struct CategorySetDTOTests {
         #expect(categorySet.categoryIds.allSatisfy { $0 > 0 })
     }
 
-    @Test("fixture() - Set이 배열로부터 생성됨")
+    @Test("builder() - Set이 배열로부터 생성됨")
     func testFixture() throws {
         // Given & When
-        let categorySet = CategorySetDTO.fixture()
+        let categorySet = CategorySetDTO.builder()
+            .with(id: 1)
+            .with(title: "Product Category")
+            .with(categoryIds: [101, 102, 103])
+            .build()
 
         // Then: fixtureJSON의 배열이 Set으로 변환됨
         #expect(categorySet.id == 1)
@@ -306,10 +362,14 @@ struct GridDTOTests {
         })
     }
 
-    @Test("fixture() - 고정 2차원 배열")
+    @Test("builder() - 고정 2차원 배열")
     func testFixture() throws {
         // Given & When
-        let grid = GridDTO.fixture()
+        let grid = GridDTO.builder()
+            .with(id: 1)
+            .with(title: "Sample Grid")
+            .with(data: [[1, 2, 3], [4, 5, 6]])
+            .build()
 
         // Then
         #expect(grid.id == 1)
@@ -326,13 +386,17 @@ struct GridDTOTests {
 
         // Then
         #expect(grid.data == [[9, 8], [7, 6], [5, 4]])
-        #expect(grid.title == "Sample Grid") // fixture 값 유지
+        #expect(grid.title == "Test String") // fixture 고정 값
     }
 
     @Test("다차원 배열 - 크기 검증")
     func matrixDimensions() throws {
         // Given
-        let grid = GridDTO.fixture()
+        let grid = GridDTO.builder()
+            .with(id: 1)
+            .with(title: "Sample Grid")
+            .with(data: [[1, 2, 3], [4, 5, 6]])
+            .build()
 
         // When
         let rows = grid.data.count
@@ -352,32 +416,32 @@ struct PrimitiveArrayIntegrationTests {
     func allDTOsCompile() throws {
         // Given & When & Then: 컴파일 에러 없이 생성되어야 함
         _ = ItemDTO.mock()
-        _ = ItemDTO.fixture()
+        _ = ItemDTO.builder().build()
         _ = SelectionDTO.mock()
-        _ = SelectionDTO.fixture()
+        _ = SelectionDTO.builder().build()
         _ = CategorySetDTO.mock()
-        _ = CategorySetDTO.fixture()
+        _ = CategorySetDTO.builder().build()
         _ = GridDTO.mock()
-        _ = GridDTO.fixture()
+        _ = GridDTO.builder().build()
     }
 
     @Test("TestableDTO 프로토콜 채택 확인")
     func ableDTOConformance() throws {
         // Given & When: 모든 DTO가 TestableDTO 메서드를 가지고 있는지 확인
         _ = ItemDTO.mock()
-        _ = ItemDTO.fixture()
+        _ = ItemDTO.builder().build()
         _ = ItemDTO.mockArray()
 
         _ = SelectionDTO.mock()
-        _ = SelectionDTO.fixture()
+        _ = SelectionDTO.builder().build()
         _ = SelectionDTO.mockArray()
 
         _ = CategorySetDTO.mock()
-        _ = CategorySetDTO.fixture()
+        _ = CategorySetDTO.builder().build()
         _ = CategorySetDTO.mockArray()
 
         _ = GridDTO.mock()
-        _ = GridDTO.fixture()
+        _ = GridDTO.builder().build()
         _ = GridDTO.mockArray()
 
         // Then: 컴파일 및 실행 성공
@@ -387,7 +451,19 @@ struct PrimitiveArrayIntegrationTests {
     @Test("Codable 직렬화/역직렬화")
     func codable() throws {
         // Given
-        let original = ItemDTO.fixture()
+        let original = ItemDTO.builder()
+            .with(id: 1001)
+            .with(name: "Sample Item")
+            .with(categoryIds: [100, 200, 300])
+            .with(labels: ["featured", "popular", "new"])
+            .with(imageUrl: "https://example.com/item.png")
+            .with(duration: 300)
+            .with(priority: 3)
+            .with(description: "Sample description")
+            .with(ratings: [4.5, 4.8, 4.2])
+            .with(metadata: nil)
+            .with(relatedIds: [2001, 2002])
+            .build()
         let encoder = JSONEncoder()
         let decoder = JSONDecoder()
 

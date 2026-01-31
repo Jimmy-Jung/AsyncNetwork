@@ -33,29 +33,6 @@ public extension APIRequest {
     }
 }
 
-/// 문서화 가능한 API 요청 프로토콜
-///
-/// API Playground UI 또는 OpenAPI 문서 생성이 필요한 경우 이 프로토콜을 채택합니다.
-/// `@APIDocument` 매크로를 사용하면 자동으로 이 프로토콜을 채택하고 `metadata`를 생성합니다.
-///
-/// ## 사용 예시
-///
-/// ```swift
-/// @APIRequest(response: PostDTO.self, baseURL: "...", path: "/posts", method: .get)
-/// @APIDocument(title: "Get all posts", description: "...", tags: ["Posts"])
-/// struct GetPostsRequest {
-///     @QueryParameter var userId: Int?
-/// }
-/// // ↑ 자동으로 DocumentableAPIRequest 채택
-/// ```
-public protocol DocumentableAPIRequest: APIRequest {
-    /// 엔드포인트 메타데이터
-    ///
-    /// API Playground UI에서 API 목록 표시, 문서 생성 등에 사용됩니다.
-    /// `@APIDocument` 매크로가 자동으로 생성합니다.
-    static var metadata: EndpointMetadata { get }
-}
-
 public extension APIRequest {
     func asURLRequest() throws -> URLRequest {
         let baseURL = try getBaseURL()

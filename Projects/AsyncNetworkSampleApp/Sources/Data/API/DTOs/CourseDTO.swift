@@ -14,74 +14,26 @@ let learningPlatformBaseURL: String = "https://api.learning-platform.example.com
 
 // MARK: - Response DTOs
 
-@ResponseTestable(
-    fixtureJSON: """
-    {
-      "id": "course-001",
-      "title": "Swift Programming Fundamentals",
-      "description": "Learn the basics of Swift programming language"
-    }
-    """,
-    includeBuilder: true,
-    defaultArrayCount: 5
-)
+@ResponseTestable
 struct CourseDTO: Codable, Sendable {
     let id: String
     let title: String
     let description: String
 }
 
-@ResponseTestable(
-    fixtureJSON: """
-    {
-      "id": "lesson-001",
-      "title": "Introduction to Variables"
-    }
-    """,
-    includeBuilder: true,
-    defaultArrayCount: 5
-)
+@ResponseTestable
 struct LessonDTO: Codable, Sendable {
     let id: String
     let title: String
 }
 
-@ResponseTestable(
-    fixtureJSON: """
-    {
-      "id": "exercise-001",
-      "question": "What is a variable in Swift?"
-    }
-    """,
-    includeBuilder: true,
-    defaultArrayCount: 5
-)
+@ResponseTestable
 struct ExerciseDTO: Codable, Sendable {
     let id: String
     let question: String
 }
 
-@ResponseTestable(
-    fixtureJSON: """
-    {
-      "items": [
-        {
-          "id": "course-001",
-          "title": "Swift Programming Fundamentals",
-          "description": "Learn the basics of Swift programming language"
-        },
-        {
-          "id": "course-002",
-          "title": "Advanced Swift Patterns",
-          "description": "Master advanced Swift design patterns"
-        }
-      ],
-      "nextToken": "eyJwYWdlIjoxfQ=="
-    }
-    """,
-    includeBuilder: true,
-    defaultArrayCount: 5
-)
+@ResponseTestable
 struct GetCoursesResponseDTO: Codable, Sendable {
     let items: [CourseDTO]
     let nextToken: String?

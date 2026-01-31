@@ -66,38 +66,6 @@ struct PostRequestsTestCasesTests {
         #expect(decoded.userId == body.userId)
     }
 
-    @Test("CreatePostWithRequiredBodyRequest - Success 시나리오")
-    func createPostWithRequiredBodySuccessScenario() throws {
-        // Given
-        let (data, response, error) = CreatePostWithRequiredBodyRequest.mockResponse(for: .success)
-
-        // Then
-        #expect(error == nil)
-
-        let httpResponse = try #require(response as? HTTPURLResponse)
-        #expect(httpResponse.statusCode == 200)
-
-        let responseData = try #require(data)
-        let post = try JSONDecoder().decode(PostDTO.self, from: responseData)
-        #expect(post.id > 0)
-    }
-
-    @Test("UpdatePostWithRequiredBodyRequest - Success 시나리오")
-    func updatePostWithRequiredBodySuccessScenario() throws {
-        // Given
-        let (data, response, error) = UpdatePostWithRequiredBodyRequest.mockResponse(for: .success)
-
-        // Then
-        #expect(error == nil)
-
-        let httpResponse = try #require(response as? HTTPURLResponse)
-        #expect(httpResponse.statusCode == 200)
-
-        let responseData = try #require(data)
-        let post = try JSONDecoder().decode(PostDTO.self, from: responseData)
-        #expect(post.id > 0)
-    }
-
     @Test("필수 body vs 옵셔널 body 비교")
     func requiredVsOptionalBody() throws {
         // Given - 옵셔널 body (기존)

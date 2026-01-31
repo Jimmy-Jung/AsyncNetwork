@@ -1,4 +1,3 @@
-import SwiftDiagnostics
 import SwiftSyntax
 import SwiftSyntaxMacros
 
@@ -20,18 +19,5 @@ public struct MacroContext {
             return structDecl.name.text
         }
         return nil
-    }
-
-    public func diagnoseError(_ message: some DiagnosticMessage) {
-        let diagnostic = Diagnostic(node: node, message: message)
-        expansionContext.diagnose(diagnostic)
-    }
-
-    public func diagnoseWarning(
-        on node: SyntaxProtocol,
-        message: some DiagnosticMessage
-    ) {
-        let diagnostic = Diagnostic(node: node, message: message)
-        expansionContext.diagnose(diagnostic)
     }
 }

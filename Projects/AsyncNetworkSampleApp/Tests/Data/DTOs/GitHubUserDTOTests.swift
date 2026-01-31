@@ -68,11 +68,43 @@ struct GitHubUserDTOTests {
 
     // MARK: - Fixture Tests
 
-    @Test("GitHubUserDTO.fixture()가 일관된 데이터를 반환하는지 확인")
+    @Test("GitHubUserDTO.builder()가 일관된 데이터를 반환하는지 확인")
     func gitHubUserDTOFixture() {
         // When
-        let fixture1 = GitHubUserDTO.fixture()
-        let fixture2 = GitHubUserDTO.fixture()
+        let fixture1 = GitHubUserDTO.builder()
+            .with(id: 1)
+            .with(login: "octocat")
+            .with(avatarUrl: "https://github.com/images/error/octocat_happy.gif")
+            .with(name: "The Octocat")
+            .with(company: nil)
+            .with(blog: nil)
+            .with(location: nil)
+            .with(email: nil)
+            .with(bio: nil)
+            .with(publicRepos: 8)
+            .with(publicGists: 8)
+            .with(followers: 9999)
+            .with(following: 9)
+            .with(createdAt: "2011-01-25T18:44:36Z")
+            .with(updatedAt: "2023-11-07T22:47:31Z")
+            .build()
+        let fixture2 = GitHubUserDTO.builder()
+            .with(id: 1)
+            .with(login: "octocat")
+            .with(avatarUrl: "https://github.com/images/error/octocat_happy.gif")
+            .with(name: "The Octocat")
+            .with(company: nil)
+            .with(blog: nil)
+            .with(location: nil)
+            .with(email: nil)
+            .with(bio: nil)
+            .with(publicRepos: 8)
+            .with(publicGists: 8)
+            .with(followers: 9999)
+            .with(following: 9)
+            .with(createdAt: "2011-01-25T18:44:36Z")
+            .with(updatedAt: "2023-11-07T22:47:31Z")
+            .build()
 
         // Then - Fixture는 항상 동일한 값
         #expect(fixture1.id == fixture2.id)
@@ -156,19 +188,41 @@ struct GitHubUserDTOTests {
 
     // MARK: - JSON Sample Tests
 
-    @Test("GitHubUserDTO.jsonSample이 유효한 JSON인지 확인")
+    @Test("GitHubUserDTO.builder()로 생성한 데이터가 유효한 JSON으로 인코딩/디코딩되는지 확인")
     func gitHubUserDTOJsonSample() throws {
-        // When
-        let jsonString = GitHubUserDTO.jsonSample
-        let jsonData = jsonString.data(using: .utf8)!
+        // Given - builder로 샘플 데이터 생성
+        let sample = GitHubUserDTO.builder()
+            .with(id: 1)
+            .with(login: "octocat")
+            .with(avatarUrl: "https://github.com/images/error/octocat_happy.gif")
+            .with(name: "The Octocat")
+            .with(company: nil)
+            .with(blog: nil)
+            .with(location: nil)
+            .with(email: nil)
+            .with(bio: nil)
+            .with(publicRepos: 8)
+            .with(publicGists: 8)
+            .with(followers: 9999)
+            .with(following: 9)
+            .with(createdAt: "2011-01-25T18:44:36Z")
+            .with(updatedAt: "2023-11-07T22:47:31Z")
+            .build()
 
-        // Then
+        // When - Encode
+        let encoder = JSONEncoder()
+        let jsonData = try encoder.encode(sample)
+
+        // Then - Decode
         let decoder = JSONDecoder()
         let decoded = try decoder.decode(GitHubUserDTO.self, from: jsonData)
 
         #expect(decoded.id > 0)
         #expect(!decoded.login.isEmpty)
         #expect(!decoded.avatarUrl.isEmpty)
+        #expect(decoded.id == sample.id)
+        #expect(decoded.login == sample.login)
+        #expect(decoded.avatarUrl == sample.avatarUrl)
     }
 
     // MARK: - Codable Tests
@@ -237,7 +291,23 @@ struct GitHubUserDTOTests {
     @Test("GitHubUserDTO가 GitHubUser 도메인 모델로 올바르게 변환되는지 확인")
     func gitHubUserDTOToDomainModel() {
         // Given
-        let dto = GitHubUserDTO.fixture()
+        let dto = GitHubUserDTO.builder()
+            .with(id: 1)
+            .with(login: "octocat")
+            .with(avatarUrl: "https://github.com/images/error/octocat_happy.gif")
+            .with(name: "The Octocat")
+            .with(company: nil)
+            .with(blog: nil)
+            .with(location: nil)
+            .with(email: nil)
+            .with(bio: nil)
+            .with(publicRepos: 8)
+            .with(publicGists: 8)
+            .with(followers: 9999)
+            .with(following: 9)
+            .with(createdAt: "2011-01-25T18:44:36Z")
+            .with(updatedAt: "2023-11-07T22:47:31Z")
+            .build()
 
         // When
         let domainModel = GitHubUser(dto: dto)

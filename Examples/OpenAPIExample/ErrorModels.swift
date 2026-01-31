@@ -11,48 +11,20 @@ import Foundation
 
 // MARK: - Error Models
 
-@ResponseTestable(
-    fixtureJSON: """
-    {
-      "error": "Resource not found",
-      "code": "NOT_FOUND",
-      "timestamp": "2026-01-14T10:30:00Z"
-    }
-    """
-)
-struct NotFoundError: Codable, Sendable, Error {
+@ResponseTestablestruct NotFoundError: Codable, Sendable, Error {
     let error: String
     let code: String
     let timestamp: String
 }
 
-@ResponseTestable(
-    fixtureJSON: """
-    {
-      "error": "Internal server error",
-      "code": "INTERNAL_ERROR",
-      "timestamp": "2026-01-14T10:30:00Z",
-      "requestId": "req-12345"
-    }
-    """
-)
-struct ServerError: Codable, Sendable, Error {
+@ResponseTestablestruct ServerError: Codable, Sendable, Error {
     let error: String
     let code: String
     let timestamp: String
     let requestId: String
 }
 
-@ResponseTestable(
-    fixtureJSON: """
-    {
-      "error": "Invalid request",
-      "code": "BAD_REQUEST",
-      "details": ["Field 'email' is required", "Field 'password' must be at least 8 characters"]
-    }
-    """
-)
-struct BadRequestError: Codable, Sendable, Error {
+@ResponseTestablestruct BadRequestError: Codable, Sendable, Error {
     let error: String
     let code: String
     let details: [String]

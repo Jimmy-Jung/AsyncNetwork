@@ -24,7 +24,7 @@ struct ResponseTestableMacroSpecialFieldsTests {
     func testEmailFieldGeneration() {
         // Given
         let source = """
-        @ResponseTestable(mockStrategy: .random, includeBuilder: false)
+        @ResponseTestable()
         struct UserDTO: Codable, Sendable {
             let email: String
             let userEmail: String?
@@ -91,7 +91,7 @@ struct ResponseTestableMacroSpecialFieldsTests {
     func testDictionaryAndSetTypes() {
         // Given
         let source = """
-        @ResponseTestable(mockStrategy: .random, includeBuilder: false)
+        @ResponseTestable()
         struct CollectionDTO: Codable, Sendable {
             let dict: [String: Int]
             let set: Set<String>

@@ -60,17 +60,23 @@ struct ExerciseDTOTests {
 
     // MARK: - Fixture Tests
 
-    @Test("ExerciseDTO.fixture()가 일관된 데이터를 반환하는지 확인")
+    @Test("ExerciseDTO.builder()가 일관된 데이터를 생성하는지 확인")
     func exerciseDTOFixture() {
         // When
-        let fixture1 = ExerciseDTO.fixture()
-        let fixture2 = ExerciseDTO.fixture()
+        let fixture1 = ExerciseDTO.builder()
+            .with(id: "exercise-001")
+            .with(question: "What is a variable in Swift?")
+            .build()
+        let fixture2 = ExerciseDTO.builder()
+            .with(id: "exercise-001")
+            .with(question: "What is a variable in Swift?")
+            .build()
 
         // Then
         #expect(fixture1.id == fixture2.id)
         #expect(fixture1.question == fixture2.question)
 
-        // fixtureJSON 값 확인
+        // 고정 값 확인
         #expect(fixture1.id == "exercise-001")
         #expect(fixture1.question == "What is a variable in Swift?")
     }

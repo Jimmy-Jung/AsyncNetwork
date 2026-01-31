@@ -3,7 +3,7 @@
 //  AsyncNetworkSampleApp
 //
 //  Created by jimmy on 2026/01/11.
-//  Updated: 2026/01/12 - Added all 17 requests
+//  Updated: 2026/02/01 - Restored .all with metadata using DocumentableRequest
 //
 
 import AsyncNetwork
