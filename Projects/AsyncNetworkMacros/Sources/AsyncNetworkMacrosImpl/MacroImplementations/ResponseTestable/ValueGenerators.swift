@@ -18,9 +18,8 @@ extension ResponseTestableMacroImpl {
         structName: String = ""
     ) -> String {
         let cleanType = type.replacingOccurrences(of: "?", with: "").trimmingCharacters(in: .whitespaces)
-        
-        // 특정 필드명에 대한 고정 값 처리
-        // NotificationDTO의 type 필드는 구조체명에 따라 고정 값 사용
+
+        // type 필드: 구조체명에 TextNotification/ImageNotification/ActionNotification 포함 시 1/2/3 고정
         if propertyName == "type" && cleanType == "Int" {
             if structName.contains("TextNotification") {
                 return "1"
@@ -130,9 +129,8 @@ extension ResponseTestableMacroImpl {
         defaultArrayCount: Int = 1
     ) -> String {
         let cleanType = type.replacingOccurrences(of: "?", with: "").trimmingCharacters(in: .whitespaces)
-        
-        // 특정 필드명에 대한 고정 값 처리
-        // NotificationDTO의 type 필드는 구조체명에 따라 고정 값 사용
+
+        // type 필드: 구조체명에 TextNotification/ImageNotification/ActionNotification 포함 시 1/2/3 고정
         if propertyName == "type" && cleanType == "Int" {
             if structName.contains("TextNotification") {
                 return "1"
