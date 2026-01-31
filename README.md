@@ -460,16 +460,7 @@ AsyncNetwork은 핵심 기능에 집중한 두 가지 매크로를 제공합니�
 struct GetPostsRequest {}
 
 // 2. 응답 DTO에 테스트 헬퍼 추가 (선택)
-@ResponseTestable(
-    sampleData: """
-    {
-        "id": 1,
-        "title": "Sample Post",
-        "body": "This is a sample post body.",
-        "userId": 1
-    }
-    """
-)
+@ResponseTestable(defaultArrayCount: 10)
 struct Post: Codable, Sendable {
     let id: Int
     let title: String
@@ -478,9 +469,12 @@ struct Post: Codable, Sendable {
 }
 
 // 자동 생성된 테스트 헬퍼 사용
-let mockPost = Post.mock()        // 랜덤 값으로 생성
-let fixedPost = Post.fixture()    // sampleData 기반 고정 값
-let posts = Post.mockArray(count: 10)  // 배열 생성
+let mockPost = Post.mock()        // 랜덤 값으로 생성 (매번 다른 값)
+let posts = Post.mockArray(count: 10)  // 10개의 랜덤 배열 생성
+let customPost = Post.builder()   // Builder 패턴으로 특정 필드만 커스터마이징
+    .with(id: 999)
+    .with(title: "Custom Title")
+    .build()
 ```
 
 #### 매크로 아키텍처
@@ -1116,83 +1110,56 @@ monitor.startMonitoring()  // 모니터링 시작
 monitor.stopMonitoring()   // 모니터링 중지
 ```
 
-### 8️⃣ @ResponseTestable - 응답 DTO 테스트 자동화 (v1.3.1+)
+### 8️⃣ @ResponseTestable - 응답 DTO 테스트 자동화
 
 `@ResponseTestable` 매크로는 응답 DTO(Data Transfer Object)에 테스트 헬퍼 메서드를 자동으로 생성합니다.
-
-> **v1.3.1 변경사항**: 매크로가 단순화되었습니다. `fixtureJSON` 대신 `sampleData` 매개변수를 사용하며, `includeBuilder`와 `defaultArrayCount` 옵션이 제거되었습니다.
 
 #### 기본 사용법
 
 ```swift
 import AsyncNetwork
 
-@ResponseTestable(
-    sampleData: """
-    {
-        "id": 1,
-        "name": "John Doe",
-        "email": "john@example.com"
-    }
-    """
-)
-struct UserDTO: Codable, Sendable {
+@ResponseTestable(defaultArrayCount: 10)
+struct PostDTO: Codable, Sendable {
+    let userId: Int
     let id: Int
-    let name: String
-    let email: String
+    let title: String
+    let body: String
 }
 
 // 자동 생성된 테스트 헬퍼 메서드
-let randomUser = UserDTO.mock()        // 랜덤 값으로 생성
-let fixedUser = UserDTO.fixture()      // sampleData 기반 고정 값
-let users = UserDTO.mockArray(count: 10)  // 랜덤 배열 생성
+let randomPost = PostDTO.mock()        // 랜덤 값으로 생성 (매번 다른 값)
+let posts = PostDTO.mockArray(count: 10)  // 10개의 랜덤 배열 생성
 
 // 유효성 검증
-try UserDTO.assertValid()  // 모든 프로퍼티가 올바르게 생성되는지 확인
+try PostDTO.mock().assertValid()  // 모든 프로퍼티가 올바르게 생성되는지 확인
 ```
 
-#### 다양한 샘플 데이터 제공
+#### Builder 패턴으로 커스터마이징
 
-`alternativeSamples`를 사용하여 다양한 테스트 시나리오를 제공할 수 있습니다:
+특정 필드만 고정하고 나머지는 랜덤 값을 사용할 수 있습니다:
 
 ```swift
-@ResponseTestable(
-    sampleData: """
-    {
-        "id": 1,
-        "name": "John Doe",
-        "email": "john@example.com",
-        "age": 30
-    }
-    """,
-    alternativeSamples: [
-        "minimal": """
-        {
-            "id": 1,
-            "name": "Jane",
-            "email": "jane@example.com"
-        }
-        """,
-        "withNulls": """
-        {
-            "id": 1,
-            "name": "Bob",
-            "email": "bob@example.com",
-            "age": null
-        }
-        """
-    ]
-)
+@ResponseTestable
 struct UserDTO: Codable, Sendable {
     let id: Int
     let name: String
     let email: String
-    let age: Int?
 }
 
-// 대체 샘플 사용
-let minimalUser = try UserDTO.fixture(sampleKey: "minimal")
-let userWithNull = try UserDTO.fixture(sampleKey: "withNulls")
+// Builder 패턴으로 특정 필드만 커스터마이징
+let customUser = UserDTO.builder()
+    .with(id: 999)
+    .with(name: "Custom Name")
+    .build()
+// email은 자동으로 랜덤 값 생성 ("mock123@example.com" 형식)
+
+// 완전히 커스터마이징
+let fixedUser = UserDTO.builder()
+    .with(id: 1)
+    .with(name: "John Doe")
+    .with(email: "john@example.com")
+    .build()
 ```
 
 #### 지원하는 타입
@@ -1208,44 +1175,46 @@ let userWithNull = try UserDTO.fixture(sampleKey: "withNulls")
 #### 중첩 DTO 예제
 
 ```swift
-@ResponseTestable(
-    sampleData: """
-    {
-        "street": "123 Main St",
-        "city": "Seoul",
-        "zipCode": "12345"
-    }
-    """
-)
+#### 중첩 DTO 예제
+
+배열이나 중첩된 커스텀 타입도 자동으로 처리됩니다:
+
+```swift
+@ResponseTestable
 struct AddressDTO: Codable, Sendable {
     let street: String
+    let suite: String
     let city: String
-    let zipCode: String
+    let zipcode: String
+    let geo: GeoDTO
 }
 
-@ResponseTestable(
-    sampleData: """
-    {
-        "id": 1,
-        "name": "John Doe",
-        "address": {
-            "street": "123 Main St",
-            "city": "Seoul",
-            "zipCode": "12345"
-        }
-    }
-    """
-)
-struct UserWithAddressDTO: Codable, Sendable {
+@ResponseTestable
+struct GeoDTO: Codable, Sendable {
+    let lat: String
+    let lng: String
+}
+
+@ResponseTestable(defaultArrayCount: 10)
+struct UserDTO: Codable, Sendable {
     let id: Int
     let name: String
-    let address: AddressDTO
+    let email: String
+    let address: AddressDTO?  // 중첩 타입은 자동으로 AddressDTO.mock() 호출
+    let phone: String?
 }
 
 // 중첩 타입도 자동으로 처리
-let user = UserWithAddressDTO.mock()
-print(user.address.city)  // 자동 생성된 값
+let user = UserDTO.mock()
+print(user.address?.city)  // 자동 생성된 랜덤 값
+print(user.address?.geo.lat)  // 중첩된 중첩 타입도 자동 생성
 ```
+
+#### 테스트에서 활용
+
+```swift
+import Testing
+@testable import YourApp
 
 #### 테스트에서 활용
 
@@ -1258,32 +1227,24 @@ func testUserDTOMock() throws {
     // Given
     let user = UserDTO.mock()
     
-    // Then
-    #expect(user.id > 0)
-    #expect(!user.name.isEmpty)
-    #expect(user.email.contains("@"))
-}
-
-@Test("UserDTO Fixture 테스트")
-func testUserDTOFixture() throws {
-    // Given
-    let user = UserDTO.fixture()
-    
-    // Then
-    #expect(user.id == 1)
-    #expect(user.name == "John Doe")
-    #expect(user.email == "john@example.com")
-}
-
-@Test("UserDTO Builder 테스트")
-func testUserDTOBuilder() throws {
-    // Given & When
-    let user = UserDTO.mock()
-    
     // Then - Mock은 랜덤 값이지만 타입은 보장됨
     #expect(user.id > 0)
     #expect(!user.name.isEmpty)
     #expect(user.email.contains("@"))
+}
+
+@Test("UserDTO Builder 테스트")
+func testUserDTOBuilder() throws {
+    // Given & When - Builder로 특정 필드만 커스터마이징
+    let user = UserDTO.builder()
+        .with(id: 999)
+        .with(name: "Custom Name")
+        .build()
+    
+    // Then
+    #expect(user.id == 999)
+    #expect(user.name == "Custom Name")
+    #expect(user.email.contains("@"))  // email은 자동 생성
 }
 
 @Test("UserDTO 배열 생성 테스트")
@@ -1298,24 +1259,52 @@ func testUserDTOArray() throws {
 
 @Test("UserDTO 유효성 검증")
 func testUserDTOValidation() throws {
-    // When & Then
-    try UserDTO.assertValid()  // 모든 프로퍼티가 올바르게 생성되면 통과
+    // Given
+    let user = UserDTO.mock()
+    
+    // When & Then - 모든 프로퍼티가 올바르게 생성되면 통과
+    try user.assertValid()
 }
+```
 ```
 
 #### 매크로 파라미터
 
 | 파라미터 | 타입 | 기본값 | 설명 |
 |---------|------|--------|------|
-| `sampleData` | `String?` | `nil` | 기본 샘플 JSON 문자열 (fixture 생성용) |
-| `alternativeSamples` | `[String: String]?` | `nil` | 대체 샘플 딕셔너리 (key: 샘플 이름, value: JSON) |
+| `defaultArrayCount` | `Int` | `5` | `mockArray()` 기본 개수 |
 
 #### 제약사항
 
 - DTO는 반드시 `Codable`과 `Sendable`을 준수해야 합니다
-- `sampleData`를 제공할 경우, 유효한 JSON 문자열이어야 합니다
-- 컴파일 타임에 JSON 구문 검증이 수행됩니다
 - 커스텀 타입을 사용할 경우, 해당 타입도 `@ResponseTestable`을 적용하거나 자체 `mock()` 메서드를 구현해야 합니다
+- `struct` 타입에만 사용 가능 (`class`, `enum`, `actor` 불가)
+
+#### 생성되는 메서드
+
+```swift
+// Mock 생성 (항상 랜덤 값)
+public static func mock() -> Self
+
+// 배열 생성 (랜덤 값 배열)
+public static func mockArray(count: Int = defaultArrayCount) -> [Self]
+
+// Builder 패턴 (특정 필드만 커스터마이징)
+public static func builder() -> {TypeName}Builder
+
+// 검증
+public func assertValid() throws
+```
+
+#### 특수 필드명 인식
+
+필드명에 따라 적절한 Mock 데이터를 생성합니다:
+
+- **email**: `"mock{랜덤숫자}@example.com"` 형식
+- **url**: `"https://example.com/{UUID}"` 형식
+- **id**: 양수 검증 추가
+- **name**: 랜덤 이름 생성
+- **title**: 랜덤 제목 생성
 
 ## 🧪 테스트
 
