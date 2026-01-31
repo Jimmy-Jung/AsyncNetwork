@@ -8,36 +8,14 @@
 import AsyncNetwork
 import Foundation
 
-@ResponseTestable(
-    fixtureJSON: """
-    {
-      "userId": 1,
-      "id": 1,
-      "title": "quidem molestiae enim"
-    }
-    """,
-    includeBuilder: true,
-    defaultArrayCount: 10
-)
+@ResponseTestable(defaultArrayCount: 10)
 struct AlbumDTO: Codable, Sendable {
     let id: Int
     let userId: Int
     let title: String
 }
 
-@ResponseTestable(
-    fixtureJSON: """
-    {
-      "albumId": 1,
-      "id": 1,
-      "title": "accusamus beatae ad facilis cum similique qui sunt",
-      "url": "https://via.placeholder.com/600/92c952",
-      "thumbnailUrl": "https://via.placeholder.com/150/92c952"
-    }
-    """,
-    includeBuilder: true,
-    defaultArrayCount: 50
-)
+@ResponseTestable(defaultArrayCount: 50)
 struct PhotoDTO: Codable, Sendable {
     let id: Int
     let albumId: Int

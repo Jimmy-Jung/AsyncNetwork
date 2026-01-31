@@ -8,19 +8,7 @@
 import AsyncNetwork
 import Foundation
 
-@ResponseTestable(
-    fixtureJSON: """
-    {
-      "postId": 1,
-      "id": 1,
-      "name": "id labore ex et quam laborum",
-      "email": "eliseo@example.com",
-      "body": "laudantium enim quasi est quidem"
-    }
-    """,
-    includeBuilder: true,
-    defaultArrayCount: 10
-)
+@ResponseTestable(defaultArrayCount: 10)
 struct CommentDTO: Codable, Sendable {
     let postId: Int
     let id: Int

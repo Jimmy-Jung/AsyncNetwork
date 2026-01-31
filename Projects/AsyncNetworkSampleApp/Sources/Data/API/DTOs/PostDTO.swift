@@ -8,18 +8,7 @@
 import AsyncNetwork
 import Foundation
 
-@ResponseTestable(
-    fixtureJSON: """
-    {
-      "userId": 1,
-      "id": 1,
-      "title": "sunt aut facere",
-      "body": "quia et suscipit"
-    }
-    """,
-    includeBuilder: true,
-    defaultArrayCount: 10
-)
+@ResponseTestable(defaultArrayCount: 10)
 struct PostDTO: Codable, Sendable {
     let userId: Int
     let id: Int

@@ -8,34 +8,11 @@
 import AsyncNetwork
 import Foundation
 
-/// GitHub User DTO (ETag 캐싱 데모용)
-///
+/// GitHub User DTO ///
 /// GitHub API는 ETag를 완벽하게 지원합니다:
 /// - 첫 요청: 200 OK + ETag 헤더
 /// - 두 번째 요청 (If-None-Match): 304 Not Modified
-@ResponseTestable(
-    fixtureJSON: """
-    {
-      "login": "octocat",
-      "id": 1,
-      "avatar_url": "https://avatars.githubusercontent.com/u/583231",
-      "name": "The Octocat",
-      "company": "@github",
-      "blog": "https://github.blog",
-      "location": "San Francisco",
-      "email": "octocat@github.com",
-      "bio": "GitHub mascot",
-      "public_repos": 8,
-      "public_gists": 8,
-      "followers": 9999,
-      "following": 9,
-      "created_at": "2008-01-14T04:33:35Z",
-      "updated_at": "2024-01-01T00:00:00Z"
-    }
-    """,
-    includeBuilder: true,
-    defaultArrayCount: 1
-)
+@ResponseTestable(defaultArrayCount: 1)
 struct GitHubUserDTO: Codable, Sendable {
     let login: String
     let id: Int
