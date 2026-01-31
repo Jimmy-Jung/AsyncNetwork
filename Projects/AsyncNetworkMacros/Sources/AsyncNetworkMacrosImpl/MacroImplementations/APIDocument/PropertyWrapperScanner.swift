@@ -24,7 +24,8 @@ struct PropertyWrapperScanner {
 
                 let headerKey: String? = {
                     guard wrapperType == "HeaderField" || wrapperType == "CustomHeader",
-                          let arguments = wrapperAttribute.arguments?.as(LabeledExprListSyntax.self) else {
+                          let arguments = wrapperAttribute.arguments?.as(LabeledExprListSyntax.self)
+                    else {
                         return nil
                     }
 
@@ -42,30 +43,11 @@ struct PropertyWrapperScanner {
                     return nil
                 }()
 
-                let defaultValue: String? = {
-                    guard let initClause = binding.initializer else {
-                        return nil
-                    }
-
-                    if let stringLiteral = initClause.value.as(StringLiteralExprSyntax.self) {
-                        var stringValue = ""
-                        for segment in stringLiteral.segments {
-                            if let stringSegment = segment.as(StringSegmentSyntax.self) {
-                                stringValue += stringSegment.content.text
-                            }
-                        }
-                        return stringValue
-                    }
-
-                    return initClause.value.trimmedDescription
-                }()
-
                 let info = PropertyWrapperInfo(
                     name: propertyName,
                     type: propertyType,
                     wrapperType: wrapperType,
-                    headerKey: headerKey,
-                    defaultValue: defaultValue
+                    headerKey: headerKey
                 )
 
                 result.append(info)

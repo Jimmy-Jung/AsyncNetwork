@@ -75,7 +75,6 @@ public struct APIRequestMacroFacade {
 
             let wrapperType = variableDecl.propertyWrapperType
             let isRequired = !typeAnnotation.isOptional
-            let defaultValue = variableDecl.firstInitializer?.value.trimmedDescription
             var headerKey: String?
             if let wrapperAttribute = variableDecl.propertyWrapperAttribute,
                let wrapperName = wrapperAttribute.name,
@@ -93,8 +92,7 @@ public struct APIRequestMacroFacade {
                 type: typeAnnotation.trimmedDescription,
                 wrapperType: wrapperType,
                 isRequired: isRequired,
-                headerKey: headerKey,
-                defaultValue: defaultValue
+                headerKey: headerKey
             ))
         }
 
