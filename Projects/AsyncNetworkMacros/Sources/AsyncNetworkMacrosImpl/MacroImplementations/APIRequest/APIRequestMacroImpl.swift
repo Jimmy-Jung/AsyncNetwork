@@ -92,8 +92,6 @@ public struct APIRequestMacroImpl: MemberMacro, ExtensionMacro {
 struct AsyncNetworkMacrosPlugin: CompilerPlugin {
     let providingMacros: [Macro.Type] = [
         APIRequestMacroImpl.self,
-        APIDocumentMacroImpl.self,
-        APITestableMacroImpl.self,
         ResponseTestableMacroImpl.self,
     ]
 }

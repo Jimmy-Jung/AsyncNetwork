@@ -50,7 +50,7 @@ public struct APIRequestMacroFacade {
 
         var declarations: [DeclSyntax] = []
 
-        let propertyGenerator = PropertyGenerator(args: args)
+        let propertyGenerator = PropertyGenerator(args: args, properties: properties)
         declarations.append(contentsOf: propertyGenerator.generate())
 
         let pathGenerator = PathGenerator(
@@ -59,15 +59,6 @@ public struct APIRequestMacroFacade {
             properties: properties
         )
         declarations.append(contentsOf: pathGenerator.generate())
-
-        if !hasAPIDocumentAttribute(declaration: declaration) {
-            let metadataGenerator = MetadataGenerator(
-                typeName: structDecl.name.text,
-                args: args,
-                properties: properties
-            )
-            declarations.append(contentsOf: metadataGenerator.generate())
-        }
 
         return declarations
     }
@@ -108,9 +99,5 @@ public struct APIRequestMacroFacade {
         }
 
         return properties
-    }
-
-    private func hasAPIDocumentAttribute(declaration: some DeclGroupSyntax) -> Bool {
-        return declaration.findAttribute(named: "APIDocument") != nil
     }
 }
