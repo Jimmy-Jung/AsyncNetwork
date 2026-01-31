@@ -25,31 +25,15 @@ public struct APIRequestArgumentParser {
         let path = try parsePath(from: arguments)
         let method = try parseMethod(from: arguments)
 
-        let title = parseTitle(from: arguments)
-        let description = parseDescription(from: arguments)
-        let tags = parseTags(from: arguments)
-
-        let testScenarios = parseTestScenarios(from: arguments)
-        let errorExamples = parseErrorExamples(from: arguments)
-        let includeRetryTests = parseIncludeRetryTests(from: arguments)
-        let includePerformanceTests = parseIncludePerformanceTests(from: arguments)
-
         let optionalPathParameters = pathParser.extractOptionalParameters(from: path)
 
         return MacroArguments(
             responseType: responseType,
-            title: title,
-            description: description,
             baseURL: baseURL.value,
             isBaseURLLiteral: baseURL.isLiteral,
             path: path,
             method: method,
-            tags: tags,
-            optionalPathParameters: optionalPathParameters,
-            testScenarios: testScenarios,
-            errorExamples: errorExamples,
-            includeRetryTests: includeRetryTests,
-            includePerformanceTests: includePerformanceTests
+            optionalPathParameters: optionalPathParameters
         )
     }
 
@@ -100,63 +84,6 @@ public struct APIRequestArgumentParser {
         } catch {
             throw MacroError.invalidArgument("method: \(error.localizedDescription)")
         }
-    }
-
-    private func parseTitle(from arguments: LabeledExprListSyntax) -> String {
-        guard let expr = findArgument(labeled: "title", in: arguments),
-              let title = try? expressionParser.extractString(from: expr)
-        else {
-            return ""
-        }
-        return title
-    }
-
-    private func parseDescription(from arguments: LabeledExprListSyntax) -> String {
-        guard let expr = findArgument(labeled: "description", in: arguments),
-              let description = try? expressionParser.extractString(from: expr)
-        else {
-            return ""
-        }
-        return description
-    }
-
-    private func parseTags(from arguments: LabeledExprListSyntax) -> [String] {
-        guard let expr = findArgument(labeled: "tags", in: arguments) else {
-            return []
-        }
-        return expressionParser.extractStringArray(from: expr)
-    }
-
-    private func parseTestScenarios(from arguments: LabeledExprListSyntax) -> [String] {
-        guard let expr = findArgument(labeled: "testScenarios", in: arguments) else {
-            return []
-        }
-        return expressionParser.extractEnumCaseArray(from: expr)
-    }
-
-    private func parseErrorExamples(from arguments: LabeledExprListSyntax) -> [String: String] {
-        guard let expr = findArgument(labeled: "errorExamples", in: arguments) else {
-            return [:]
-        }
-        return expressionParser.extractStringDictionary(from: expr)
-    }
-
-    private func parseIncludeRetryTests(from arguments: LabeledExprListSyntax) -> Bool {
-        guard let expr = findArgument(labeled: "includeRetryTests", in: arguments),
-              let value = try? expressionParser.extractBoolean(from: expr)
-        else {
-            return true
-        }
-        return value
-    }
-
-    private func parseIncludePerformanceTests(from arguments: LabeledExprListSyntax) -> Bool {
-        guard let expr = findArgument(labeled: "includePerformanceTests", in: arguments),
-              let value = try? expressionParser.extractBoolean(from: expr)
-        else {
-            return false
-        }
-        return value
     }
 
     private func findArgument(
