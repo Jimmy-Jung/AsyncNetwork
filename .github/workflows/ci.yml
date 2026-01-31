@@ -16,11 +16,13 @@ jobs:
     - name: Show Swift version
       run: swift --version
       
-    - name: Build and Test
-      timeout-minutes: 15
-      run: |
-        swift build --enable-code-coverage
-        swift test --enable-code-coverage
+    - name: Build
+      timeout-minutes: 10
+      run: swift build --enable-code-coverage
+      
+    - name: Run Tests
+      timeout-minutes: 10
+      run: swift test --enable-code-coverage
       
     - name: Generate code coverage
       run: |
