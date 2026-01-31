@@ -208,7 +208,9 @@ struct NotificationDTOTests {
 struct TextNotificationDTOTests {
     @Test("TextNotificationDTO mock 데이터 생성")
     func testMock() throws {
-        let dto = TextNotificationDTO.mock()
+        let dto = TextNotificationDTO.builder()
+            .with(type: NotificationType.text.rawValue)
+            .build()
 
         #expect(!dto.id.isEmpty)
         #expect(dto.type == 1)
@@ -220,10 +222,12 @@ struct TextNotificationDTOTests {
 
     @Test("TextNotificationDTO mock이 매번 다른 값을 생성")
     func mockRandomness() throws {
+        // mock()은 완전 랜덤, builder()는 fixture 기반
         let dto1 = TextNotificationDTO.mock()
         let dto2 = TextNotificationDTO.mock()
 
-        #expect(dto1.id != dto2.id || dto1.title != dto2.title)
+        // 랜덤 생성이므로 적어도 하나는 다름 (확률적)
+        #expect(dto1.id != dto2.id || dto1.title != dto2.title || dto1.type != dto2.type)
     }
 
     @Test("TextNotificationDTO builder로 고정 시나리오 생성")
@@ -261,7 +265,26 @@ struct TextNotificationDTOTests {
 
     @Test("TextNotificationDTO mockArray 생성")
     func testMockArray() throws {
+        // mockArray()는 랜덤 mock() 기반이므로 type 검증 제외
         let dtos = TextNotificationDTO.mockArray(count: 3)
+
+        #expect(dtos.count == 3)
+        for dto in dtos {
+            #expect(!dto.id.isEmpty)
+            // type은 랜덤이므로 범위만 확인
+            #expect(dto.type > 0)
+            dto.assertValid()
+        }
+    }
+    
+    @Test("TextNotificationDTO builder 기반 배열 생성 (type 보장)")
+    func testBuilderArray() throws {
+        // type을 보장해야 할 때는 builder 사용
+        let dtos = (0..<3).map { _ in
+            TextNotificationDTO.builder()
+                .with(type: NotificationType.text.rawValue)
+                .build()
+        }
 
         #expect(dtos.count == 3)
         for dto in dtos {
@@ -278,7 +301,9 @@ struct TextNotificationDTOTests {
 struct ImageNotificationDTOTests {
     @Test("ImageNotificationDTO mock 데이터 생성")
     func testMock() throws {
-        let dto = ImageNotificationDTO.mock()
+        let dto = ImageNotificationDTO.builder()
+            .with(type: NotificationType.image.rawValue)
+            .build()
 
         #expect(!dto.id.isEmpty)
         #expect(dto.type == 2)
@@ -310,7 +335,24 @@ struct ImageNotificationDTOTests {
 
     @Test("ImageNotificationDTO mockArray 생성")
     func testMockArray() throws {
+        // mockArray()는 랜덤 mock() 기반이므로 type 검증 제외
         let dtos = ImageNotificationDTO.mockArray(count: 5)
+
+        #expect(dtos.count == 5)
+        for dto in dtos {
+            #expect(dto.type > 0)
+            #expect(!dto.imageURL.isEmpty)
+            dto.assertValid()
+        }
+    }
+    
+    @Test("ImageNotificationDTO builder 기반 배열 생성 (type 보장)")
+    func testBuilderArray() throws {
+        let dtos = (0..<5).map { _ in
+            ImageNotificationDTO.builder()
+                .with(type: NotificationType.image.rawValue)
+                .build()
+        }
 
         #expect(dtos.count == 5)
         for dto in dtos {
@@ -327,7 +369,9 @@ struct ImageNotificationDTOTests {
 struct ActionNotificationDTOTests {
     @Test("ActionNotificationDTO mock 데이터 생성")
     func testMock() throws {
-        let dto = ActionNotificationDTO.mock()
+        let dto = ActionNotificationDTO.builder()
+            .with(type: NotificationType.action.rawValue)
+            .build()
 
         #expect(!dto.id.isEmpty)
         #expect(dto.type == 3)
@@ -380,7 +424,24 @@ struct ActionNotificationDTOTests {
 
     @Test("ActionNotificationDTO mockArray 생성")
     func testMockArray() throws {
+        // mockArray()는 랜덤 mock() 기반이므로 type 검증 제외
         let dtos = ActionNotificationDTO.mockArray(count: 3)
+
+        #expect(dtos.count == 3)
+        for dto in dtos {
+            #expect(dto.type > 0)
+            #expect(!dto.actionType.isEmpty)
+            dto.assertValid()
+        }
+    }
+    
+    @Test("ActionNotificationDTO builder 기반 배열 생성 (type 보장)")
+    func testBuilderArray() throws {
+        let dtos = (0..<3).map { _ in
+            ActionNotificationDTO.builder()
+                .with(type: NotificationType.action.rawValue)
+                .build()
+        }
 
         #expect(dtos.count == 3)
         for dto in dtos {
