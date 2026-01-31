@@ -30,31 +30,6 @@ struct UserValidationError: Codable, Sendable, Error {
     path: "/users",
     method: .get
 )
-@APIDocument(
-    title: "Get all users",
-    description: """
-    JSONPlaceholder에서 모든 사용자를 가져옵니다.
-
-    기능:
-    • 페이지네이션 지원 (_limit 파라미터)
-    • 완전한 사용자 프로필 정보 포함
-
-    응답 형식:
-    User 객체의 배열을 반환합니다. 각 객체는 주소, 회사, 연락처 정보를 포함합니다.
-    """,
-    tags: ["Users"]
-)
-@APITestable(
-    scenarios: [.success, .serverError, .timeout],
-    errorExamples: [
-        "500": """
-        {
-          "error": "Internal Server Error",
-          "message": "Failed to fetch users"
-        }
-        """
-    ]
-)
 struct GetAllUsersRequest {
     @QueryParameter(key: "_limit") var limit: Int?
     @QueryParameter(key: "_page") var page: Int?
@@ -62,6 +37,23 @@ struct GetAllUsersRequest {
     init(limit: Int? = nil, page: Int? = nil) {
         self.limit = limit
         self.page = page
+    }
+}
+
+extension GetAllUsersRequest: DocumentableRequest {
+    static var metadata: EndpointMetadata {
+        EndpointMetadata(
+            id: "GetAllUsersRequest",
+            title: "Get All Users",
+            description: "모든 사용자를 조회합니다. limit, page 쿼리 파라미터를 지원합니다.",
+            method: "GET",
+            path: "/users",
+            baseURLString: jsonPlaceholderURL,
+            headers: [:],
+            tags: ["Users"],
+            parameters: ["limit", "page"],
+            responseTypeName: "[UserDTO]"
+        )
     }
 }
 
@@ -76,35 +68,25 @@ struct GetAllUsersRequest {
         404: UserNotFoundError.self
     ]
 )
-@APIDocument(
-    title: "Get a user by ID",
-    description: """
-    특정 ID를 가진 사용자를 가져옵니다.
-
-    파라미터:
-    • id: User의 고유 식별자
-
-    응답:
-    완전한 사용자 프로필 정보 (주소, 회사, 연락처 포함)
-
-    에러 처리:
-    • 404: 사용자를 찾을 수 없음
-    """,
-    tags: ["Users"]
-)
-@APITestable(
-    scenarios: [.success, .notFound, .serverError],
-    errorExamples: [
-        "404": """
-        {
-          "error": "User not found",
-          "code": "USER_NOT_FOUND"
-        }
-        """
-    ]
-)
 struct GetUserByIdRequest {
     @PathParameter var id: Int
+}
+
+extension GetUserByIdRequest: DocumentableRequest {
+    static var metadata: EndpointMetadata {
+        EndpointMetadata(
+            id: "GetUserByIdRequest",
+            title: "Get User by ID",
+            description: "특정 사용자를 ID로 조회합니다.",
+            method: "GET",
+            path: "/users/{id}",
+            baseURLString: jsonPlaceholderURL,
+            headers: [:],
+            tags: ["Users"],
+            parameters: ["id"],
+            responseTypeName: "UserDTO"
+        )
+    }
 }
 
 // MARK: - Create User
@@ -119,52 +101,6 @@ struct GetUserByIdRequest {
         422: UserValidationError.self
     ]
 )
-@APIDocument(
-    title: "Create a new user",
-    description: """
-    새로운 사용자를 생성합니다.
-
-    요청 바디:
-    • name: 사용자 이름 (필수)
-    • username: 사용자명 (필수, 고유)
-    • email: 이메일 주소 (필수, 유효한 형식)
-
-    검증 규칙:
-    • name: 1-100자
-    • username: 3-20자, 영문/숫자만
-    • email: 유효한 이메일 형식
-
-    에러 처리:
-    • 400: 잘못된 요청 데이터
-    • 409: 이미 존재하는 username 또는 email
-    • 422: 검증 실패
-    """,
-    tags: ["Users"]
-)
-@APITestable(
-    scenarios: [.success, .clientError, .serverError],
-    errorExamples: [
-        "400": """
-        {
-          "error": "Validation Failed",
-          "message": "Invalid user data"
-        }
-        """,
-        "409": """
-        {
-          "error": "Conflict",
-          "message": "Username or email already exists"
-        }
-        """,
-        "422": """
-        {
-          "error": "Validation Failed",
-          "message": "Email format is invalid",
-          "fields": ["email"]
-        }
-        """
-    ]
-)
 struct CreateUserRequest {
     @RequestBody var body: UserBodyDTO?
     @HeaderField(key: .contentType) var contentType: String? = "application/json"
@@ -172,6 +108,23 @@ struct CreateUserRequest {
     init(body: UserBodyDTO? = nil, contentType: String? = "application/json") {
         self.body = body
         self.contentType = contentType
+    }
+}
+
+extension CreateUserRequest: DocumentableRequest {
+    static var metadata: EndpointMetadata {
+        EndpointMetadata(
+            id: "CreateUserRequest",
+            title: "Create User",
+            description: "새로운 사용자를 생성합니다.",
+            method: "POST",
+            path: "/users",
+            baseURLString: jsonPlaceholderURL,
+            headers: ["Content-Type": "application/json"],
+            tags: ["Users"],
+            parameters: ["body"],
+            responseTypeName: "UserDTO"
+        )
     }
 }
 

@@ -29,40 +29,6 @@ struct PhotoNotFoundError: Codable, Sendable, Error {
     path: "/albums",
     method: .get
 )
-@APIDocument(
-    title: "Get albums for a user",
-    description: """
-    특정 사용자의 모든 앨범을 가져옵니다.
-
-    파라미터:
-    • userId: 앨범을 조회할 User의 ID (필수)
-
-    기능:
-    • userId 기준 필터링
-    • 페이지네이션 지원
-
-    응답 형식:
-    Album 객체의 배열을 반환합니다.
-    """,
-    tags: ["Albums"]
-)
-@APITestable(
-    scenarios: [.success, .clientError, .serverError, .timeout],
-    errorExamples: [
-        "400": """
-        {
-          "error": "Bad Request",
-          "message": "userId parameter is required"
-        }
-        """,
-        "500": """
-        {
-          "error": "Internal Server Error",
-          "message": "Failed to fetch albums"
-        }
-        """
-    ]
-)
 struct GetAlbumsForUserRequest {
     @QueryParameter var userId: Int
     @QueryParameter(key: "_limit") var limit: Int?
@@ -70,6 +36,23 @@ struct GetAlbumsForUserRequest {
     init(userId: Int, limit: Int? = nil) {
         self.userId = userId
         self.limit = limit
+    }
+}
+
+extension GetAlbumsForUserRequest: DocumentableRequest {
+    static var metadata: EndpointMetadata {
+        EndpointMetadata(
+            id: "GetAlbumsForUserRequest",
+            title: "Get Albums for User",
+            description: "특정 사용자의 앨범 목록을 조회합니다.",
+            method: "GET",
+            path: "/albums",
+            baseURLString: jsonPlaceholderURL,
+            headers: [:],
+            tags: ["Albums"],
+            parameters: ["userId", "limit"],
+            responseTypeName: "[AlbumDTO]"
+        )
     }
 }
 
@@ -84,32 +67,25 @@ struct GetAlbumsForUserRequest {
         404: AlbumNotFoundError.self
     ]
 )
-@APIDocument(
-    title: "Get an album by ID",
-    description: """
-    특정 ID를 가진 앨범을 가져옵니다.
-
-    파라미터:
-    • id: Album의 고유 식별자
-
-    에러 처리:
-    • 404: 앨범을 찾을 수 없음
-    """,
-    tags: ["Albums"]
-)
-@APITestable(
-    scenarios: [.success, .notFound],
-    errorExamples: [
-        "404": """
-        {
-          "error": "Album not found",
-          "code": "ALBUM_NOT_FOUND"
-        }
-        """
-    ]
-)
 struct GetAlbumByIdRequest {
     @PathParameter var id: Int
+}
+
+extension GetAlbumByIdRequest: DocumentableRequest {
+    static var metadata: EndpointMetadata {
+        EndpointMetadata(
+            id: "GetAlbumByIdRequest",
+            title: "Get Album by ID",
+            description: "특정 앨범을 ID로 조회합니다.",
+            method: "GET",
+            path: "/albums/{id}",
+            baseURLString: jsonPlaceholderURL,
+            headers: [:],
+            tags: ["Albums"],
+            parameters: ["id"],
+            responseTypeName: "AlbumDTO"
+        )
+    }
 }
 
 // MARK: - Get Photos for Album
@@ -120,41 +96,6 @@ struct GetAlbumByIdRequest {
     path: "/photos",
     method: .get
 )
-@APIDocument(
-    title: "Get photos for an album",
-    description: """
-    특정 앨범의 모든 사진을 가져옵니다.
-
-    파라미터:
-    • albumId: 사진을 조회할 Album의 ID (필수)
-
-    기능:
-    • albumId 기준 필터링
-    • 페이지네이션 지원
-    • 썸네일 URL 포함
-
-    응답 형식:
-    Photo 객체의 배열을 반환합니다. 각 객체는 원본 이미지 URL과 썸네일 URL을 포함합니다.
-    """,
-    tags: ["Photos"]
-)
-@APITestable(
-    scenarios: [.success, .clientError, .serverError, .timeout],
-    errorExamples: [
-        "400": """
-        {
-          "error": "Bad Request",
-          "message": "albumId parameter is required"
-        }
-        """,
-        "500": """
-        {
-          "error": "Internal Server Error",
-          "message": "Failed to fetch photos"
-        }
-        """
-    ]
-)
 struct GetPhotosForAlbumRequest {
     @QueryParameter(key: "albumId") var albumId: Int
     @QueryParameter(key: "_limit") var limit: Int?
@@ -162,6 +103,23 @@ struct GetPhotosForAlbumRequest {
     init(albumId: Int, limit: Int? = nil) {
         self.albumId = albumId
         self.limit = limit
+    }
+}
+
+extension GetPhotosForAlbumRequest: DocumentableRequest {
+    static var metadata: EndpointMetadata {
+        EndpointMetadata(
+            id: "GetPhotosForAlbumRequest",
+            title: "Get Photos for Album",
+            description: "특정 앨범의 사진 목록을 조회합니다.",
+            method: "GET",
+            path: "/photos",
+            baseURLString: jsonPlaceholderURL,
+            headers: [:],
+            tags: ["Photos"],
+            parameters: ["albumId", "limit"],
+            responseTypeName: "[PhotoDTO]"
+        )
     }
 }
 
@@ -176,33 +134,23 @@ struct GetPhotosForAlbumRequest {
         404: PhotoNotFoundError.self
     ]
 )
-@APIDocument(
-    title: "Get a photo by ID",
-    description: """
-    특정 ID를 가진 사진을 가져옵니다.
-
-    파라미터:
-    • id: Photo의 고유 식별자
-
-    응답:
-    원본 이미지 URL과 썸네일 URL을 포함한 Photo 객체
-
-    에러 처리:
-    • 404: 사진을 찾을 수 없음
-    """,
-    tags: ["Photos"]
-)
-@APITestable(
-    scenarios: [.success, .notFound],
-    errorExamples: [
-        "404": """
-        {
-          "error": "Photo not found",
-          "code": "PHOTO_NOT_FOUND"
-        }
-        """
-    ]
-)
 struct GetPhotoByIdRequest {
     @PathParameter var id: Int
+}
+
+extension GetPhotoByIdRequest: DocumentableRequest {
+    static var metadata: EndpointMetadata {
+        EndpointMetadata(
+            id: "GetPhotoByIdRequest",
+            title: "Get Photo by ID",
+            description: "특정 사진을 ID로 조회합니다.",
+            method: "GET",
+            path: "/photos/{id}",
+            baseURLString: jsonPlaceholderURL,
+            headers: [:],
+            tags: ["Photos"],
+            parameters: ["id"],
+            responseTypeName: "PhotoDTO"
+        )
+    }
 }
