@@ -1,6 +1,6 @@
 import SwiftSyntax
 
-public struct PathGenerator: CodeGenerator {
+public struct PathGenerator {
     private let args: MacroArguments
     private let pathParser: PathParser
     private let properties: [PropertyInfo]
