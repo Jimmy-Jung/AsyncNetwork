@@ -61,27 +61,6 @@ struct UserDTOTests {
         #expect(mocks.count == 10)
     }
 
-    // MARK: - Fixture Tests
-
-    @Test("UserDTO.fixture()가 일관된 데이터를 반환하는지 확인")
-    func userDTOFixture() {
-        // When
-        let fixture1 = UserDTO.fixture()
-        let fixture2 = UserDTO.fixture()
-
-        // Then - Fixture는 항상 동일한 값
-        #expect(fixture1.id == fixture2.id)
-        #expect(fixture1.name == fixture2.name)
-        #expect(fixture1.username == fixture2.username)
-        #expect(fixture1.email == fixture2.email)
-
-        // fixtureJSON에 정의된 값과 일치
-        #expect(fixture1.id == 1)
-        #expect(fixture1.name == "Leanne Graham")
-        #expect(fixture1.username == "Bret")
-        #expect(fixture1.email == "Sincere@april.biz")
-    }
-
     // MARK: - Builder Tests
 
     @Test("UserDTO.builder()가 커스텀 데이터를 생성하는지 확인")
@@ -113,7 +92,7 @@ struct UserDTOTests {
 
     @Test("UserDTO.builder()가 일부만 커스터마이징하는지 확인")
     func userDTOBuilderPartial() throws {
-        // When - name만 변경
+        // When - name만 변경, 나머지는 랜덤
         let partial = UserDTO.builder()
             .with(name: "Partial User")
             .build()
@@ -124,24 +103,32 @@ struct UserDTOTests {
         #expect(!partial.username.isEmpty)
         #expect(!partial.email.isEmpty)
 
-        // Note: partial builder는 랜덤 값을 생성하므로
-        // assertValid()가 실패할 수 있어 제거
+        partial.assertValid()
     }
-
-    // MARK: - JSON Sample Tests
-
-    @Test("UserDTO.jsonSample이 유효한 JSON인지 확인")
-    func userDTOJsonSample() throws {
-        // When
-        let jsonString = UserDTO.jsonSample
-        let jsonData = jsonString.data(using: .utf8)!
-
+    
+    @Test("UserDTO.builder()로 고정 시나리오 테스트")
+    func userDTOBuilderFixedScenario() throws {
+        // Given - 특정 테스트 시나리오: 관리자 계정
+        let adminUser = UserDTO.builder()
+            .with(id: 1)
+            .with(name: "Admin User")
+            .with(username: "admin")
+            .with(email: "admin@example.com")
+            .with(phone: "555-0000")
+            .with(website: "admin.example.com")
+            .with(address: nil)
+            .with(company: nil)
+            .build()
+        
         // Then
-        let decoder = JSONDecoder()
-        let decoded = try decoder.decode(UserDTO.self, from: jsonData)
-
-        #expect(decoded.id > 0)
-        #expect(!decoded.name.isEmpty)
+        #expect(adminUser.id == 1)
+        #expect(adminUser.name == "Admin User")
+        #expect(adminUser.username == "admin")
+        #expect(adminUser.email == "admin@example.com")
+        #expect(adminUser.address == nil)
+        #expect(adminUser.company == nil)
+        
+        adminUser.assertValid()
     }
 
     // MARK: - Codable Tests
@@ -169,8 +156,15 @@ struct UserDTOTests {
 
     @Test("UserDTO가 User 도메인 모델로 올바르게 변환되는지 확인")
     func userDTOToDomainModel() {
-        // Given
-        let dto = UserDTO.fixture()
+        // Given - Builder로 고정 값 생성
+        let dto = UserDTO.builder()
+            .with(id: 1)
+            .with(name: "Leanne Graham")
+            .with(username: "Bret")
+            .with(email: "Sincere@april.biz")
+            .with(phone: "1-770-736-8031 x56442")
+            .with(website: "hildegard.org")
+            .build()
 
         // When
         let domainModel = User(dto: dto)
@@ -327,26 +321,36 @@ struct AddressDTOTests {
         mock.assertValid()
     }
 
-    // MARK: - Fixture Tests
+    // MARK: - Builder Tests
 
-    @Test("AddressDTO.fixture()가 일관된 데이터를 반환하는지 확인")
-    func addressDTOFixture() {
-        // When
-        let fixture = AddressDTO.fixture()
+    @Test("AddressDTO.builder()로 고정 값 생성")
+    func addressDTOBuilder() {
+        // When - Builder로 고정 시나리오 생성
+        let address = AddressDTO.builder()
+            .with(street: "Kulas Light")
+            .with(suite: "Apt. 556")
+            .with(city: "Gwenborough")
+            .with(zipcode: "92998-3874")
+            .build()
 
         // Then
-        #expect(fixture.street == "Kulas Light")
-        #expect(fixture.suite == "Apt. 556")
-        #expect(fixture.city == "Gwenborough")
-        #expect(fixture.zipcode == "92998-3874")
+        #expect(address.street == "Kulas Light")
+        #expect(address.suite == "Apt. 556")
+        #expect(address.city == "Gwenborough")
+        #expect(address.zipcode == "92998-3874")
     }
 
     // MARK: - Domain Model Conversion Tests
 
     @Test("AddressDTO가 Address 도메인 모델로 올바르게 변환되는지 확인")
     func addressDTOToDomainModel() {
-        // Given
-        let dto = AddressDTO.fixture()
+        // Given - Builder로 고정 값 생성
+        let dto = AddressDTO.builder()
+            .with(street: "Test Street")
+            .with(suite: "Suite 100")
+            .with(city: "Test City")
+            .with(zipcode: "12345")
+            .build()
 
         // When
         let domainModel = Address(dto: dto)
@@ -434,24 +438,30 @@ struct GeoDTOTests {
         mock.assertValid()
     }
 
-    // MARK: - Fixture Tests
+    // MARK: - Builder Tests
 
-    @Test("GeoDTO.fixture()가 일관된 데이터를 반환하는지 확인")
-    func geoDTOFixture() {
-        // When
-        let fixture = GeoDTO.fixture()
+    @Test("GeoDTO.builder()로 고정 값 생성")
+    func geoDTOBuilder() {
+        // When - Builder로 고정 좌표 생성
+        let geo = GeoDTO.builder()
+            .with(lat: "-37.3159")
+            .with(lng: "81.1496")
+            .build()
 
         // Then
-        #expect(fixture.lat == "-37.3159")
-        #expect(fixture.lng == "81.1496")
+        #expect(geo.lat == "-37.3159")
+        #expect(geo.lng == "81.1496")
     }
 
     // MARK: - Domain Model Conversion Tests
 
     @Test("GeoDTO가 Geo 도메인 모델로 올바르게 변환되는지 확인")
     func geoDTOToDomainModel() {
-        // Given
-        let dto = GeoDTO.fixture()
+        // Given - Builder로 고정 값 생성
+        let dto = GeoDTO.builder()
+            .with(lat: "-37.3159")
+            .with(lng: "81.1496")
+            .build()
 
         // When
         let domainModel = Geo(dto: dto)
@@ -529,25 +539,33 @@ struct CompanyDTOTests {
         mock.assertValid()
     }
 
-    // MARK: - Fixture Tests
+    // MARK: - Builder Tests
 
-    @Test("CompanyDTO.fixture()가 일관된 데이터를 반환하는지 확인")
-    func companyDTOFixture() {
-        // When
-        let fixture = CompanyDTO.fixture()
+    @Test("CompanyDTO.builder()로 고정 값 생성")
+    func companyDTOBuilder() {
+        // When - Builder로 특정 회사 정보 생성
+        let company = CompanyDTO.builder()
+            .with(name: "Romaguera-Crona")
+            .with(catchPhrase: "Multi-layered client-server neural-net")
+            .with(bs: "harness real-time e-markets")
+            .build()
 
         // Then
-        #expect(fixture.name == "Romaguera-Crona")
-        #expect(fixture.catchPhrase == "Multi-layered client-server neural-net")
-        #expect(fixture.bs == "harness real-time e-markets")
+        #expect(company.name == "Romaguera-Crona")
+        #expect(company.catchPhrase == "Multi-layered client-server neural-net")
+        #expect(company.bs == "harness real-time e-markets")
     }
 
     // MARK: - Domain Model Conversion Tests
 
     @Test("CompanyDTO가 Company 도메인 모델로 올바르게 변환되는지 확인")
     func companyDTOToDomainModel() {
-        // Given
-        let dto = CompanyDTO.fixture()
+        // Given - Builder로 고정 값 생성
+        let dto = CompanyDTO.builder()
+            .with(name: "Test Company")
+            .with(catchPhrase: "Test Phrase")
+            .with(bs: "Test BS")
+            .build()
 
         // When
         let domainModel = Company(dto: dto)

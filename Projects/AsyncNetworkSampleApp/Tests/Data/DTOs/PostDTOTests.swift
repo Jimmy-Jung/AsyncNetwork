@@ -61,21 +61,32 @@ struct PostDTOTests {
         #expect(mocks.count == 10)
     }
 
-    // MARK: - Fixture Tests
+    // MARK: - Builder Tests (Fixture Replacement)
 
-    @Test("PostDTO.fixture()가 일관된 데이터를 반환하는지 확인")
-    func postDTOFixture() {
+    @Test("PostDTO.builder()가 일관된 데이터를 생성하는지 확인")
+    func postDTOBuilderFixture() {
         // When
-        let fixture1 = PostDTO.fixture()
-        let fixture2 = PostDTO.fixture()
+        let fixture1 = PostDTO.builder()
+            .with(id: 1)
+            .with(userId: 1)
+            .with(title: "sunt aut facere repellat provident occaecati excepturi optio reprehenderit")
+            .with(body: "quia et suscipit\nsuscipit recusandae consequuntur expedita et cum\nreprehenderit molestiae ut ut quas totam\nnostrum rerum est autem sunt rem eveniet architecto")
+            .build()
+        
+        let fixture2 = PostDTO.builder()
+            .with(id: 1)
+            .with(userId: 1)
+            .with(title: "sunt aut facere repellat provident occaecati excepturi optio reprehenderit")
+            .with(body: "quia et suscipit\nsuscipit recusandae consequuntur expedita et cum\nreprehenderit molestiae ut ut quas totam\nnostrum rerum est autem sunt rem eveniet architecto")
+            .build()
 
-        // Then - Fixture는 항상 동일한 값
+        // Then - Builder로 생성한 값은 항상 동일
         #expect(fixture1.id == fixture2.id)
         #expect(fixture1.userId == fixture2.userId)
         #expect(fixture1.title == fixture2.title)
         #expect(fixture1.body == fixture2.body)
 
-        // fixtureJSON에 정의된 값과 일치
+        // 고정 값 검증
         #expect(fixture1.id == 1)
         #expect(fixture1.userId == 1)
         #expect(fixture1.title.contains("sunt aut facere"))
@@ -122,18 +133,30 @@ struct PostDTOTests {
         partial.assertValid()
     }
 
-    // MARK: - JSON Sample Tests
+    // MARK: - JSON Sample Tests (Builder-based)
 
-    @Test("PostDTO.jsonSample이 유효한 JSON인지 확인")
-    func postDTOJsonSample() throws {
-        // When
-        let jsonString = PostDTO.jsonSample
-        let jsonData = jsonString.data(using: .utf8)!
+    @Test("PostDTO.builder()로 생성한 샘플이 유효한 JSON으로 인코딩/디코딩되는지 확인")
+    func postDTOBuilderJsonSample() throws {
+        // Given - Builder로 샘플 생성
+        let sample = PostDTO.builder()
+            .with(id: 1)
+            .with(userId: 1)
+            .with(title: "sunt aut facere repellat provident occaecati excepturi optio reprehenderit")
+            .with(body: "quia et suscipit\nsuscipit recusandae consequuntur expedita et cum\nreprehenderit molestiae ut ut quas totam\nnostrum rerum est autem sunt rem eveniet architecto")
+            .build()
 
-        // Then
+        // When - Encode
+        let encoder = JSONEncoder()
+        let jsonData = try encoder.encode(sample)
+
+        // Then - Decode
         let decoder = JSONDecoder()
         let decoded = try decoder.decode(PostDTO.self, from: jsonData)
 
+        #expect(decoded.id == sample.id)
+        #expect(decoded.userId == sample.userId)
+        #expect(decoded.title == sample.title)
+        #expect(decoded.body == sample.body)
         #expect(decoded.id > 0)
         #expect(!decoded.title.isEmpty)
     }
@@ -164,7 +187,12 @@ struct PostDTOTests {
     @Test("PostDTO가 Post 도메인 모델로 올바르게 변환되는지 확인")
     func postDTOToDomainModel() {
         // Given
-        let dto = PostDTO.fixture()
+        let dto = PostDTO.builder()
+            .with(id: 1)
+            .with(userId: 1)
+            .with(title: "sunt aut facere repellat provident occaecati excepturi optio reprehenderit")
+            .with(body: "quia et suscipit\nsuscipit recusandae consequuntur expedita et cum\nreprehenderit molestiae ut ut quas totam\nnostrum rerum est autem sunt rem eveniet architecto")
+            .build()
 
         // When
         let domainModel = Post(dto: dto)
@@ -199,7 +227,12 @@ struct PostDTOTests {
     @Test("Mock PostDTO를 도메인 모델로 변환 후 다시 DTO로 변환해도 동일한지 확인")
     func roundTripConversion() {
         // Given
-        let originalDTO = PostDTO.fixture()
+        let originalDTO = PostDTO.builder()
+            .with(id: 1)
+            .with(userId: 1)
+            .with(title: "sunt aut facere repellat provident occaecati excepturi optio reprehenderit")
+            .with(body: "quia et suscipit\nsuscipit recusandae consequuntur expedita et cum\nreprehenderit molestiae ut ut quas totam\nnostrum rerum est autem sunt rem eveniet architecto")
+            .build()
 
         // When
         let domain = Post(dto: originalDTO)

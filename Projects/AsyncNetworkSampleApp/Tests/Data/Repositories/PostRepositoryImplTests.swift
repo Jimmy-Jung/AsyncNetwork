@@ -38,7 +38,7 @@ struct PostRepositoryImplTests {
         let post = try await repository.getPost(by: 1)
         
         // Then
-        #expect(post.id == 1)
+        #expect(post.id == PostDTO.builder().build().id)
         #expect(!post.title.isEmpty)
     }
     
@@ -62,9 +62,9 @@ struct PostRepositoryImplTests {
         let createdPost = try await repository.createPost(newPost)
         
         // Then
-        // Mock은 fixture()를 반환하므로 fixture 값과 비교
-        #expect(createdPost.title == PostDTO.fixture().title)
-        #expect(createdPost.body == PostDTO.fixture().body)
+        // Mock은 builder()를 반환하므로 builder 값과 비교
+        #expect(createdPost.title == PostDTO.builder().build().title)
+        #expect(createdPost.body == PostDTO.builder().build().body)
     }
     
     @Test("updatePost가 Post를 업데이트하는지 확인")
@@ -73,14 +73,15 @@ struct PostRepositoryImplTests {
         let mockService = createMockNetworkService()
         let repository = PostRepositoryImpl(networkService: mockService)
         
-        // @Response 매크로의 fixture() 사용
-        let updatedPost = Post(dto: PostDTO.fixture())
+        // @Response 매크로의 builder() 사용
+        let updatedPost = Post(dto: PostDTO.builder().build())
         
         // When
         let result = try await repository.updatePost(updatedPost)
         
-        // Then
+        // Then - builder()는 고정 값 반환
         #expect(result.id == updatedPost.id)
+        #expect(result.id == PostDTO.builder().build().id)
     }
     
     @Test("PostDTO mock 데이터가 도메인 모델로 변환되는지 확인")
@@ -101,17 +102,17 @@ struct PostRepositoryImplTests {
         dto.assertValid()
     }
     
-    @Test("PostDTO fixture가 일관된 데이터를 제공하는지 확인")
-    func testPostDTOFixtureConsistency() {
-        // Given - @Response 매크로의 fixture() 사용
-        let fixture1 = PostDTO.fixture()
-        let fixture2 = PostDTO.fixture()
+    @Test("PostDTO builder가 일관된 데이터를 제공하는지 확인")
+    func testPostDTOBuilderConsistency() {
+        // Given - @Response 매크로의 builder() 사용
+        let builder1 = PostDTO.builder().build()
+        let builder2 = PostDTO.builder().build()
         
         // When
-        let domain1 = Post(dto: fixture1)
-        let domain2 = Post(dto: fixture2)
+        let domain1 = Post(dto: builder1)
+        let domain2 = Post(dto: builder2)
         
-        // Then - Fixture는 항상 동일
+        // Then - Builder는 항상 동일한 기본값
         #expect(domain1.id == domain2.id)
         #expect(domain1.title == domain2.title)
     }
@@ -179,7 +180,7 @@ private actor MockHTTPClient: HTTPClientProtocol {
         if path.contains("/posts") && !path.contains("/comments") {
             // GET /posts/{id} - 단일 Post 조회
             if method == "GET" && path.components(separatedBy: "/").count > 2 {
-                let dto = PostDTO.fixture()
+                let dto = PostDTO.builder().build()
                 data = try JSONEncoder().encode(dto)
             }
             // GET /posts - 전체 Posts 조회
@@ -189,12 +190,12 @@ private actor MockHTTPClient: HTTPClientProtocol {
             }
             // POST /posts - Post 생성 (단일 객체 반환)
             else if method == "POST" {
-                let dto = PostDTO.fixture()
+                let dto = PostDTO.builder().build()
                 data = try JSONEncoder().encode(dto)
             }
             // PUT /posts/{id} - Post 업데이트 (단일 객체 반환)
             else if method == "PUT" {
-                let dto = PostDTO.fixture()
+                let dto = PostDTO.builder().build()
                 data = try JSONEncoder().encode(dto)
             }
             // DELETE - EmptyResponse

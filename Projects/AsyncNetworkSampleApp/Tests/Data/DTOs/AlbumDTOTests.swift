@@ -60,20 +60,28 @@ struct AlbumDTOTests {
         #expect(mocks.count == 10)
     }
 
-    // MARK: - Fixture Tests
+    // MARK: - Builder Tests (Fixture Replacement)
 
-    @Test("AlbumDTO.fixture()가 일관된 데이터를 반환하는지 확인")
+    @Test("AlbumDTO.builder()가 일관된 데이터를 생성하는지 확인")
     func albumDTOFixture() {
         // When
-        let fixture1 = AlbumDTO.fixture()
-        let fixture2 = AlbumDTO.fixture()
+        let fixture1 = AlbumDTO.builder()
+            .with(id: 1)
+            .with(userId: 1)
+            .with(title: "quidem molestiae enim")
+            .build()
+        let fixture2 = AlbumDTO.builder()
+            .with(id: 1)
+            .with(userId: 1)
+            .with(title: "quidem molestiae enim")
+            .build()
 
-        // Then - Fixture는 항상 동일한 값
+        // Then - Builder로 생성한 값은 항상 동일
         #expect(fixture1.id == fixture2.id)
         #expect(fixture1.userId == fixture2.userId)
         #expect(fixture1.title == fixture2.title)
 
-        // fixtureJSON에 정의된 값과 일치
+        // 고정 값과 일치
         #expect(fixture1.id == 1)
         #expect(fixture1.userId == 1)
         #expect(fixture1.title == "quidem molestiae enim")
@@ -117,20 +125,28 @@ struct AlbumDTOTests {
         // 필요한 필드만 검증하고 assertValid()는 생략
     }
 
-    // MARK: - JSON Sample Tests
+    // MARK: - Builder JSON Tests
 
-    @Test("AlbumDTO.jsonSample이 유효한 JSON인지 확인")
+    @Test("AlbumDTO.builder()로 생성한 데이터가 JSON 인코딩/디코딩되는지 확인")
     func albumDTOJsonSample() throws {
-        // When
-        let jsonString = AlbumDTO.jsonSample
-        let jsonData = jsonString.data(using: .utf8)!
+        // Given - Builder로 샘플 데이터 생성
+        let sample = AlbumDTO.builder()
+            .with(id: 1)
+            .with(userId: 1)
+            .with(title: "quidem molestiae enim")
+            .build()
 
-        // Then
+        // When - Encode
+        let encoder = JSONEncoder()
+        let jsonData = try encoder.encode(sample)
+
+        // Then - Decode
         let decoder = JSONDecoder()
         let decoded = try decoder.decode(AlbumDTO.self, from: jsonData)
 
-        #expect(decoded.id > 0)
-        #expect(!decoded.title.isEmpty)
+        #expect(decoded.id == 1)
+        #expect(decoded.userId == 1)
+        #expect(decoded.title == "quidem molestiae enim")
     }
 
     // MARK: - Codable Tests
@@ -158,7 +174,11 @@ struct AlbumDTOTests {
     @Test("AlbumDTO가 Album 도메인 모델로 올바르게 변환되는지 확인")
     func albumDTOToDomainModel() {
         // Given
-        let dto = AlbumDTO.fixture()
+        let dto = AlbumDTO.builder()
+            .with(id: 1)
+            .with(userId: 1)
+            .with(title: "quidem molestiae enim")
+            .build()
 
         // When
         let domainModel = Album(dto: dto)
@@ -294,22 +314,30 @@ struct PhotoDTOTests {
         #expect(mocks.count == 50)
     }
 
-    // MARK: - Fixture Tests
+    // MARK: - Builder Tests (Fixture Replacement)
 
-    @Test("PhotoDTO.fixture()가 일관된 데이터를 반환하는지 확인")
+    @Test("PhotoDTO.builder()가 일관된 데이터를 생성하는지 확인")
     func photoDTOFixture() {
         // When
-        let fixture1 = PhotoDTO.fixture()
-        let fixture2 = PhotoDTO.fixture()
+        let fixture1 = PhotoDTO.builder()
+            .with(id: 1)
+            .with(albumId: 1)
+            .with(title: "accusamus beatae ad facilis cum similique qui sunt")
+            .build()
+        let fixture2 = PhotoDTO.builder()
+            .with(id: 1)
+            .with(albumId: 1)
+            .with(title: "accusamus beatae ad facilis cum similique qui sunt")
+            .build()
 
-        // Then - Fixture는 항상 동일한 값
+        // Then - Builder로 생성한 값은 항상 동일
         #expect(fixture1.id == fixture2.id)
         #expect(fixture1.albumId == fixture2.albumId)
         #expect(fixture1.title == fixture2.title)
         #expect(fixture1.url == fixture2.url)
         #expect(fixture1.thumbnailUrl == fixture2.thumbnailUrl)
 
-        // fixtureJSON에 정의된 값과 일치
+        // 고정 값과 일치
         #expect(fixture1.id == 1)
         #expect(fixture1.albumId == 1)
         #expect(fixture1.title == "accusamus beatae ad facilis cum similique qui sunt")
@@ -370,7 +398,11 @@ struct PhotoDTOTests {
     @Test("PhotoDTO가 Photo 도메인 모델로 올바르게 변환되는지 확인")
     func photoDTOToDomainModel() {
         // Given
-        let dto = PhotoDTO.fixture()
+        let dto = PhotoDTO.builder()
+            .with(id: 1)
+            .with(albumId: 1)
+            .with(title: "accusamus beatae ad facilis cum similique qui sunt")
+            .build()
 
         // When
         let domainModel = Photo(dto: dto)
