@@ -22,7 +22,7 @@ struct ResponseTestableMacroTests {
     func arrayPropertyMockGeneration() {
         // Given
         let source = """
-        @ResponseTestable(mockStrategy: .random, includeBuilder: false, defaultArrayCount: 5)
+        @ResponseTestable(defaultArrayCount: 5)
         struct ResponseWithArray: Codable, Sendable {
             let items: [ItemDTO]
         }
@@ -80,7 +80,7 @@ struct ResponseTestableMacroTests {
     func allBasicTypes() {
         // Given
         let source = """
-        @ResponseTestable(mockStrategy: .random, includeBuilder: false)
+        @ResponseTestable()
         struct AllTypesDTO: Codable, Sendable {
             let int: Int
             let int8: Int8
@@ -202,7 +202,7 @@ struct ResponseTestableMacroTests {
     func optionalProperties() {
         // Given
         let source = """
-        @ResponseTestable(mockStrategy: .random, includeBuilder: false)
+        @ResponseTestable()
         struct OptionalDTO: Codable, Sendable {
             let required: String
             let optional: String?
@@ -271,7 +271,7 @@ struct ResponseTestableMacroTests {
     func emailFieldGeneration() {
         // Given
         let source = """
-        @ResponseTestable(mockStrategy: .random, includeBuilder: false)
+        @ResponseTestable()
         struct UserDTO: Codable, Sendable {
             let email: String
             let userEmail: String?
@@ -338,7 +338,7 @@ struct ResponseTestableMacroTests {
     func dictionaryAndSetTypes() {
         // Given
         let source = """
-        @ResponseTestable(mockStrategy: .random, includeBuilder: false)
+        @ResponseTestable()
         struct CollectionDTO: Codable, Sendable {
             let dict: [String: Int]
             let set: Set<String>
@@ -400,7 +400,7 @@ struct ResponseTestableMacroTests {
     func builderGeneration() {
         // Given
         let source = """
-        @ResponseTestable(mockStrategy: .random, includeBuilder: true, defaultArrayCount: 5)
+        @ResponseTestable(defaultArrayCount: 5)
         struct BuilderDTO: Codable, Sendable {
             let id: Int
             let name: String
@@ -519,8 +519,7 @@ struct ResponseTestableMacroTests {
               "id": "invalid_not_int",
               "name": "Test"
             }
-            \""",
-            includeBuilder: false
+            \"""
         )
         struct ErrorDTO: Codable, Sendable {
             let id: Int
@@ -599,7 +598,7 @@ struct ResponseTestableMacroTests {
     func nestedCustomTypes() {
         // Given
         let source = """
-        @ResponseTestable(mockStrategy: .random, includeBuilder: false)
+        @ResponseTestable()
         struct ParentDTO: Codable, Sendable {
             let child: ChildDTO
             let children: [ChildDTO]

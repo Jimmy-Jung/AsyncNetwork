@@ -14,9 +14,22 @@ extension ResponseTestableMacroImpl {
     static func generateMockValue(
         for type: String,
         isOptional: Bool,
-        propertyName: String = ""
+        propertyName: String = "",
+        structName: String = ""
     ) -> String {
         let cleanType = type.replacingOccurrences(of: "?", with: "").trimmingCharacters(in: .whitespaces)
+        
+        // 특정 필드명에 대한 고정 값 처리
+        // NotificationDTO의 type 필드는 구조체명에 따라 고정 값 사용
+        if propertyName == "type" && cleanType == "Int" {
+            if structName.contains("TextNotification") {
+                return "1"
+            } else if structName.contains("ImageNotification") {
+                return "2"
+            } else if structName.contains("ActionNotification") {
+                return "3"
+            }
+        }
 
         var mockValue: String
 
@@ -42,10 +55,11 @@ extension ResponseTestableMacroImpl {
         case "UInt64":
             mockValue = "UInt64.random(in: 1...1000)"
         case "String":
-            // 특수 필드명 처리
+            // 특수 필드명 처리 (랜덤이지만 일정한 패턴 유지)
             if propertyName.lowercased().contains("email") {
                 mockValue = "\"mock\\(Int.random(in: 1...999))@example.com\""
             } else if propertyName.lowercased().contains("url") {
+                // URL 필드도 랜덤하게 생성 (mock()은 랜덤 값)
                 mockValue = "\"https://example.com/\\(UUID().uuidString.prefix(8))\""
             } else {
                 mockValue = "\"Mock \\(UUID().uuidString.prefix(8))\""
@@ -76,7 +90,7 @@ extension ResponseTestableMacroImpl {
                 // 빈 배열이 아닌지 확인
                 if !elementType.isEmpty {
                     let randomCount = "Int.random(in: 2...5)"
-                    let elementMockValue = generateMockValue(for: elementType, isOptional: false, propertyName: "")
+                    let elementMockValue = generateMockValue(for: elementType, isOptional: false, propertyName: "", structName: structName)
                     mockValue = "(0..<\(randomCount)).map { _ in \(elementMockValue) }"
                 } else {
                     mockValue = "[]"
@@ -89,7 +103,7 @@ extension ResponseTestableMacroImpl {
                 let elementType = String(cleanType.dropFirst(4).dropLast()).trimmingCharacters(in: .whitespaces)
                 if !elementType.isEmpty {
                     let randomCount = "Int.random(in: 2...5)"
-                    let elementMockValue = generateMockValue(for: elementType, isOptional: false, propertyName: "")
+                    let elementMockValue = generateMockValue(for: elementType, isOptional: false, propertyName: "", structName: structName)
                     mockValue = "Set((0..<\(randomCount)).map { _ in \(elementMockValue) })"
                 } else {
                     mockValue = "Set()"
@@ -107,13 +121,27 @@ extension ResponseTestableMacroImpl {
         }
     }
 
-    /// Fixture 값 생성
+    /// Fixture 값 생성 (고정값)
     static func generateFixtureValue(
         for type: String,
         isOptional: Bool,
+        propertyName: String = "",
+        structName: String = "",
         defaultArrayCount: Int = 1
     ) -> String {
         let cleanType = type.replacingOccurrences(of: "?", with: "").trimmingCharacters(in: .whitespaces)
+        
+        // 특정 필드명에 대한 고정 값 처리
+        // NotificationDTO의 type 필드는 구조체명에 따라 고정 값 사용
+        if propertyName == "type" && cleanType == "Int" {
+            if structName.contains("TextNotification") {
+                return "1"
+            } else if structName.contains("ImageNotification") {
+                return "2"
+            } else if structName.contains("ActionNotification") {
+                return "3"
+            }
+        }
 
         var fixtureValue: String
 
@@ -121,7 +149,14 @@ extension ResponseTestableMacroImpl {
         case "Int", "Int8", "Int16", "Int32", "Int64", "UInt", "UInt8", "UInt16", "UInt32", "UInt64":
             fixtureValue = "1"
         case "String":
-            fixtureValue = "\"Test String\""
+            // 특수 필드명에 대한 고정 값
+            if propertyName.lowercased().contains("email") {
+                fixtureValue = "\"test@example.com\""
+            } else if propertyName.lowercased().contains("url") {
+                fixtureValue = "\"https://example.com/fixture\""
+            } else {
+                fixtureValue = "\"Test String\""
+            }
         case "Bool":
             fixtureValue = "true"
         case "Double", "Float":
@@ -131,7 +166,7 @@ extension ResponseTestableMacroImpl {
         case "Date":
             fixtureValue = "Date(timeIntervalSince1970: 1704556800)" // 2024-01-06
         case "UUID":
-            fixtureValue = "UUID()"
+            fixtureValue = "UUID(uuidString: \"00000000-0000-0000-0000-000000000001\")!"
         case "URL":
             fixtureValue = "URL(string: \"https://example.com\")!"
         case "Decimal":
@@ -140,10 +175,10 @@ extension ResponseTestableMacroImpl {
             fixtureValue = "Data()"
         default:
             if cleanType.hasPrefix("["), cleanType.hasSuffix("]") {
-                // 배열 타입: defaultArrayCount만큼 fixture()를 사용하여 고정값 생성
+                // 배열 타입: defaultArrayCount만큼 고정값 생성
                 let elementType = String(cleanType.dropFirst().dropLast()).trimmingCharacters(in: .whitespaces)
                 if !elementType.isEmpty {
-                    let elementFixtureValue = generateFixtureValue(for: elementType, isOptional: false, defaultArrayCount: defaultArrayCount)
+                    let elementFixtureValue = generateFixtureValue(for: elementType, isOptional: false, propertyName: "", structName: structName, defaultArrayCount: defaultArrayCount)
                     fixtureValue = "(0..<\(defaultArrayCount)).map { _ in \(elementFixtureValue) }"
                 } else {
                     fixtureValue = "[]"
@@ -151,13 +186,17 @@ extension ResponseTestableMacroImpl {
             } else if cleanType.hasPrefix("Set<"), cleanType.hasSuffix(">") {
                 let elementType = String(cleanType.dropFirst(4).dropLast()).trimmingCharacters(in: .whitespaces)
                 if !elementType.isEmpty {
-                    let elementFixtureValue = generateFixtureValue(for: elementType, isOptional: false, defaultArrayCount: defaultArrayCount)
+                    let elementFixtureValue = generateFixtureValue(for: elementType, isOptional: false, propertyName: "", structName: structName, defaultArrayCount: defaultArrayCount)
                     fixtureValue = "Set((0..<\(defaultArrayCount)).map { _ in \(elementFixtureValue) })"
                 } else {
                     fixtureValue = "Set()"
                 }
+            } else if cleanType.hasPrefix("["), cleanType.contains(":"), cleanType.hasSuffix("]") {
+                // 딕셔너리 타입
+                fixtureValue = "[:]"
             } else {
-                fixtureValue = "\(cleanType).fixture()"
+                // 커스텀 타입 - builder().build()로 일관된 고정값 생성
+                fixtureValue = "\(cleanType).builder().build()"
             }
         }
 

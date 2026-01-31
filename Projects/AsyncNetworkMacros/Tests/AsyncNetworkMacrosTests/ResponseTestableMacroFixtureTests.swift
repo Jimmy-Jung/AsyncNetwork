@@ -23,7 +23,7 @@ struct ResponseTestableMacroFixtureTests {
     func builderGeneration() {
         // Given
         let source = """
-        @ResponseTestable(mockStrategy: .random, includeBuilder: true, defaultArrayCount: 5)
+        @ResponseTestable(defaultArrayCount: 5)
         struct BuilderDTO: Codable, Sendable {
             let id: Int
             let name: String
@@ -148,8 +148,7 @@ struct ResponseTestableMacroFixtureTests {
               "id": "invalid_not_int",
               "name": "Test"
             }
-            \""",
-            includeBuilder: false
+            \"""
         )
         struct ErrorDTO: Codable, Sendable {
             let id: Int

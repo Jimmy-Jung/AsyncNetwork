@@ -23,7 +23,7 @@ struct ResponseTestableMacroBuilderTests {
     func testNestedCustomTypes() {
         // Given
         let source = """
-        @ResponseTestable(mockStrategy: .random, includeBuilder: false)
+        @ResponseTestable()
         struct ParentDTO: Codable, Sendable {
             let child: ChildDTO
             let children: [ChildDTO]

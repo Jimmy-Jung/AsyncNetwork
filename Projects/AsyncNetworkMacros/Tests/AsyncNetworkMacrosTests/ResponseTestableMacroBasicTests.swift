@@ -23,7 +23,7 @@ struct ResponseTestableMacroBasicTests {
     func testArrayPropertyMockGeneration() {
         // Given
         let source = """
-        @ResponseTestable(mockStrategy: .random, includeBuilder: false, defaultArrayCount: 5)
+        @ResponseTestable(defaultArrayCount: 5)
         struct ResponseWithArray: Codable, Sendable {
             let items: [ItemDTO]
         }
@@ -81,7 +81,7 @@ struct ResponseTestableMacroBasicTests {
     func testAllBasicTypes() {
         // Given
         let source = """
-        @ResponseTestable(mockStrategy: .random, includeBuilder: false)
+        @ResponseTestable()
         struct AllTypesDTO: Codable, Sendable {
             let int: Int
             let int8: Int8
@@ -203,7 +203,7 @@ struct ResponseTestableMacroBasicTests {
     func testOptionalProperties() {
         // Given
         let source = """
-        @ResponseTestable(mockStrategy: .random, includeBuilder: false)
+        @ResponseTestable()
         struct OptionalDTO: Codable, Sendable {
             let required: String
             let optional: String?
