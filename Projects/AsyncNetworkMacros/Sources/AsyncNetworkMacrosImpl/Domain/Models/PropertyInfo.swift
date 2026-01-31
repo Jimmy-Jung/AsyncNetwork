@@ -4,22 +4,9 @@ public struct PropertyInfo {
     public let wrapperType: String?
     public let isRequired: Bool
     public let headerKey: String?
-    public let defaultValue: String?
 
     public var isHeader: Bool {
         wrapperType == "HeaderField" || wrapperType == "CustomHeader"
-    }
-
-    public var isPathParameter: Bool {
-        wrapperType == "PathParameter"
-    }
-
-    public var isQueryParameter: Bool {
-        wrapperType == "QueryParameter"
-    }
-
-    public var isRequestBody: Bool {
-        wrapperType == "RequestBody"
     }
 
     public var isOptional: Bool {
@@ -31,15 +18,13 @@ public struct PropertyInfo {
         type: String,
         wrapperType: String? = nil,
         isRequired: Bool = true,
-        headerKey: String? = nil,
-        defaultValue: String? = nil
+        headerKey: String? = nil
     ) {
         self.name = name
         self.type = type
         self.wrapperType = wrapperType
         self.isRequired = isRequired
         self.headerKey = headerKey
-        self.defaultValue = defaultValue
     }
 
     public init(
@@ -52,6 +37,5 @@ public struct PropertyInfo {
         wrapperType = nil
         isRequired = !isOptional
         headerKey = nil
-        defaultValue = nil
     }
 }
