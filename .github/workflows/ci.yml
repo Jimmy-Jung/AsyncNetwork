@@ -17,12 +17,12 @@ jobs:
       run: swift --version
       
     - name: Build
-      timeout-minutes: 10
+      timeout-minutes: 15
       run: swift build --enable-code-coverage
       
     - name: Run Tests
-      timeout-minutes: 15
-      run: swift test --enable-code-coverage
+      timeout-minutes: 20
+      run: swift test --parallel --enable-code-coverage
       
     - name: Generate code coverage
       run: |
