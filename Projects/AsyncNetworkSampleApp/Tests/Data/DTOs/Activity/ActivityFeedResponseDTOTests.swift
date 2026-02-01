@@ -16,7 +16,7 @@ struct ActivityFeedResponseDTOTests {
         let response = ActivityFeedResponseDTO.builder().build()
 
         #expect(response.totalCount == 1)
-        #expect(response.activities.count == 5)
+        #expect(response.activities.count == 3)  // ActivityDTO.defaultArrayCount = 3
 
         for activity in response.activities {
             switch activity {
@@ -97,7 +97,7 @@ struct ActivityFeedResponseDTOTests {
         let mock = ActivityFeedResponseDTO.mock()
 
         #expect(mock.totalCount > 0)
-        #expect(mock.activities.count == 5)
+        #expect(mock.activities.count == 3)  // ActivityDTO.defaultArrayCount = 3
 
         for activity in mock.activities {
             switch activity {
