@@ -22,7 +22,7 @@ jobs:
       
     - name: Run Tests
       timeout-minutes: 10
-      run: swift test --enable-code-coverage
+      run: swift test --parallel --enable-code-coverage
       
     - name: Generate code coverage
       run: |
