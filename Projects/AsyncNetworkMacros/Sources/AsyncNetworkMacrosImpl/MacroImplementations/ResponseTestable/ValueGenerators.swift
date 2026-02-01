@@ -44,6 +44,17 @@ extension ResponseTestableMacroImpl {
         type.replacingOccurrences(of: "?", with: "")
             .trimmingCharacters(in: .whitespaces)
     }
+    
+    /// 커스텀 타입인지 확인 (기본 타입이 아닌 경우)
+    private static func isCustomType(_ type: String) -> Bool {
+        let basicTypes: Set<String> = [
+            "Int", "Int8", "Int16", "Int32", "Int64",
+            "UInt", "UInt8", "UInt16", "UInt32", "UInt64",
+            "String", "Bool", "Double", "Float", "CGFloat",
+            "Date", "UUID", "URL", "Decimal", "Data"
+        ]
+        return !basicTypes.contains(type)
+    }
 }
 
 extension ResponseTestableMacroImpl {
@@ -114,17 +125,49 @@ extension ResponseTestableMacroImpl {
 
             switch collectionType {
             case let .array(elementType):
-                let randomCount = "Int.random(in: \(MockConstants.arrayCountRange))"
-                let elementMockValue = generateMockValue(for: elementType, isOptional: false, propertyName: "", structName: structName)
-                mockValue = "(0..<\(randomCount)).map { _ in \(elementMockValue) }"
+                // 배열 요소가 커스텀 타입(enum/struct)인 경우
+                // 해당 타입의 mockArray()를 사용하여 타입별 defaultArrayCount 반영
+                let cleanElementType = cleanTypeName(elementType)
+                
+                // 중첩 배열이나 컬렉션인 경우 재귀 처리
+                let nestedCollectionType = CollectionType.parse(cleanElementType)
+                if nestedCollectionType != .none {
+                    // 중첩 컬렉션 - 재귀 호출
+                    let randomCount = "Int.random(in: \(MockConstants.arrayCountRange))"
+                    let elementMockValue = generateMockValue(for: elementType, isOptional: false, propertyName: "", structName: structName)
+                    mockValue = "(0..<\(randomCount)).map { _ in \(elementMockValue) }"
+                } else if isCustomType(cleanElementType) {
+                    // 커스텀 타입 - mockArray() 사용
+                    mockValue = "\(cleanElementType).mockArray()"
+                } else {
+                    // 기본 타입 - 직접 생성
+                    let randomCount = "Int.random(in: \(MockConstants.arrayCountRange))"
+                    let elementMockValue = generateMockValue(for: elementType, isOptional: false, propertyName: "", structName: structName)
+                    mockValue = "(0..<\(randomCount)).map { _ in \(elementMockValue) }"
+                }
 
             case .dictionary:
                 mockValue = "[:]"
 
             case let .set(elementType):
-                let randomCount = "Int.random(in: \(MockConstants.arrayCountRange))"
-                let elementMockValue = generateMockValue(for: elementType, isOptional: false, propertyName: "", structName: structName)
-                mockValue = "Set((0..<\(randomCount)).map { _ in \(elementMockValue) })"
+                let cleanElementType = cleanTypeName(elementType)
+                
+                // 중첩 컬렉션인 경우 재귀 처리
+                let nestedCollectionType = CollectionType.parse(cleanElementType)
+                if nestedCollectionType != .none {
+                    // 중첩 컬렉션 - 재귀 호출
+                    let randomCount = "Int.random(in: \(MockConstants.arrayCountRange))"
+                    let elementMockValue = generateMockValue(for: elementType, isOptional: false, propertyName: "", structName: structName)
+                    mockValue = "Set((0..<\(randomCount)).map { _ in \(elementMockValue) })"
+                } else if isCustomType(cleanElementType) {
+                    // 커스텀 타입 - mockArray() 사용
+                    mockValue = "Set(\(cleanElementType).mockArray())"
+                } else {
+                    // 기본 타입 - 직접 생성
+                    let randomCount = "Int.random(in: \(MockConstants.arrayCountRange))"
+                    let elementMockValue = generateMockValue(for: elementType, isOptional: false, propertyName: "", structName: structName)
+                    mockValue = "Set((0..<\(randomCount)).map { _ in \(elementMockValue) })"
+                }
 
             case .none:
                 // 커스텀 타입 - mock() 재귀 호출
@@ -184,27 +227,69 @@ extension ResponseTestableMacroImpl {
 
             switch collectionType {
             case let .array(elementType):
-                let elementFixtureValue = generateFixtureValue(
-                    for: elementType,
-                    isOptional: false,
-                    propertyName: "",
-                    structName: structName,
-                    defaultArrayCount: defaultArrayCount
-                )
-                fixtureValue = "(0..<\(defaultArrayCount)).map { _ in \(elementFixtureValue) }"
+                // 배열 요소가 커스텀 타입(enum/struct)인 경우
+                // 해당 타입의 mockArray()를 사용하여 타입별 defaultArrayCount 반영
+                let cleanElementType = cleanTypeName(elementType)
+                
+                // 중첩 배열이나 컬렉션인 경우 재귀 처리
+                let nestedCollectionType = CollectionType.parse(cleanElementType)
+                if nestedCollectionType != .none {
+                    // 중첩 컬렉션 - 재귀 호출
+                    let elementFixtureValue = generateFixtureValue(
+                        for: elementType,
+                        isOptional: false,
+                        propertyName: "",
+                        structName: structName,
+                        defaultArrayCount: defaultArrayCount
+                    )
+                    fixtureValue = "(0..<\(defaultArrayCount)).map { _ in \(elementFixtureValue) }"
+                } else if isCustomType(cleanElementType) {
+                    // 커스텀 타입 - mockArray() 사용
+                    fixtureValue = "\(cleanElementType).mockArray()"
+                } else {
+                    // 기본 타입 - 직접 생성
+                    let elementFixtureValue = generateFixtureValue(
+                        for: elementType,
+                        isOptional: false,
+                        propertyName: "",
+                        structName: structName,
+                        defaultArrayCount: defaultArrayCount
+                    )
+                    fixtureValue = "(0..<\(defaultArrayCount)).map { _ in \(elementFixtureValue) }"
+                }
 
             case .dictionary:
                 fixtureValue = "[:]"
 
             case let .set(elementType):
-                let elementFixtureValue = generateFixtureValue(
-                    for: elementType,
-                    isOptional: false,
-                    propertyName: "",
-                    structName: structName,
-                    defaultArrayCount: defaultArrayCount
-                )
-                fixtureValue = "Set((0..<\(defaultArrayCount)).map { _ in \(elementFixtureValue) })"
+                let cleanElementType = cleanTypeName(elementType)
+                
+                // 중첩 컬렉션인 경우 재귀 처리
+                let nestedCollectionType = CollectionType.parse(cleanElementType)
+                if nestedCollectionType != .none {
+                    // 중첩 컬렉션 - 재귀 호출
+                    let elementFixtureValue = generateFixtureValue(
+                        for: elementType,
+                        isOptional: false,
+                        propertyName: "",
+                        structName: structName,
+                        defaultArrayCount: defaultArrayCount
+                    )
+                    fixtureValue = "Set((0..<\(defaultArrayCount)).map { _ in \(elementFixtureValue) })"
+                } else if isCustomType(cleanElementType) {
+                    // 커스텀 타입 - mockArray() 사용
+                    fixtureValue = "Set(\(cleanElementType).mockArray())"
+                } else {
+                    // 기본 타입 - 직접 생성
+                    let elementFixtureValue = generateFixtureValue(
+                        for: elementType,
+                        isOptional: false,
+                        propertyName: "",
+                        structName: structName,
+                        defaultArrayCount: defaultArrayCount
+                    )
+                    fixtureValue = "Set((0..<\(defaultArrayCount)).map { _ in \(elementFixtureValue) })"
+                }
 
             case .none:
                 // 커스텀 타입 - mock()으로 고정값 생성

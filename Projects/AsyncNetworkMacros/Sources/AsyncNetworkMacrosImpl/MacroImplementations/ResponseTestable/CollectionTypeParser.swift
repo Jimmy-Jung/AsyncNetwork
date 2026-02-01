@@ -11,7 +11,7 @@ import Foundation
 // MARK: - CollectionType
 
 /// 컬렉션 타입 분류
-enum CollectionType {
+enum CollectionType: Equatable {
     case array(elementType: String)
     case dictionary(keyType: String, valueType: String)
     case set(elementType: String)
