@@ -11,7 +11,16 @@ import Foundation
 // MARK: - NotificationDTO (Union Type)
 
 /// Union 타입의 알림 DTO
-/// 서버에서 받는 알림의 type 필드에 따라 다른 구조체로 디코딩됩니다
+///
+/// 서버에서 받는 알림의 type 필드에 따라 다른 구조체로 디코딩됩니다.
+///
+/// Backend 구조 (TypeScript):
+/// ```typescript
+/// type NotificationDto = TextNotificationDto | ImageNotificationDto | ActionNotificationDto;
+/// ```
+///
+/// - Note: @ResponseTestable 매크로로 mock(), mockArray(), assertValid() 자동 생성
+@ResponseTestable(defaultArrayCount: 5)
 public enum NotificationDTO: Codable, Sendable, Equatable {
     case text(TextNotificationDTO)
     case image(ImageNotificationDTO)
@@ -57,7 +66,17 @@ public enum NotificationDTO: Codable, Sendable, Equatable {
 
 // MARK: - NotificationType
 
-public enum NotificationType: Int, Codable, Sendable {
+/// 알림 타입 열거형
+///
+/// Backend 구조:
+/// ```typescript
+/// enum NotificationType {
+///     Text = 1,
+///     Image = 2,
+///     Action = 3
+/// }
+/// ```
+public enum NotificationType: Int, Codable, Sendable, CaseIterable {
     case text = 1
     case image = 2
     case action = 3
@@ -65,7 +84,20 @@ public enum NotificationType: Int, Codable, Sendable {
 
 // MARK: - TextNotificationDTO
 
-@ResponseTestable
+/// 텍스트 알림 DTO
+///
+/// Backend 구조 (TypeScript):
+/// ```typescript
+/// interface TextNotificationDto {
+///     id: string;
+///     type: NotificationType.Text;
+///     title: string;
+///     content: string;
+///     timestamp: string;
+///     isRead: boolean;
+/// }
+/// ```
+@ResponseTestable(defaultArrayCount: 5)
 public struct TextNotificationDTO: Codable, Sendable, Equatable {
     public let id: String
     public let type: Int
@@ -93,7 +125,21 @@ public struct TextNotificationDTO: Codable, Sendable, Equatable {
 
 // MARK: - ImageNotificationDTO
 
-@ResponseTestable
+/// 이미지 알림 DTO
+///
+/// Backend 구조 (TypeScript):
+/// ```typescript
+/// interface ImageNotificationDto {
+///     id: string;
+///     type: NotificationType.Image;
+///     title: string;
+///     imageURL: string;
+///     thumbnail: string;
+///     timestamp: string;
+///     isRead: boolean;
+/// }
+/// ```
+@ResponseTestable(defaultArrayCount: 5)
 public struct ImageNotificationDTO: Codable, Sendable, Equatable {
     public let id: String
     public let type: Int
@@ -124,7 +170,22 @@ public struct ImageNotificationDTO: Codable, Sendable, Equatable {
 
 // MARK: - ActionNotificationDTO
 
-@ResponseTestable
+/// 액션 알림 DTO
+///
+/// Backend 구조 (TypeScript):
+/// ```typescript
+/// interface ActionNotificationDto {
+///     id: string;
+///     type: NotificationType.Action;
+///     title: string;
+///     actionType: string;
+///     actionURL: string;
+///     expiresAt: string;
+///     timestamp: string;
+///     isRead: boolean;
+/// }
+/// ```
+@ResponseTestable(defaultArrayCount: 5)
 public struct ActionNotificationDTO: Codable, Sendable, Equatable {
     public let id: String
     public let type: Int

@@ -67,11 +67,13 @@ public protocol TestableDTO {
 /// ## 주요 기능
 ///
 /// 1. **Mock 데이터 생성**: `mock()`, `mockArray()`
-/// 2. **Builder 패턴**: 특정 필드만 커스터마이징 (mock 기반)
+/// 2. **Builder 패턴**: 특정 필드만 커스터마이징 (struct만 지원)
 /// 3. **자동 검증**: `assertValid()`로 데이터 유효성 확인
 /// 4. **TestableDTO 프로토콜 자동 채택**
 ///
 /// ## 기본 사용법
+///
+/// ### Struct
 ///
 /// ```swift
 /// @ResponseTestable
@@ -85,6 +87,22 @@ public protocol TestableDTO {
 /// let user = UserDTO.mock()                    // 매번 다른 랜덤 데이터
 /// let users = UserDTO.mockArray(count: 10)     // 10개의 랜덤 데이터 배열
 /// user.assertValid()                           // 데이터 유효성 검증
+/// ```
+///
+/// ### Enum (Associated Value 지원)
+///
+/// ```swift
+/// @ResponseTestable
+/// enum ResponseDTO: Codable, Sendable {
+///     case success(UserDTO)
+///     case error(ErrorDTO)
+///     case empty
+/// }
+///
+/// // 사용
+/// let response = ResponseDTO.mock()            // 랜덤하게 case 선택
+/// let responses = ResponseDTO.mockArray(count: 5)
+/// response.assertValid()                       // Associated value 검증
 /// ```
 ///
 /// ## Builder 패턴 사용
@@ -192,10 +210,13 @@ public protocol TestableDTO {
 /// ## 주의사항
 ///
 /// 1. **Codable 준수 필수**: 타입이 `Codable`을 준수해야 합니다.
-/// 2. **struct 전용**: `class`, `enum`, `actor`에는 사용할 수 없습니다.
-/// 3. **순환 참조 주의**: 중첩 DTO가 순환 참조하면 무한 루프 발생 가능
+/// 2. **struct 또는 enum 전용**: `class`, `actor`에는 사용할 수 없습니다.
+/// 3. **enum Associated Value 제약**: Associated value 타입도 `TestableDTO`를 준수해야 합니다.
+/// 4. **순환 참조 주의**: 중첩 DTO가 순환 참조하면 무한 루프 발생 가능
 ///
 /// ## 생성되는 멤버
+///
+/// ### Struct
 ///
 /// ```swift
 /// // Mock 생성 (항상 랜덤 값)
@@ -207,12 +228,25 @@ public protocol TestableDTO {
 /// // 검증
 /// public func assertValid()
 ///
-/// // Builder (includeBuilder: true인 경우)
+/// // Builder
 /// public static func builder() -> {TypeName}Builder
 /// public struct {TypeName}Builder: Sendable {
 ///     public func with({propertyName}: {PropertyType}) -> Self
 ///     public func build() -> {TypeName}
 /// }
+/// ```
+///
+/// ### Enum
+///
+/// ```swift
+/// // Mock 생성 (랜덤 case 선택)
+/// public static func mock() -> Self
+///
+/// // 배열 생성 (랜덤 case 배열)
+/// public static func mockArray(count: Int = defaultArrayCount) -> [Self]
+///
+/// // 검증 (Associated value 검증)
+/// public func assertValid() throws
 /// ```
 ///
 /// ## Extension

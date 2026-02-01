@@ -1114,7 +1114,7 @@ monitor.stopMonitoring()   // 모니터링 중지
 
 `@ResponseTestable` 매크로는 응답 DTO(Data Transfer Object)에 테스트 헬퍼 메서드를 자동으로 생성합니다.
 
-#### 기본 사용법
+#### 기본 사용법 (Struct)
 
 ```swift
 import AsyncNetwork
@@ -1133,6 +1133,57 @@ let posts = PostDTO.mockArray(count: 10)  // 10개의 랜덤 배열 생성
 
 // 유효성 검증
 try PostDTO.mock().assertValid()  // 모든 프로퍼티가 올바르게 생성되는지 확인
+```
+
+#### Enum 타입 지원 (v1.3.2+)
+
+Union Type이나 Tagged Union 패턴에 유용합니다:
+
+```swift
+import AsyncNetwork
+
+// Associated value가 있는 enum
+@ResponseTestable(defaultArrayCount: 5)
+enum NotificationDTO: Codable, Sendable {
+    case text(TextNotificationDTO)
+    case image(ImageNotificationDTO)
+    case action(ActionNotificationDTO)
+}
+
+@ResponseTestable
+struct TextNotificationDTO: Codable, Sendable {
+    let title: String
+    let content: String
+}
+
+@ResponseTestable
+struct ImageNotificationDTO: Codable, Sendable {
+    let title: String
+    let imageURL: String
+}
+
+@ResponseTestable
+struct ActionNotificationDTO: Codable, Sendable {
+    let title: String
+    let actionURL: String
+}
+
+// 사용 - 랜덤하게 case 선택
+let notification = NotificationDTO.mock()  // .text, .image, .action 중 랜덤 선택
+let notifications = NotificationDTO.mockArray(count: 5)
+
+// 검증 - Associated value도 자동 검증
+try notification.assertValid()
+
+// 각 case별 검증
+switch notification {
+case let .text(dto):
+    try dto.assertValid()
+case let .image(dto):
+    try dto.assertValid()
+case let .action(dto):
+    try dto.assertValid()
+}
 ```
 
 #### Builder 패턴으로 커스터마이징
@@ -1278,10 +1329,14 @@ func testUserDTOValidation() throws {
 
 - DTO는 반드시 `Codable`과 `Sendable`을 준수해야 합니다
 - 커스텀 타입을 사용할 경우, 해당 타입도 `@ResponseTestable`을 적용하거나 자체 `mock()` 메서드를 구현해야 합니다
-- `struct` 타입에만 사용 가능 (`class`, `enum`, `actor` 불가)
+- `struct` 또는 `enum` 타입에만 사용 가능 (`class`, `actor` 불가)
+- `enum`의 경우:
+  - Associated value가 있는 경우, 해당 타입도 `TestableDTO` 프로토콜을 준수해야 합니다
+  - Builder 패턴은 `struct`에만 지원됩니다
 
 #### 생성되는 메서드
 
+##### Struct용
 ```swift
 // Mock 생성 (항상 랜덤 값)
 public static func mock() -> Self
@@ -1293,6 +1348,18 @@ public static func mockArray(count: Int = defaultArrayCount) -> [Self]
 public static func builder() -> {TypeName}Builder
 
 // 검증
+public func assertValid() throws
+```
+
+##### Enum용
+```swift
+// Mock 생성 (랜덤 case 선택)
+public static func mock() -> Self
+
+// 배열 생성 (랜덤 case 배열)
+public static func mockArray(count: Int = defaultArrayCount) -> [Self]
+
+// 검증 (Associated value 검증)
 public func assertValid() throws
 ```
 
