@@ -1,15 +1,15 @@
 import SwiftDiagnostics
 
 public enum TestableDTOMacroError: Error, DiagnosticMessage {
-    case notAStruct
+    case notAStructOrEnum
     case invalidFixtureJSON(String)
     case emptyFixtureJSON
     case jsonValidationFailed(String)
 
     public var message: String {
         switch self {
-        case .notAStruct:
-            return "@ResponseTestable은 struct에만 적용할 수 있습니다"
+        case .notAStructOrEnum:
+            return "@ResponseTestable은 struct 또는 enum에만 적용할 수 있습니다"
         case let .invalidFixtureJSON(reason):
             return "유효하지 않은 fixtureJSON: \(reason)"
         case .emptyFixtureJSON:

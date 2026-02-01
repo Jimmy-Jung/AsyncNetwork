@@ -14,13 +14,32 @@ public struct ResponseTestableMacroImpl: MemberMacro, ExtensionMacro {
         conformingTo _: [TypeSyntax],
         in context: some MacroExpansionContext
     ) throws -> [DeclSyntax] {
-        guard let structDecl = declaration.as(StructDeclSyntax.self) else {
-            throw TestableDTOMacroError.notAStruct
-        }
-
-        let typeName = structDecl.name.text
         let parser = TestableDTOArgumentParser()
         let args = try parser.parse(from: node)
+        
+        // Struct 또는 Enum 처리
+        if let structDecl = declaration.as(StructDeclSyntax.self) {
+            return try expandForStruct(
+                structDecl: structDecl,
+                args: args
+            )
+        } else if let enumDecl = declaration.as(EnumDeclSyntax.self) {
+            return try expandForEnum(
+                enumDecl: enumDecl,
+                args: args
+            )
+        } else {
+            throw TestableDTOMacroError.notAStructOrEnum
+        }
+    }
+    
+    // MARK: - Struct Expansion
+    
+    private static func expandForStruct(
+        structDecl: StructDeclSyntax,
+        args: TestableDTOArguments
+    ) throws -> [DeclSyntax] {
+        let typeName = structDecl.name.text
         let properties = extractProperties(from: structDecl)
 
         var members: [DeclSyntax] = []
@@ -43,6 +62,29 @@ public struct ResponseTestableMacroImpl: MemberMacro, ExtensionMacro {
                 defaultArrayCount: args.defaultArrayCount
             )
         )
+
+        return members
+    }
+    
+    // MARK: - Enum Expansion
+    
+    private static func expandForEnum(
+        enumDecl: EnumDeclSyntax,
+        args: TestableDTOArguments
+    ) throws -> [DeclSyntax] {
+        let typeName = enumDecl.name.text
+        let cases = extractEnumCases(from: enumDecl)
+
+        var members: [DeclSyntax] = []
+
+        // mock() 메서드 (enum용)
+        members.append(generateEnumMockMethod(typeName: typeName, cases: cases))
+        
+        // mockArray() 메서드
+        members.append(generateMockArrayMethod(defaultCount: args.defaultArrayCount))
+
+        // assertValid() 메서드 (enum용)
+        members.append(generateEnumAssertValidMethod(typeName: typeName, cases: cases))
 
         return members
     }
@@ -301,5 +343,138 @@ public struct ResponseTestableMacroImpl: MemberMacro, ExtensionMacro {
         }
 
         return properties
+    }
+    
+    // MARK: - Enum Helpers
+    
+    /// Enum case 정보
+    private struct EnumCaseInfo {
+        let name: String
+        let associatedValueType: String?
+    }
+    
+    /// Enum case 추출
+    private static func extractEnumCases(from enumDecl: EnumDeclSyntax) -> [EnumCaseInfo] {
+        var cases: [EnumCaseInfo] = []
+        
+        for member in enumDecl.memberBlock.members {
+            if let caseDecl = member.decl.as(EnumCaseDeclSyntax.self) {
+                for element in caseDecl.elements {
+                    let caseName = element.name.text
+                    
+                    // Associated value 타입 추출
+                    let associatedValueType: String?
+                    if let parameterClause = element.parameterClause {
+                        // 첫 번째 파라미터의 타입만 추출 (단순화)
+                        if let firstParam = parameterClause.parameters.first {
+                            associatedValueType = firstParam.type.description.trimmingCharacters(in: .whitespaces)
+                        } else {
+                            associatedValueType = nil
+                        }
+                    } else {
+                        associatedValueType = nil
+                    }
+                    
+                    cases.append(EnumCaseInfo(
+                        name: caseName,
+                        associatedValueType: associatedValueType
+                    ))
+                }
+            }
+        }
+        
+        return cases
+    }
+    
+    /// Enum용 mock() 메서드 생성
+    private static func generateEnumMockMethod(
+        typeName: String,
+        cases: [EnumCaseInfo]
+    ) -> DeclSyntax {
+        guard !cases.isEmpty else {
+            return """
+            /// 랜덤 값으로 테스트 데이터 생성
+            public static func mock() -> \(raw: typeName) {
+                fatalError("Enum에 case가 없습니다")
+            }
+            """
+        }
+        
+        var switchCases: [String] = []
+        for (index, caseInfo) in cases.enumerated() {
+            if let associatedType = caseInfo.associatedValueType {
+                // Associated value가 있는 경우
+                switchCases.append("""
+                case \(index):
+                        return .\(caseInfo.name)(\(associatedType).mock())
+                """)
+            } else {
+                // Associated value가 없는 경우
+                switchCases.append("""
+                case \(index):
+                        return .\(caseInfo.name)
+                """)
+            }
+        }
+        
+        let switchCode = switchCases.joined(separator: "\n            ")
+        
+        return """
+        /// 랜덤 값으로 테스트 데이터 생성
+        ///
+        /// 랜덤하게 enum case 중 하나를 선택하여 생성합니다.
+        /// Associated value가 있는 경우 해당 타입의 mock()을 호출합니다.
+        public static func mock() -> \(raw: typeName) {
+            let randomCase = Int.random(in: 0...\(raw: String(cases.count - 1)))
+            switch randomCase {
+            \(raw: switchCode)
+            default:
+                return .\(raw: cases[0].name)\(raw: cases[0].associatedValueType != nil ? "(\(cases[0].associatedValueType!).mock())" : "")
+            }
+        }
+        """
+    }
+    
+    /// Enum용 assertValid() 메서드 생성
+    private static func generateEnumAssertValidMethod(
+        typeName: String,
+        cases: [EnumCaseInfo]
+    ) -> DeclSyntax {
+        guard !cases.isEmpty else {
+            return """
+            /// 데이터 검증
+            public func assertValid() {
+                // No validation rules
+            }
+            """
+        }
+        
+        var switchCases: [String] = []
+        for caseInfo in cases {
+            if let associatedType = caseInfo.associatedValueType {
+                // Associated value가 있는 경우 검증
+                switchCases.append("""
+                case let .\(caseInfo.name)(value):
+                        try value.assertValid()
+                """)
+            } else {
+                // Associated value가 없는 경우
+                switchCases.append("""
+                case .\(caseInfo.name):
+                        break
+                """)
+            }
+        }
+        
+        let switchCode = switchCases.joined(separator: "\n            ")
+        
+        return """
+        /// 데이터 검증
+        public func assertValid() throws {
+            switch self {
+            \(raw: switchCode)
+            }
+        }
+        """
     }
 }
