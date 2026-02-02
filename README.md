@@ -301,6 +301,70 @@ let posts: [Post] = try await service.request(
 - `Int8`, `Int16`, `Int32`, `Int64`
 - `UInt`, `UInt8`, `UInt16`, `UInt32`, `UInt64`
 
+#### 배열 쿼리 파라미터 (Array Query Parameters)
+
+`@QueryParameter`는 배열을 자동으로 개별 쿼리 파라미터로 변환합니다. 배열의 각 요소는 동일한 키로 반복됩니다.
+
+```swift
+@APIRequest(
+    response: StudiesResponse.self,
+    baseURL: "https://api.example.com",
+    path: "/studies",
+    method: .get
+)
+struct GetStudiesRequest {
+    @QueryParameter var size: Int?
+    @QueryParameter var userId: String?
+    @QueryParameter var categories: [String]?  // ✅ 배열 지원
+    
+    init(size: Int? = nil, userId: String? = nil, categories: [String]? = nil) {
+        self.size = size
+        self.userId = userId
+        self.categories = categories
+    }
+}
+
+// 사용
+let studies = try await service.request(
+    GetStudiesRequest(
+        size: 100,
+        userId: "user123",
+        categories: ["science", "math", "history"]
+    )
+)
+// 결과: GET /studies?size=100&userId=user123&categories=science&categories=math&categories=history
+```
+
+**커스텀 키와 배열 조합:**
+
+```swift
+@APIRequest(
+    response: StudiesResponse.self,
+    baseURL: "https://api.example.com",
+    path: "/studies",
+    method: .get
+)
+struct GetStudiesRequest {
+    @QueryParameter(key: "category_id") var categoryIds: [String]?  // ✅ 커스텀 키 + 배열
+    
+    init(categoryIds: [String]? = nil) {
+        self.categoryIds = categoryIds
+    }
+}
+
+// 사용
+let studies = try await service.request(
+    GetStudiesRequest(categoryIds: ["1111", "1112", "1121"])
+)
+// 결과: GET /studies?category_id=1111&category_id=1112&category_id=1121
+```
+
+**배열 처리 규칙:**
+- ✅ **Optional 배열** (`[String]?`): nil이면 쿼리에서 제외, 빈 배열도 제외
+- ✅ **Non-optional 배열** (`[String]`): 항상 쿼리에 추가 (빈 배열은 제외)
+- ✅ **정수 배열**: `[Int]`, `[Int]?` 등 모든 타입 지원
+- ✅ **개별 파라미터 변환**: 각 요소가 `key=value1&key=value2` 형태로 변환
+
 ### 3️⃣ Path Parameters
 
 ```swift

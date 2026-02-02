@@ -186,29 +186,56 @@ public struct QueryParameter<Value: Sendable>: RequestParameter {
     }
 
     public func apply(to request: inout URLRequest, key: String) throws {
-        // Optional인지 확인하고, Optional이면 nil 체크 및 값 추출
-        let mirror = Mirror(reflecting: wrappedValue)
-        let valueToAppend: String
-
-        if mirror.displayStyle == .optional {
-            // Optional 타입이고 nil인 경우 무시
-            guard let firstChild = mirror.children.first else {
-                return
-            }
-            // Optional의 래핑된 값 사용
-            valueToAppend = "\(firstChild.value)"
-        } else {
-            // Non-optional 값 직접 사용
-            valueToAppend = "\(wrappedValue)"
-        }
-
         guard var components = URLComponents(url: request.url!, resolvingAgainstBaseURL: false) else {
             return
         }
 
         var queryItems = components.queryItems ?? []
         let parameterKey = customKey ?? key
-        queryItems.append(URLQueryItem(name: parameterKey, value: valueToAppend))
+
+        // Optional인지 확인하고, Optional이면 nil 체크 및 값 추출
+        let mirror = Mirror(reflecting: wrappedValue)
+
+        if mirror.displayStyle == .optional {
+            // Optional 타입이고 nil인 경우 무시
+            guard let firstChild = mirror.children.first else {
+                return
+            }
+
+            // Optional의 래핑된 값 확인
+            let unwrappedValue = firstChild.value
+            let unwrappedMirror = Mirror(reflecting: unwrappedValue)
+
+            // 배열인지 확인
+            if unwrappedMirror.displayStyle == .collection {
+                // 배열의 각 요소를 개별 쿼리 파라미터로 추가
+                for child in unwrappedMirror.children {
+                    let elementValue = "\(child.value)"
+                    queryItems.append(URLQueryItem(name: parameterKey, value: elementValue))
+                }
+            } else {
+                // 배열이 아닌 경우 기존 로직
+                let valueToAppend = "\(unwrappedValue)"
+                queryItems.append(URLQueryItem(name: parameterKey, value: valueToAppend))
+            }
+        } else {
+            // Non-optional 값 처리
+            let nonOptionalMirror = Mirror(reflecting: wrappedValue)
+
+            // 배열인지 확인
+            if nonOptionalMirror.displayStyle == .collection {
+                // 배열의 각 요소를 개별 쿼리 파라미터로 추가
+                for child in nonOptionalMirror.children {
+                    let elementValue = "\(child.value)"
+                    queryItems.append(URLQueryItem(name: parameterKey, value: elementValue))
+                }
+            } else {
+                // 배열이 아닌 경우 기존 로직
+                let valueToAppend = "\(wrappedValue)"
+                queryItems.append(URLQueryItem(name: parameterKey, value: valueToAppend))
+            }
+        }
+
         components.queryItems = queryItems
 
         if let url = components.url {
