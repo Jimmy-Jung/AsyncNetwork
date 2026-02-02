@@ -301,6 +301,70 @@ let posts: [Post] = try await service.request(
 - `Int8`, `Int16`, `Int32`, `Int64`
 - `UInt`, `UInt8`, `UInt16`, `UInt32`, `UInt64`
 
+#### 배열 쿼리 파라미터 (Array Query Parameters)
+
+`@QueryParameter`는 배열을 자동으로 개별 쿼리 파라미터로 변환합니다. 배열의 각 요소는 동일한 키로 반복됩니다.
+
+```swift
+@APIRequest(
+    response: [Product].self,
+    baseURL: "https://api.example.com",
+    path: "/products",
+    method: .get
+)
+struct GetProductsRequest {
+    @QueryParameter var page: Int?
+    @QueryParameter var limit: Int?
+    @QueryParameter var tags: [String]?  // ✅ 배열 지원
+    
+    init(page: Int? = nil, limit: Int? = nil, tags: [String]? = nil) {
+        self.page = page
+        self.limit = limit
+        self.tags = tags
+    }
+}
+
+// 사용
+let products = try await service.request(
+    GetProductsRequest(
+        page: 1,
+        limit: 20,
+        tags: ["electronics", "sale", "featured"]
+    )
+)
+// 결과: GET /products?page=1&limit=20&tags=electronics&tags=sale&tags=featured
+```
+
+**커스텀 키와 배열 조합:**
+
+```swift
+@APIRequest(
+    response: [Product].self,
+    baseURL: "https://api.example.com",
+    path: "/products",
+    method: .get
+)
+struct GetProductsRequest {
+    @QueryParameter(key: "filter_id") var filterIds: [Int]?  // ✅ 커스텀 키 + 배열
+    
+    init(filterIds: [Int]? = nil) {
+        self.filterIds = filterIds
+    }
+}
+
+// 사용
+let products = try await service.request(
+    GetProductsRequest(filterIds: [101, 102, 103])
+)
+// 결과: GET /products?filter_id=101&filter_id=102&filter_id=103
+```
+
+**배열 처리 규칙:**
+- ✅ **Optional 배열** (`[String]?`): nil이면 쿼리에서 제외, 빈 배열도 제외
+- ✅ **Non-optional 배열** (`[String]`): 항상 쿼리에 추가 (빈 배열은 제외)
+- ✅ **정수 배열**: `[Int]`, `[Int]?` 등 모든 타입 지원
+- ✅ **개별 파라미터 변환**: 각 요소가 `key=value1&key=value2` 형태로 변환
+
 ### 3️⃣ Path Parameters
 
 ```swift
