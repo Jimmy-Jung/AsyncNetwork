@@ -18,18 +18,18 @@ struct QueryParameterArrayTests {
         // Given
         struct TestRequestWithArray: APIRequest {
             var baseURLString: String = "https://api.example.com"
-            var path: String = "/curated-studies"
+            var path: String = "/products"
             var method: HTTPMethod = .get
 
-            @QueryParameter var middleUnitIds: [String]?
+            @QueryParameter var tags: [String]?
 
-            init(middleUnitIds: [String]? = nil) {
-                self.middleUnitIds = middleUnitIds
+            init(tags: [String]? = nil) {
+                self.tags = tags
             }
         }
 
         let request = TestRequestWithArray(
-            middleUnitIds: ["1111", "1112", "1121", "1122"]
+            tags: ["electronics", "sale", "featured", "popular"]
         )
 
         // When
@@ -42,18 +42,18 @@ struct QueryParameterArrayTests {
         let queryItems = components?.queryItems
 
         // 배열의 각 요소가 개별 쿼리 파라미터로 변환되어야 함
-        let middleUnitIdItems = queryItems?.filter { $0.name == "middleUnitIds" }
-        #expect(middleUnitIdItems?.count == 4)
-        #expect(middleUnitIdItems?.contains(where: { $0.value == "1111" }) == true)
-        #expect(middleUnitIdItems?.contains(where: { $0.value == "1112" }) == true)
-        #expect(middleUnitIdItems?.contains(where: { $0.value == "1121" }) == true)
-        #expect(middleUnitIdItems?.contains(where: { $0.value == "1122" }) == true)
+        let tagItems = queryItems?.filter { $0.name == "tags" }
+        #expect(tagItems?.count == 4)
+        #expect(tagItems?.contains(where: { $0.value == "electronics" }) == true)
+        #expect(tagItems?.contains(where: { $0.value == "sale" }) == true)
+        #expect(tagItems?.contains(where: { $0.value == "featured" }) == true)
+        #expect(tagItems?.contains(where: { $0.value == "popular" }) == true)
 
-        // URL 형태 확인 (middleUnitIds=1111&middleUnitIds=1112&...)
-        #expect(urlString.contains("middleUnitIds=1111"))
-        #expect(urlString.contains("middleUnitIds=1112"))
-        #expect(urlString.contains("middleUnitIds=1121"))
-        #expect(urlString.contains("middleUnitIds=1122"))
+        // URL 형태 확인 (tags=electronics&tags=sale&...)
+        #expect(urlString.contains("tags=electronics"))
+        #expect(urlString.contains("tags=sale"))
+        #expect(urlString.contains("tags=featured"))
+        #expect(urlString.contains("tags=popular"))
 
         // JSON 배열 형태가 아니어야 함
         #expect(!urlString.contains("%5B")) // [ 인코딩
@@ -187,18 +187,18 @@ struct QueryParameterArrayTests {
         // Given
         struct TestRequestWithArray: APIRequest {
             var baseURLString: String = "https://api.example.com"
-            var path: String = "/application/v1/curated-studies"
+            var path: String = "/products"
             var method: HTTPMethod = .get
 
-            @QueryParameter(key: "middleUnitId") var middleUnitIds: [String]?
+            @QueryParameter(key: "filter_id") var filterIds: [Int]?
 
-            init(middleUnitIds: [String]? = nil) {
-                self.middleUnitIds = middleUnitIds
+            init(filterIds: [Int]? = nil) {
+                self.filterIds = filterIds
             }
         }
 
         let request = TestRequestWithArray(
-            middleUnitIds: ["1111", "1112", "1121", "1122"]
+            filterIds: [101, 102, 103, 104]
         )
 
         // When
@@ -211,17 +211,17 @@ struct QueryParameterArrayTests {
         let queryItems = components?.queryItems
 
         // 커스텀 키로 변환되어야 함
-        let unitIdItems = queryItems?.filter { $0.name == "middleUnitId" }
-        #expect(unitIdItems?.count == 4)
+        let filterItems = queryItems?.filter { $0.name == "filter_id" }
+        #expect(filterItems?.count == 4)
 
-        // URL 형태 확인 (middleUnitId=1111&middleUnitId=1112&...)
-        #expect(urlString.contains("middleUnitId=1111"))
-        #expect(urlString.contains("middleUnitId=1112"))
-        #expect(urlString.contains("middleUnitId=1121"))
-        #expect(urlString.contains("middleUnitId=1122"))
+        // URL 형태 확인 (filter_id=101&filter_id=102&...)
+        #expect(urlString.contains("filter_id=101"))
+        #expect(urlString.contains("filter_id=102"))
+        #expect(urlString.contains("filter_id=103"))
+        #expect(urlString.contains("filter_id=104"))
 
         // 원래 프로퍼티 이름은 사용되지 않아야 함
-        #expect(!urlString.contains("middleUnitIds"))
+        #expect(!urlString.contains("filterIds"))
     }
 
     @Test("QueryParameter - 배열과 일반 파라미터 혼합")
@@ -229,27 +229,27 @@ struct QueryParameterArrayTests {
         // Given
         struct TestRequestMixed: APIRequest {
             var baseURLString: String = "https://api.example.com"
-            var path: String = "/curated-studies"
+            var path: String = "/products"
             var method: HTTPMethod = .get
 
-            @QueryParameter var size: Int?
-            @QueryParameter var orders: String?
-            @QueryParameter var userId: String?
-            @QueryParameter var middleUnitIds: [String]?
+            @QueryParameter var page: Int?
+            @QueryParameter var limit: Int?
+            @QueryParameter var sort: String?
+            @QueryParameter var tags: [String]?
 
-            init(size: Int? = nil, orders: String? = nil, userId: String? = nil, middleUnitIds: [String]? = nil) {
-                self.size = size
-                self.orders = orders
-                self.userId = userId
-                self.middleUnitIds = middleUnitIds
+            init(page: Int? = nil, limit: Int? = nil, sort: String? = nil, tags: [String]? = nil) {
+                self.page = page
+                self.limit = limit
+                self.sort = sort
+                self.tags = tags
             }
         }
 
         let request = TestRequestMixed(
-            size: 100,
-            orders: "[{\"_id\":0}]",
-            userId: "65960afb136d98c235ec0e11",
-            middleUnitIds: ["1111", "1112", "1121", "1122"]
+            page: 1,
+            limit: 20,
+            sort: "price_asc",
+            tags: ["electronics", "sale", "new", "featured"]
         )
 
         // When
@@ -262,22 +262,22 @@ struct QueryParameterArrayTests {
         let queryItems = components?.queryItems
 
         // 일반 파라미터 확인
-        #expect(queryItems?.contains(where: { $0.name == "size" && $0.value == "100" }) == true)
-        #expect(queryItems?.contains(where: { $0.name == "userId" && $0.value == "65960afb136d98c235ec0e11" }) == true)
+        #expect(queryItems?.contains(where: { $0.name == "page" && $0.value == "1" }) == true)
+        #expect(queryItems?.contains(where: { $0.name == "limit" && $0.value == "20" }) == true)
 
         // 배열 파라미터 확인
-        let unitIdItems = queryItems?.filter { $0.name == "middleUnitIds" }
-        #expect(unitIdItems?.count == 4)
-        #expect(unitIdItems?.contains(where: { $0.value == "1111" }) == true)
-        #expect(unitIdItems?.contains(where: { $0.value == "1112" }) == true)
-        #expect(unitIdItems?.contains(where: { $0.value == "1121" }) == true)
-        #expect(unitIdItems?.contains(where: { $0.value == "1122" }) == true)
+        let tagItems = queryItems?.filter { $0.name == "tags" }
+        #expect(tagItems?.count == 4)
+        #expect(tagItems?.contains(where: { $0.value == "electronics" }) == true)
+        #expect(tagItems?.contains(where: { $0.value == "sale" }) == true)
+        #expect(tagItems?.contains(where: { $0.value == "new" }) == true)
+        #expect(tagItems?.contains(where: { $0.value == "featured" }) == true)
 
         // URL 형태 확인
-        #expect(urlString.contains("size=100"))
-        #expect(urlString.contains("userId=65960afb136d98c235ec0e11"))
-        #expect(urlString.contains("middleUnitIds=1111"))
-        #expect(urlString.contains("middleUnitIds=1112"))
+        #expect(urlString.contains("page=1"))
+        #expect(urlString.contains("limit=20"))
+        #expect(urlString.contains("tags=electronics"))
+        #expect(urlString.contains("tags=sale"))
     }
 
     @Test("QueryParameter - 정수 배열")
@@ -315,43 +315,43 @@ struct QueryParameterArrayTests {
         #expect(productIdItems?.contains(where: { $0.value == "8" }) == true)
     }
 
-    @Test("QueryParameter - 실제 사용 케이스 재현 - 요청 생성")
-    func realWorldUseCaseRequest() throws {
-        // Given - 사용자의 실제 요청 구조 재현
-        struct GetCuratedStudiesRequest: APIRequest {
-            var baseURLString: String = "https://dev.an2.api.slc.susimdal.com"
-            var path: String = "/application/v1/curated-studies"
+    @Test("QueryParameter - 복잡한 요청 구조 - 요청 생성")
+    func complexRequestStructure() throws {
+        // Given - 복잡한 요청 구조 테스트
+        struct GetProductsRequest: APIRequest {
+            var baseURLString: String = "https://api.example.com"
+            var path: String = "/api/v1/products"
             var method: HTTPMethod = .get
 
-            @QueryParameter var size: Int?
-            @QueryParameter var orders: String?
-            @QueryParameter var nextToken: String?
-            @QueryParameter var userId: String?
-            @QueryParameter var semesterId: String?
-            @QueryParameter(key: "middleUnitId") var middleUnitIds: [String]?
+            @QueryParameter var page: Int?
+            @QueryParameter var limit: Int?
+            @QueryParameter var sort: String?
+            @QueryParameter var search: String?
+            @QueryParameter var status: String?
+            @QueryParameter(key: "category_id") var categoryIds: [String]?
 
             init(
-                size: Int? = nil,
-                orders: String? = nil,
-                nextToken: String? = nil,
-                userId: String? = nil,
-                semesterId: String? = nil,
-                middleUnitIds: [String]? = nil
+                page: Int? = nil,
+                limit: Int? = nil,
+                sort: String? = nil,
+                search: String? = nil,
+                status: String? = nil,
+                categoryIds: [String]? = nil
             ) {
-                self.size = size
-                self.orders = orders
-                self.nextToken = nextToken
-                self.userId = userId
-                self.semesterId = semesterId
-                self.middleUnitIds = middleUnitIds
+                self.page = page
+                self.limit = limit
+                self.sort = sort
+                self.search = search
+                self.status = status
+                self.categoryIds = categoryIds
             }
         }
 
-        let request = GetCuratedStudiesRequest(
-            size: 100,
-            orders: "[{\"_id\":0}]",
-            userId: "65960afb136d98c235ec0e11",
-            middleUnitIds: ["1111", "1112", "1121", "1122", "1131", "1132", "1141", "1142"]
+        let request = GetProductsRequest(
+            page: 1,
+            limit: 50,
+            search: "laptop",
+            categoryIds: ["cat_101", "cat_102", "cat_103", "cat_104", "cat_105", "cat_106", "cat_107", "cat_108"]
         )
 
         // When
@@ -363,31 +363,31 @@ struct QueryParameterArrayTests {
         let queryItems = components?.queryItems
 
         // 기본 파라미터 확인
-        #expect(queryItems?.contains(where: { $0.name == "size" && $0.value == "100" }) == true)
-        #expect(queryItems?.contains(where: { $0.name == "userId" && $0.value == "65960afb136d98c235ec0e11" }) == true)
+        #expect(queryItems?.contains(where: { $0.name == "page" && $0.value == "1" }) == true)
+        #expect(queryItems?.contains(where: { $0.name == "search" && $0.value == "laptop" }) == true)
 
         // 배열이 개별 파라미터로 변환되었는지 확인
-        let unitIdItems = queryItems?.filter { $0.name == "middleUnitId" }
-        #expect(unitIdItems?.count == 8)
+        let categoryItems = queryItems?.filter { $0.name == "category_id" }
+        #expect(categoryItems?.count == 8)
     }
 
-    @Test("QueryParameter - 실제 사용 케이스 재현 - URL 형식 검증")
-    func realWorldUseCaseURLFormat() throws {
+    @Test("QueryParameter - 복잡한 요청 구조 - URL 형식 검증")
+    func complexRequestURLFormat() throws {
         // Given
-        struct GetCuratedStudiesRequest: APIRequest {
-            var baseURLString: String = "https://dev.an2.api.slc.susimdal.com"
-            var path: String = "/application/v1/curated-studies"
+        struct GetProductsRequest: APIRequest {
+            var baseURLString: String = "https://api.example.com"
+            var path: String = "/api/v1/products"
             var method: HTTPMethod = .get
 
-            @QueryParameter(key: "middleUnitId") var middleUnitIds: [String]?
+            @QueryParameter(key: "category_id") var categoryIds: [String]?
 
-            init(middleUnitIds: [String]? = nil) {
-                self.middleUnitIds = middleUnitIds
+            init(categoryIds: [String]? = nil) {
+                self.categoryIds = categoryIds
             }
         }
 
-        let request = GetCuratedStudiesRequest(
-            middleUnitIds: ["1111", "1112", "1121", "1122", "1131", "1132", "1141", "1142"]
+        let request = GetProductsRequest(
+            categoryIds: ["cat_101", "cat_102", "cat_103", "cat_104", "cat_105", "cat_106", "cat_107", "cat_108"]
         )
 
         // When
@@ -397,22 +397,22 @@ struct QueryParameterArrayTests {
         let url = try #require(urlRequest.url)
         let urlString = url.absoluteString
 
-        // URL 형태가 올바른지 확인 (middleUnitId=1111&middleUnitId=1112&...)
-        #expect(urlString.contains("middleUnitId=1111"))
-        #expect(urlString.contains("middleUnitId=1112"))
-        #expect(urlString.contains("middleUnitId=1121"))
-        #expect(urlString.contains("middleUnitId=1122"))
-        #expect(urlString.contains("middleUnitId=1131"))
-        #expect(urlString.contains("middleUnitId=1132"))
-        #expect(urlString.contains("middleUnitId=1141"))
-        #expect(urlString.contains("middleUnitId=1142"))
+        // URL 형태가 올바른지 확인 (category_id=cat_101&category_id=cat_102&...)
+        #expect(urlString.contains("category_id=cat_101"))
+        #expect(urlString.contains("category_id=cat_102"))
+        #expect(urlString.contains("category_id=cat_103"))
+        #expect(urlString.contains("category_id=cat_104"))
+        #expect(urlString.contains("category_id=cat_105"))
+        #expect(urlString.contains("category_id=cat_106"))
+        #expect(urlString.contains("category_id=cat_107"))
+        #expect(urlString.contains("category_id=cat_108"))
 
-        // middleUnitId가 JSON 배열 형태가 아니어야 함
-        #expect(!urlString.contains("middleUnitId=%5B"))
+        // category_id가 JSON 배열 형태가 아니어야 함
+        #expect(!urlString.contains("category_id=%5B"))
 
-        // middleUnitId가 개별 파라미터로 분리되어 있는지 확인
-        let middleUnitIdPattern = "middleUnitId=1111&middleUnitId=1112"
-        #expect(urlString.contains(middleUnitIdPattern))
+        // category_id가 개별 파라미터로 분리되어 있는지 확인
+        let categoryIdPattern = "category_id=cat_101&category_id=cat_102"
+        #expect(urlString.contains(categoryIdPattern))
 
         print("✅ Generated URL: \(urlString)")
     }
