@@ -307,56 +307,56 @@ let posts: [Post] = try await service.request(
 
 ```swift
 @APIRequest(
-    response: StudiesResponse.self,
+    response: [Product].self,
     baseURL: "https://api.example.com",
-    path: "/studies",
+    path: "/products",
     method: .get
 )
-struct GetStudiesRequest {
-    @QueryParameter var size: Int?
-    @QueryParameter var userId: String?
-    @QueryParameter var categories: [String]?  // ✅ 배열 지원
+struct GetProductsRequest {
+    @QueryParameter var page: Int?
+    @QueryParameter var limit: Int?
+    @QueryParameter var tags: [String]?  // ✅ 배열 지원
     
-    init(size: Int? = nil, userId: String? = nil, categories: [String]? = nil) {
-        self.size = size
-        self.userId = userId
-        self.categories = categories
+    init(page: Int? = nil, limit: Int? = nil, tags: [String]? = nil) {
+        self.page = page
+        self.limit = limit
+        self.tags = tags
     }
 }
 
 // 사용
-let studies = try await service.request(
-    GetStudiesRequest(
-        size: 100,
-        userId: "user123",
-        categories: ["science", "math", "history"]
+let products = try await service.request(
+    GetProductsRequest(
+        page: 1,
+        limit: 20,
+        tags: ["electronics", "sale", "featured"]
     )
 )
-// 결과: GET /studies?size=100&userId=user123&categories=science&categories=math&categories=history
+// 결과: GET /products?page=1&limit=20&tags=electronics&tags=sale&tags=featured
 ```
 
 **커스텀 키와 배열 조합:**
 
 ```swift
 @APIRequest(
-    response: StudiesResponse.self,
+    response: [Product].self,
     baseURL: "https://api.example.com",
-    path: "/studies",
+    path: "/products",
     method: .get
 )
-struct GetStudiesRequest {
-    @QueryParameter(key: "category_id") var categoryIds: [String]?  // ✅ 커스텀 키 + 배열
+struct GetProductsRequest {
+    @QueryParameter(key: "filter_id") var filterIds: [Int]?  // ✅ 커스텀 키 + 배열
     
-    init(categoryIds: [String]? = nil) {
-        self.categoryIds = categoryIds
+    init(filterIds: [Int]? = nil) {
+        self.filterIds = filterIds
     }
 }
 
 // 사용
-let studies = try await service.request(
-    GetStudiesRequest(categoryIds: ["1111", "1112", "1121"])
+let products = try await service.request(
+    GetProductsRequest(filterIds: [101, 102, 103])
 )
-// 결과: GET /studies?category_id=1111&category_id=1112&category_id=1121
+// 결과: GET /products?filter_id=101&filter_id=102&filter_id=103
 ```
 
 **배열 처리 규칙:**
