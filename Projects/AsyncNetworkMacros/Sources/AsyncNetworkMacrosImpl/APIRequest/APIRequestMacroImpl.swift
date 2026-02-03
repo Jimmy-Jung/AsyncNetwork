@@ -53,11 +53,3 @@ public struct APIRequestMacroImpl: MemberMacro, ExtensionMacro {
         return [extensionDeclSyntax]
     }
 }
-
-@main
-struct AsyncNetworkMacrosPlugin: CompilerPlugin {
-    let providingMacros: [Macro.Type] = [
-        APIRequestMacroImpl.self,
-        ResponseTestableMacroImpl.self
-    ]
-}

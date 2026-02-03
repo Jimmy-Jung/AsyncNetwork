@@ -44,22 +44,23 @@ public struct ResponseTestableMacroImpl: MemberMacro, ExtensionMacro {
 
         var members: [DeclSyntax] = []
 
-        // mock() 메서드
-        members.append(generateMockMethod(typeName: typeName, properties: properties))
+        // random() 메서드
+        members.append(generateRandomMethod(typeName: typeName, properties: properties))
         
-        // mockArray() 메서드
-        members.append(generateMockArrayMethod(defaultCount: args.defaultArrayCount))
+        // randomArray() 메서드
+        members.append(generateRandomArrayMethod(defaultCount: args.defaultArrayCount))
 
         // assertValid() 메서드
         members.append(generateAssertValidMethod(properties: properties))
 
-        // builder() 메서드 및 Builder 타입 (항상 생성)
-        members.append(generateBuilderMethod(typeName: typeName))
+        // fixture() 메서드 및 FixtureBuilder 타입 (항상 생성)
+        members.append(generateFixtureMethod(typeName: typeName))
         members.append(
-            generateBuilderType(
+            generateFixtureBuilderType(
                 typeName: typeName,
                 properties: properties,
-                defaultArrayCount: args.defaultArrayCount
+                defaultArrayCount: args.defaultArrayCount,
+                enumStrategy: args.enumStrategy
             )
         )
 
@@ -77,11 +78,14 @@ public struct ResponseTestableMacroImpl: MemberMacro, ExtensionMacro {
 
         var members: [DeclSyntax] = []
 
-        // mock() 메서드 (enum용)
-        members.append(generateEnumMockMethod(typeName: typeName, cases: cases))
+        // random() 메서드 (enum용)
+        members.append(generateEnumRandomMethod(typeName: typeName, cases: cases))
         
-        // mockArray() 메서드
-        members.append(generateMockArrayMethod(defaultCount: args.defaultArrayCount))
+        // randomArray() 메서드
+        members.append(generateRandomArrayMethod(defaultCount: args.defaultArrayCount))
+
+        // fixture() 메서드 (enum용)
+        members.append(generateEnumFixtureMethod(typeName: typeName, cases: cases, strategy: args.enumStrategy))
 
         // assertValid() 메서드 (enum용)
         members.append(generateEnumAssertValidMethod(typeName: typeName, cases: cases))
@@ -109,45 +113,60 @@ public struct ResponseTestableMacroImpl: MemberMacro, ExtensionMacro {
 
     // MARK: - Helper Methods
 
-    /// mock() 메서드 생성 (항상 랜덤 값, 단 특수 필드는 고정 값)
-    private static func generateMockMethod(
+    /// random() 메서드 생성 (항상 랜덤 값, 단 특수 필드는 고정 값)
+    private static func generateRandomMethod(
         typeName: String,
         properties: [PropertyInfo]
     ) -> DeclSyntax {
         var initParams: [String] = []
 
         for prop in properties {
-            let mockValue = generateMockValue(
+            let randomValue = generateRandomValue(
                 for: prop.type,
                 isOptional: prop.isOptional,
                 propertyName: prop.name,
-                structName: typeName
+                structName: typeName,
+                generatorName: "generator"
             )
-            initParams.append("\(prop.name): \(mockValue)")
+            initParams.append("\(prop.name): \(randomValue)")
         }
 
         let initCode = initParams.joined(separator: ",\n            ")
 
         return """
-        /// 랜덤 값으로 테스트 데이터 생성
-        ///
-        /// 매번 다른 랜덤 값을 생성합니다. (Int.random, UUID().uuidString 등)
-        /// - 테스트 시 특정 필드만 고정하려면 builder()를 사용하세요
-        /// - builder(): fixture 고정 값 기반으로 일부만 커스터마이징
-        public static func mock() -> \(raw: typeName) {
-            \(raw: typeName)(
+        /// 랜덤 값으로 테스트 데이터 생성 (내부 구현)
+        public static func random(seed: Int? = nil, depth: Int = 0) -> \(raw: typeName) {
+            if depth > 10 { // 순환 참조 방지 (최대 깊이 10)
+                // Optional이면 nil 반환, Non-Optional이면 어쩔 수 없이 진행 (단, ValueGenerator에서 Optional 처리)
+                // 여기서는 타입 정보를 모르므로, ValueGenerator에서 depth를 활용하도록 위임
+            }
+            
+            var generator: RandomNumberGenerator = seed != nil ? SeededRandomNumberGenerator(seed: seed!) : SystemRandomNumberGenerator()
+            
+            return \(raw: typeName)(
                 \(raw: initCode)
             )
+        }
+        
+        /// 랜덤 값으로 테스트 데이터 생성 (공개 인터페이스)
+        public static func random(seed: Int? = nil) -> \(raw: typeName) {
+            random(seed: seed, depth: 0)
         }
         """
     }
 
-    /// mockArray() 메서드 생성
-    private static func generateMockArrayMethod(defaultCount: Int) -> DeclSyntax {
+    /// randomArray() 메서드 생성
+    private static func generateRandomArrayMethod(defaultCount: Int) -> DeclSyntax {
         return """
-        /// 여러 개의 Mock 데이터 생성
-        public static func mockArray(count: Int = \(raw: String(defaultCount))) -> [Self] {
-            (0..<count).map { _ in mock() }
+        /// 여러 개의 Random 데이터 생성
+        public static func randomArray(count: Int = \(raw: String(defaultCount)), seed: Int? = nil) -> [Self] {
+            var generator: RandomNumberGenerator = seed != nil ? SeededRandomNumberGenerator(seed: seed!) : SystemRandomNumberGenerator()
+            // 시드가 있으면 예측 가능한 난수 시퀀스를 위해 시드를 조금씩 변경하거나, 생성기를 공유해야 함.
+            // 여기서는 단순화를 위해 시드를 증가시키는 방식 사용
+            return (0..<count).map { i in 
+                let itemSeed = seed.map { $0 + i }
+                return random(seed: itemSeed) 
+            }
         }
         """
     }
@@ -174,8 +193,8 @@ public struct ResponseTestableMacroImpl: MemberMacro, ExtensionMacro {
         """
     }
 
-    /// builder() 메서드 생성
-    private static func generateBuilderMethod(typeName: String) -> DeclSyntax {
+    /// fixture() 메서드 생성
+    private static func generateFixtureMethod(typeName: String) -> DeclSyntax {
         return """
         /// Builder 패턴으로 유연한 데이터 생성
         ///
@@ -185,31 +204,38 @@ public struct ResponseTestableMacroImpl: MemberMacro, ExtensionMacro {
         ///
         /// Example:
         /// ```swift
-        /// let dto = DTO.builder()
+        /// let dto = DTO.fixture()
         ///     .with(id: 999)
         ///     .with(name: "Custom")
         ///     .build()
         /// // id와 name만 고정, 나머지는 fixture 값 사용
         /// ```
-        public static func builder() -> \(raw: typeName)Builder {
-            \(raw: typeName)Builder()
+        public static func fixture() -> \(raw: typeName)FixtureBuilder {
+            \(raw: typeName)FixtureBuilder()
+        }
+        
+        /// 고정 값으로 테스트 데이터 생성 (내부용)
+        public static func fixtureValue() -> \(raw: typeName) {
+            fixture().build()
         }
         """
     }
 
-    /// Builder 타입 생성
-    private static func generateBuilderType(
+    /// FixtureBuilder 타입 생성
+    private static func generateFixtureBuilderType(
         typeName: String,
         properties: [PropertyInfo],
-        defaultArrayCount: Int
+        defaultArrayCount: Int,
+        enumStrategy: String
     ) -> DeclSyntax {
         let builderComponents = generateBuilderComponents(
             typeName: typeName,
             properties: properties,
-            defaultArrayCount: defaultArrayCount
+            defaultArrayCount: defaultArrayCount,
+            enumStrategy: enumStrategy
         )
         
-        return composeBuilderType(
+        return composeFixtureBuilderType(
             typeName: typeName,
             components: builderComponents
         )
@@ -221,7 +247,8 @@ public struct ResponseTestableMacroImpl: MemberMacro, ExtensionMacro {
     private static func generateBuilderComponents(
         typeName: String,
         properties: [PropertyInfo],
-        defaultArrayCount: Int
+        defaultArrayCount: Int,
+        enumStrategy: String
     ) -> BuilderComponents {
         var builderProperties: [String] = []
         var withMethods: [String] = []
@@ -238,7 +265,8 @@ public struct ResponseTestableMacroImpl: MemberMacro, ExtensionMacro {
                 isOptional: prop.isOptional,
                 propertyName: prop.name,
                 structName: typeName,
-                defaultArrayCount: defaultArrayCount
+                defaultArrayCount: defaultArrayCount,
+                enumStrategy: enumStrategy
             )
             initAssignments.append("self.\(prop.name) = \(fixtureValue)")
         }
@@ -272,8 +300,8 @@ public struct ResponseTestableMacroImpl: MemberMacro, ExtensionMacro {
         "\(prop.name): \(prop.name)"
     }
     
-    /// Builder 타입 조립
-    private static func composeBuilderType(
+    /// FixtureBuilder 타입 조립
+    private static func composeFixtureBuilderType(
         typeName: String,
         components: BuilderComponents
     ) -> DeclSyntax {
@@ -289,7 +317,7 @@ public struct ResponseTestableMacroImpl: MemberMacro, ExtensionMacro {
         /// - 일관된 고정 값으로 시작하여 원하는 필드만 커스터마이징
         /// - with() 메서드로 원하는 값만 커스터마이징 가능
         /// - 테스트 시나리오별로 특정 필드만 제어할 때 유용
-        public struct \(raw: typeName)Builder: Sendable {
+        public struct \(raw: typeName)FixtureBuilder: Sendable {
             \(raw: propertiesCode)
 
             public init() {
@@ -386,15 +414,15 @@ public struct ResponseTestableMacroImpl: MemberMacro, ExtensionMacro {
         return cases
     }
     
-    /// Enum용 mock() 메서드 생성
-    private static func generateEnumMockMethod(
+    /// Enum용 random() 메서드 생성
+    private static func generateEnumRandomMethod(
         typeName: String,
         cases: [EnumCaseInfo]
     ) -> DeclSyntax {
         guard !cases.isEmpty else {
             return """
             /// 랜덤 값으로 테스트 데이터 생성
-            public static func mock() -> \(raw: typeName) {
+            public static func random(seed: Int? = nil) -> \(raw: typeName) {
                 fatalError("Enum에 case가 없습니다")
             }
             """
@@ -404,9 +432,11 @@ public struct ResponseTestableMacroImpl: MemberMacro, ExtensionMacro {
         for (index, caseInfo) in cases.enumerated() {
             if let associatedType = caseInfo.associatedValueType {
                 // Associated value가 있는 경우
+                // 연관 값 생성 시에도 동일한 시드 패턴을 유지하거나, 생성기를 공유해야 함.
+                // 여기서는 시드를 전달하는 방식으로 처리
                 switchCases.append("""
                 case \(index):
-                        return .\(caseInfo.name)(\(associatedType).mock())
+                        return .\(caseInfo.name)(\(associatedType).random(seed: seed, depth: depth + 1))
                 """)
             } else {
                 // Associated value가 없는 경우
@@ -420,22 +450,78 @@ public struct ResponseTestableMacroImpl: MemberMacro, ExtensionMacro {
         let switchCode = switchCases.joined(separator: "\n            ")
         
         return """
-        /// 랜덤 값으로 테스트 데이터 생성
-        ///
-        /// 랜덤하게 enum case 중 하나를 선택하여 생성합니다.
-        /// Associated value가 있는 경우 해당 타입의 mock()을 호출합니다.
-        public static func mock() -> \(raw: typeName) {
-            let randomCase = Int.random(in: 0...\(raw: String(cases.count - 1)))
+        /// 랜덤 값으로 테스트 데이터 생성 (내부 구현)
+        public static func random(seed: Int? = nil, depth: Int = 0) -> \(raw: typeName) {
+            var generator: RandomNumberGenerator = seed != nil ? SeededRandomNumberGenerator(seed: seed!) : SystemRandomNumberGenerator()
+            let randomCase = Int.random(in: 0...\(raw: String(cases.count - 1)), using: &generator)
             switch randomCase {
             \(raw: switchCode)
             default:
-                return .\(raw: cases[0].name)\(raw: cases[0].associatedValueType != nil ? "(\(cases[0].associatedValueType!).mock())" : "")
+                return .\(raw: cases[0].name)\(raw: cases[0].associatedValueType != nil ? "(\(cases[0].associatedValueType!).random(seed: seed, depth: depth + 1))" : "")
             }
+        }
+        
+        /// 랜덤 값으로 테스트 데이터 생성 (공개 인터페이스)
+        public static func random(seed: Int? = nil) -> \(raw: typeName) {
+            random(seed: seed, depth: 0)
         }
         """
     }
     
-    /// Enum용 assertValid() 메서드 생성
+    /// Enum용 fixture() 메서드 생성
+    private static func generateEnumFixtureMethod(
+        typeName: String,
+        cases: [EnumCaseInfo],
+        strategy: String
+    ) -> DeclSyntax {
+        guard !cases.isEmpty else {
+            return """
+            /// 고정 값으로 테스트 데이터 생성
+            public static func fixture() -> \(raw: typeName) {
+                fatalError("Enum에 case가 없습니다")
+            }
+            """
+        }
+        
+        // 전략에 따른 케이스 선택
+        let selectedCase: EnumCaseInfo
+        if strategy == "random" {
+            // 랜덤 전략이지만 fixture()는 고정값을 반환해야 하므로
+            // 여기서는 첫 번째 케이스를 반환하는 것이 맞음.
+            // 하지만 사용자가 명시적으로 random을 원했다면?
+            // fixture()의 의미는 "예측 가능한 고정값"이므로 random 전략은 적합하지 않음.
+            // 따라서 fixture()는 항상 첫 번째 케이스를 반환하거나,
+            // 별도의 로직이 필요함.
+            // 여기서는 "firstCase"와 동일하게 처리
+            selectedCase = cases[0]
+        } else {
+            // "firstCase"
+            selectedCase = cases[0]
+        }
+        
+        let returnValue: String
+        if let associatedType = selectedCase.associatedValueType {
+            // 연관 값이 있는 경우 해당 타입의 fixture() 호출
+            // Struct에도 fixtureValue() -> Self를 추가했으므로 그것을 호출
+            returnValue = ".\(selectedCase.name)(\(associatedType).fixtureValue())"
+        } else {
+            returnValue = ".\(selectedCase.name)"
+        }
+        
+        return """
+        /// 고정 값으로 테스트 데이터 생성
+        ///
+        /// Enum의 경우 첫 번째 case를 기본값으로 사용합니다.
+        public static func fixture() -> \(raw: typeName) {
+            return \(raw: returnValue)
+        }
+        
+        /// 고정 값으로 테스트 데이터 생성 (내부용)
+        public static func fixtureValue() -> \(raw: typeName) {
+            return fixture()
+        }
+        """
+    }
     private static func generateEnumAssertValidMethod(
         typeName: String,
         cases: [EnumCaseInfo]

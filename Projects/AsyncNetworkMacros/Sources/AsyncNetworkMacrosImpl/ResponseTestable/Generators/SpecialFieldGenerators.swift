@@ -16,7 +16,7 @@ protocol SpecialFieldGenerator: Sendable {
     func matches(propertyName: String, type: String) -> Bool
     
     /// Mock 값 생성 (랜덤)
-    func generateMockValue() -> String
+    func generateRandomValue() -> String
     
     /// Fixture 값 생성 (고정)
     func generateFixtureValue() -> String
@@ -43,7 +43,7 @@ struct EmailFieldGenerator: SpecialFieldGenerator {
         type == "String" && propertyName.lowercased().contains("email")
     }
     
-    func generateMockValue() -> String {
+    func generateRandomValue() -> String {
         "\"mock\\(Int.random(in: \(mockRange)))@\(mockDomain)\""
     }
     
@@ -70,7 +70,7 @@ struct URLFieldGenerator: SpecialFieldGenerator {
         type == "String" && propertyName.lowercased().contains("url")
     }
     
-    func generateMockValue() -> String {
+    func generateRandomValue() -> String {
         "\"https://\(mockDomain)/\\(UUID().uuidString.prefix(8))\""
     }
     
@@ -87,7 +87,7 @@ struct IDFieldGenerator: SpecialFieldGenerator {
         ["Int", "Int8", "Int16", "Int32", "Int64"].contains(type)
     }
     
-    func generateMockValue() -> String {
+    func generateRandomValue() -> String {
         // ID는 일반 Int와 동일하게 처리
         ""  // 빈 문자열 반환 시 기본 로직 사용
     }
@@ -117,11 +117,11 @@ struct SpecialFieldGeneratorRegistry: Sendable {
     }
     
     /// Mock 값 생성 (특수 필드가 아니면 nil 반환)
-    func generateMockValue(for propertyName: String, type: String) -> String? {
+    func generateRandomValue(for propertyName: String, type: String) -> String? {
         guard let generator = findGenerator(for: propertyName, type: type) else {
             return nil
         }
-        let value = generator.generateMockValue()
+        let value = generator.generateRandomValue()
         return value.isEmpty ? nil : value
     }
     
