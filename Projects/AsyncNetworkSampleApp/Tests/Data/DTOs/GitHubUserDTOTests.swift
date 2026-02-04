@@ -13,10 +13,10 @@ import Testing
 struct GitHubUserDTOTests {
     // MARK: - Mock Tests
 
-    @Test("GitHubUserDTO.mock()이 올바른 데이터를 생성하는지 확인")
+    @Test("GitHubUserDTO.random()이 올바른 데이터를 생성하는지 확인")
     func gitHubUserDTOMock() throws {
         // When
-        let mock = GitHubUserDTO.mock()
+        let mock = GitHubUserDTO.random()
 
         // Then
         #expect(mock.id > 0)
@@ -33,20 +33,20 @@ struct GitHubUserDTOTests {
         mock.assertValid()
     }
 
-    @Test("GitHubUserDTO.mock()이 매번 다른 값을 생성하는지 확인")
+    @Test("GitHubUserDTO.random()이 매번 다른 값을 생성하는지 확인")
     func gitHubUserDTOMockRandomness() {
         // When
-        let mock1 = GitHubUserDTO.mock()
-        let mock2 = GitHubUserDTO.mock()
+        let mock1 = GitHubUserDTO.random()
+        let mock2 = GitHubUserDTO.random()
 
         // Then - 랜덤이므로 값이 달라야 함
         #expect(mock1.id != mock2.id || mock1.login != mock2.login)
     }
 
-    @Test("GitHubUserDTO.mockArray()가 여러 개의 Mock을 생성하는지 확인")
+    @Test("GitHubUserDTO.randomArray()가 여러 개의 Mock을 생성하는지 확인")
     func gitHubUserDTOMockArray() throws {
         // When
-        let mocks = GitHubUserDTO.mockArray(count: 5)
+        let mocks = GitHubUserDTO.randomArray(count: 5)
 
         // Then
         #expect(mocks.count == 5)
@@ -57,10 +57,10 @@ struct GitHubUserDTOTests {
         }
     }
 
-    @Test("GitHubUserDTO.mockArray()가 기본 개수로 생성하는지 확인")
+    @Test("GitHubUserDTO.randomArray()가 기본 개수로 생성하는지 확인")
     func gitHubUserDTOMockArrayDefaultCount() {
-        // When (defaultArrayCount: 1)
-        let mocks = GitHubUserDTO.mockArray()
+        // When ()
+        let mocks = GitHubUserDTO.randomArray()
 
         // Then
         #expect(mocks.count == 1)
@@ -68,10 +68,10 @@ struct GitHubUserDTOTests {
 
     // MARK: - Fixture Tests
 
-    @Test("GitHubUserDTO.builder()가 일관된 데이터를 반환하는지 확인")
+    @Test("GitHubUserDTO.fixture()가 일관된 데이터를 반환하는지 확인")
     func gitHubUserDTOFixture() {
         // When
-        let fixture1 = GitHubUserDTO.builder()
+        let fixture1 = GitHubUserDTO.fixture()
             .with(id: 1)
             .with(login: "octocat")
             .with(avatarUrl: "https://github.com/images/error/octocat_happy.gif")
@@ -88,7 +88,7 @@ struct GitHubUserDTOTests {
             .with(createdAt: "2011-01-25T18:44:36Z")
             .with(updatedAt: "2023-11-07T22:47:31Z")
             .build()
-        let fixture2 = GitHubUserDTO.builder()
+        let fixture2 = GitHubUserDTO.fixture()
             .with(id: 1)
             .with(login: "octocat")
             .with(avatarUrl: "https://github.com/images/error/octocat_happy.gif")
@@ -125,7 +125,7 @@ struct GitHubUserDTOTests {
 
     // MARK: - Builder Tests
 
-    @Test("GitHubUserDTO.builder()가 커스텀 데이터를 생성하는지 확인")
+    @Test("GitHubUserDTO.fixture()가 커스텀 데이터를 생성하는지 확인")
     func gitHubUserDTOBuilder() throws {
         // Given
         let customLogin = "testuser"
@@ -133,7 +133,7 @@ struct GitHubUserDTOTests {
         let customAvatarUrl = "https://example.com/avatar.jpg"
 
         // When
-        let custom = GitHubUserDTO.builder()
+        let custom = GitHubUserDTO.fixture()
             .with(id: 999)
             .with(login: customLogin)
             .with(avatarUrl: customAvatarUrl)
@@ -169,10 +169,10 @@ struct GitHubUserDTOTests {
         custom.assertValid()
     }
 
-    @Test("GitHubUserDTO.builder()가 일부만 커스터마이징하는지 확인")
+    @Test("GitHubUserDTO.fixture()가 일부만 커스터마이징하는지 확인")
     func gitHubUserDTOBuilderPartial() throws {
         // When - login만 변경
-        let partial = GitHubUserDTO.builder()
+        let partial = GitHubUserDTO.fixture()
             .with(login: "customlogin")
             .build()
 
@@ -188,10 +188,10 @@ struct GitHubUserDTOTests {
 
     // MARK: - JSON Sample Tests
 
-    @Test("GitHubUserDTO.builder()로 생성한 데이터가 유효한 JSON으로 인코딩/디코딩되는지 확인")
+    @Test("GitHubUserDTO.fixture()로 생성한 데이터가 유효한 JSON으로 인코딩/디코딩되는지 확인")
     func gitHubUserDTOJsonSample() throws {
         // Given - builder로 샘플 데이터 생성
-        let sample = GitHubUserDTO.builder()
+        let sample = GitHubUserDTO.fixture()
             .with(id: 1)
             .with(login: "octocat")
             .with(avatarUrl: "https://github.com/images/error/octocat_happy.gif")
@@ -230,7 +230,7 @@ struct GitHubUserDTOTests {
     @Test("GitHubUserDTO가 Codable을 준수하는지 확인")
     func gitHubUserDTOCodable() throws {
         // Given
-        let original = GitHubUserDTO.mock()
+        let original = GitHubUserDTO.random()
 
         // When - Encode
         let encoder = JSONEncoder()
@@ -291,7 +291,7 @@ struct GitHubUserDTOTests {
     @Test("GitHubUserDTO가 GitHubUser 도메인 모델로 올바르게 변환되는지 확인")
     func gitHubUserDTOToDomainModel() {
         // Given
-        let dto = GitHubUserDTO.builder()
+        let dto = GitHubUserDTO.fixture()
             .with(id: 1)
             .with(login: "octocat")
             .with(avatarUrl: "https://github.com/images/error/octocat_happy.gif")
@@ -333,7 +333,7 @@ struct GitHubUserDTOTests {
     @Test("GitHubUserDTO의 옵셔널 필드가 nil일 때 도메인 모델로 올바르게 변환되는지 확인")
     func gitHubUserDTOWithNilOptionalsToDomainModel() {
         // Given
-        let dto = GitHubUserDTO.builder()
+        let dto = GitHubUserDTO.fixture()
             .with(id: 1)
             .with(login: "testuser")
             .with(avatarUrl: "https://example.com/avatar.jpg")

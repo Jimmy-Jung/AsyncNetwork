@@ -13,10 +13,10 @@ import Testing
 struct CourseDTOTests {
     // MARK: - Mock Tests
 
-    @Test("CourseDTO.mock()이 올바른 데이터를 생성하는지 확인")
+    @Test("CourseDTO.random()이 올바른 데이터를 생성하는지 확인")
     func courseDTOMock() throws {
         // When
-        let mock = CourseDTO.mock()
+        let mock = CourseDTO.random()
 
         // Then
         #expect(!mock.id.isEmpty)
@@ -27,20 +27,20 @@ struct CourseDTOTests {
         mock.assertValid()
     }
 
-    @Test("CourseDTO.mock()이 매번 다른 값을 생성하는지 확인")
+    @Test("CourseDTO.random()이 매번 다른 값을 생성하는지 확인")
     func courseDTOMockRandomness() {
         // When
-        let mock1 = CourseDTO.mock()
-        let mock2 = CourseDTO.mock()
+        let mock1 = CourseDTO.random()
+        let mock2 = CourseDTO.random()
 
         // Then - 랜덤이므로 값이 달라야 함
         #expect(mock1.id != mock2.id || mock1.title != mock2.title)
     }
 
-    @Test("CourseDTO.mockArray()가 여러 개의 Mock을 생성하는지 확인")
+    @Test("CourseDTO.random()으로 여러 개의 데이터를 생성하는지 확인")
     func courseDTOMockArray() throws {
         // When
-        let mocks = CourseDTO.mockArray(count: 10)
+        let mocks = CourseDTO.randomArray(count: 10)
 
         // Then
         #expect(mocks.count == 10)
@@ -51,10 +51,10 @@ struct CourseDTOTests {
         }
     }
 
-    @Test("CourseDTO.mockArray()가 기본 개수로 생성하는지 확인")
+    @Test("CourseDTO.randomArray()가 기본 개수로 생성하는지 확인")
     func courseDTOMockArrayDefaultCount() {
-        // When (defaultArrayCount: 5)
-        let mocks = CourseDTO.mockArray()
+        // When
+        let mocks = CourseDTO.randomArray()
 
         // Then
         #expect(mocks.count == 5)
@@ -62,7 +62,7 @@ struct CourseDTOTests {
 
     // MARK: - Builder Tests
 
-    @Test("CourseDTO.builder()가 커스텀 데이터를 생성하는지 확인")
+    @Test("CourseDTO.fixture()가 커스텀 데이터를 생성하는지 확인")
     func courseDTOBuilder() throws {
         // Given
         let customId = "custom-course-999"
@@ -70,7 +70,7 @@ struct CourseDTOTests {
         let customDescription = "Master advanced Swift architectural patterns"
 
         // When
-        let custom = CourseDTO.builder()
+        let custom = CourseDTO.fixture()
             .with(id: customId)
             .with(title: customTitle)
             .with(description: customDescription)
@@ -88,7 +88,7 @@ struct CourseDTOTests {
     func courseDTOBuilderPartialUpdate() throws {
         // Given - id만 고정, 나머지는 랜덤
         // Builder는 mock() 기반이므로 나머지 필드는 자동으로 랜덤 값 생성
-        let custom = CourseDTO.builder()
+        let custom = CourseDTO.fixture()
             .with(id: "partial-course-001")
             .build()
 
@@ -97,7 +97,7 @@ struct CourseDTOTests {
         // 나머지는 Mock 랜덤 값
         #expect(!custom.title.isEmpty)
         #expect(!custom.description.isEmpty)
-        
+
         custom.assertValid()
     }
 
@@ -106,7 +106,7 @@ struct CourseDTOTests {
     @Test("Pattern 1: 완전 랜덤 - mock()만 사용")
     func builderPattern1_FullyRandom() {
         // When - 모든 필드가 랜덤
-        let random = CourseDTO.mock()
+        let random = CourseDTO.random()
 
         // Then - 매번 다른 값
         #expect(!random.id.isEmpty)
@@ -118,7 +118,7 @@ struct CourseDTOTests {
     @Test("Pattern 2: 완전 고정 - builder로 모든 필드 지정")
     func builderPattern2_FullyFixed() {
         // When - 모든 필드를 고정
-        let fixed = CourseDTO.builder()
+        let fixed = CourseDTO.fixture()
             .with(id: "course-001")
             .with(title: "Swift Fundamentals")
             .with(description: "Learn Swift basics")
@@ -134,7 +134,7 @@ struct CourseDTOTests {
     @Test("Pattern 3: 하이브리드 - 일부만 고정, 나머지는 fixture")
     func builderPattern3_Hybrid() {
         // When - id만 커스터마이징, 나머지는 fixture 기본값
-        let hybrid = CourseDTO.builder()
+        let hybrid = CourseDTO.fixture()
             .with(id: "test-course-999")
             .build()
 
@@ -144,7 +144,7 @@ struct CourseDTOTests {
         #expect(!hybrid.description.isEmpty) // fixture 값
 
         // 여러 번 생성해도 같은 with() 값이면 동일한 결과
-        let hybrid2 = CourseDTO.builder()
+        let hybrid2 = CourseDTO.fixture()
             .with(id: "test-course-999")
             .build()
 
@@ -153,14 +153,14 @@ struct CourseDTOTests {
         #expect(hybrid.description == hybrid2.description) // fixture 값도 동일
     }
 
-    @Test("Pattern 4: 배열 생성 - mockArray()로 여러 개 생성")
+    @Test("Pattern 4: 배열 생성 - randomArray()로 여러 개 생성")
     func builderPattern4_Array() {
         // When - 여러 개의 랜덤 데이터 생성
-        let courses = CourseDTO.mockArray(count: 10)
+        let courses = CourseDTO.randomArray(count: 10)
 
         // Then
         #expect(courses.count == 10)
-        
+
         // 각 항목이 유효한지 확인
         for course in courses {
             course.assertValid()
@@ -174,8 +174,8 @@ struct CourseDTOTests {
     @Test("Pattern 5: Builder + 커스텀 배열 - 일부만 고정")
     func builderPattern5_CustomArray() {
         // When - 특정 조건의 Course들을 여러 개 생성
-        let beginnerCourses = (1...5).map { index in
-            CourseDTO.builder()
+        let beginnerCourses = (1 ... 5).map { index in
+            CourseDTO.fixture()
                 .with(id: "beginner-\(index)")
                 .with(title: "Beginner Course \(index)")
                 // description은 랜덤
@@ -184,11 +184,11 @@ struct CourseDTOTests {
 
         // Then
         #expect(beginnerCourses.count == 5)
-        
+
         for (index, course) in beginnerCourses.enumerated() {
             let expectedId = "beginner-\(index + 1)"
             let expectedTitle = "Beginner Course \(index + 1)"
-            
+
             #expect(course.id == expectedId)
             #expect(course.title == expectedTitle)
             #expect(!course.description.isEmpty) // 랜덤 값
@@ -198,19 +198,19 @@ struct CourseDTOTests {
     @Test("Pattern 6: 실전 시나리오 - 특정 조건 테스트")
     func builderPattern6_RealWorldScenario() {
         // Scenario: "Swift"로 시작하는 ID를 가진 Course만 필터링하는 로직 테스트
-        
+
         // Given - Swift 과정 3개, 다른 과정 2개 생성
-        let swiftCourses = (1...3).map { index in
-            CourseDTO.builder()
+        let swiftCourses = (1 ... 3).map { index in
+            CourseDTO.fixture()
                 .with(id: "swift-\(index)")
                 .build()
         }
-        
+
         let otherCourses = [
-            CourseDTO.builder().with(id: "python-101").build(),
-            CourseDTO.builder().with(id: "kotlin-basics").build()
+            CourseDTO.fixture().with(id: "python-101").build(),
+            CourseDTO.fixture().with(id: "kotlin-basics").build()
         ]
-        
+
         let allCourses = swiftCourses + otherCourses
 
         // When - "swift-"로 시작하는 Course 필터링
@@ -218,7 +218,7 @@ struct CourseDTOTests {
 
         // Then
         #expect(filteredSwiftCourses.count == 3)
-        
+
         for course in filteredSwiftCourses {
             #expect(course.id.hasPrefix("swift-"))
             course.assertValid()
@@ -228,16 +228,16 @@ struct CourseDTOTests {
     @Test("Pattern 7: 중첩 DTO - Builder + Mock 조합")
     func builderPattern7_NestedDTO() {
         // When - GetCoursesResponseDTO에 커스텀 Course 배열 주입
-        let customCourse1 = CourseDTO.builder()
+        let customCourse1 = CourseDTO.fixture()
             .with(id: "custom-1")
             .with(title: "Custom Course 1")
             .build()
-        
-        let customCourse2 = CourseDTO.builder()
+
+        let customCourse2 = CourseDTO.fixture()
             .with(id: "custom-2")
             .build() // title, description은 랜덤
-        
-        let response = GetCoursesResponseDTO.builder()
+
+        let response = GetCoursesResponseDTO.fixture()
             .with(items: [customCourse1, customCourse2])
             .with(nextToken: "custom-token")
             .build()

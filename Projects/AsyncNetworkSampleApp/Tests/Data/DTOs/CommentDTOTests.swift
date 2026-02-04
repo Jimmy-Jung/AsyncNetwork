@@ -13,10 +13,10 @@ import Testing
 struct CommentDTOTests {
     // MARK: - Mock Tests
 
-    @Test("CommentDTO.mock()이 올바른 데이터를 생성하는지 확인")
+    @Test("CommentDTO.random()이 올바른 데이터를 생성하는지 확인")
     func commentDTOMock() throws {
         // When
-        let mock = CommentDTO.mock()
+        let mock = CommentDTO.random()
 
         // Then
         #expect(mock.id > 0)
@@ -29,20 +29,20 @@ struct CommentDTOTests {
         mock.assertValid()
     }
 
-    @Test("CommentDTO.mock()이 매번 다른 값을 생성하는지 확인")
+    @Test("CommentDTO.random()이 매번 다른 값을 생성하는지 확인")
     func commentDTOMockRandomness() {
         // When
-        let mock1 = CommentDTO.mock()
-        let mock2 = CommentDTO.mock()
+        let mock1 = CommentDTO.random()
+        let mock2 = CommentDTO.random()
 
         // Then - 랜덤이므로 값이 달라야 함
         #expect(mock1.id != mock2.id || mock1.name != mock2.name)
     }
 
-    @Test("CommentDTO.mockArray()가 여러 개의 Mock을 생성하는지 확인")
+    @Test("CommentDTO.randomArray()가 여러 개의 Mock을 생성하는지 확인")
     func commentDTOMockArray() throws {
         // When
-        let mocks = CommentDTO.mockArray(count: 10)
+        let mocks = CommentDTO.randomArray(count: 10)
 
         // Then
         #expect(mocks.count == 10)
@@ -53,10 +53,10 @@ struct CommentDTOTests {
         }
     }
 
-    @Test("CommentDTO.mockArray()가 기본 개수로 생성하는지 확인")
+    @Test("CommentDTO.randomArray()가 기본 개수로 생성하는지 확인")
     func commentDTOMockArrayDefaultCount() {
-        // When (defaultArrayCount: 10)
-        let mocks = CommentDTO.mockArray()
+        // When ()
+        let mocks = CommentDTO.randomArray()
 
         // Then
         #expect(mocks.count == 10)
@@ -64,17 +64,17 @@ struct CommentDTOTests {
 
     // MARK: - Fixture Tests
 
-    @Test("CommentDTO.builder()가 일관된 데이터를 생성하는지 확인")
+    @Test("CommentDTO.fixture()가 일관된 데이터를 생성하는지 확인")
     func commentDTOFixture() {
         // When
-        let fixture1 = CommentDTO.builder()
+        let fixture1 = CommentDTO.fixture()
             .with(id: 1)
             .with(postId: 1)
             .with(name: "id labore ex et quam laborum")
             .with(email: "eliseo@example.com")
             .with(body: "Test body")
             .build()
-        let fixture2 = CommentDTO.builder()
+        let fixture2 = CommentDTO.fixture()
             .with(id: 1)
             .with(postId: 1)
             .with(name: "id labore ex et quam laborum")
@@ -98,7 +98,7 @@ struct CommentDTOTests {
 
     // MARK: - Builder Tests
 
-    @Test("CommentDTO.builder()가 커스텀 데이터를 생성하는지 확인")
+    @Test("CommentDTO.fixture()가 커스텀 데이터를 생성하는지 확인")
     func commentDTOBuilder() throws {
         // Given
         let customName = "Custom Commenter"
@@ -106,7 +106,7 @@ struct CommentDTOTests {
         let customBody = "Custom comment body"
 
         // When
-        let custom = CommentDTO.builder()
+        let custom = CommentDTO.fixture()
             .with(id: 999)
             .with(postId: 42)
             .with(name: customName)
@@ -124,10 +124,10 @@ struct CommentDTOTests {
         custom.assertValid()
     }
 
-    @Test("CommentDTO.builder()가 일부만 커스터마이징하는지 확인 (하이브리드 패턴)")
+    @Test("CommentDTO.fixture()가 일부만 커스터마이징하는지 확인 (하이브리드 패턴)")
     func commentDTOBuilderPartial() throws {
         // When - email만 변경, 나머지는 mock 기반 랜덤
-        let partial = CommentDTO.builder()
+        let partial = CommentDTO.fixture()
             .with(email: "newemail@test.com")
             .build()
 
@@ -147,8 +147,8 @@ struct CommentDTOTests {
     func builderRealWorldExample1() {
         // Given - Post ID 100에 대한 댓글 5개 생성
         let postId = 100
-        let comments = (1...5).map { index in
-            CommentDTO.builder()
+        let comments = (1 ... 5).map { index in
+            CommentDTO.fixture()
                 .with(id: index)
                 .with(postId: postId)
                 // name, email, body는 랜덤
@@ -157,7 +157,7 @@ struct CommentDTOTests {
 
         // Then
         #expect(comments.count == 5)
-        
+
         for comment in comments {
             #expect(comment.postId == postId) // 모두 같은 postId
             #expect(!comment.name.isEmpty) // 랜덤 값
@@ -169,20 +169,20 @@ struct CommentDTOTests {
     @Test("실전 예시: 테스트용 관리자 댓글 vs 일반 댓글")
     func builderRealWorldExample2() {
         // Given - 관리자 댓글 (고정 email)
-        let adminComment = CommentDTO.builder()
+        let adminComment = CommentDTO.fixture()
             .with(email: "admin@example.com")
             .with(name: "Administrator")
             // id, postId, body는 랜덤
             .build()
 
         // Given - 일반 사용자 댓글 (완전 랜덤)
-        let userComment = CommentDTO.mock()
+        let userComment = CommentDTO.random()
 
         // Then
         #expect(adminComment.email == "admin@example.com")
         #expect(adminComment.name == "Administrator")
         #expect(!userComment.email.isEmpty)
-        
+
         adminComment.assertValid()
         userComment.assertValid()
     }
@@ -192,7 +192,7 @@ struct CommentDTOTests {
     @Test("CommentDTO를 JSON으로 인코딩/디코딩할 수 있는지 확인")
     func commentDTOJsonSample() throws {
         // Given - Builder로 샘플 데이터 생성
-        let sample = CommentDTO.builder()
+        let sample = CommentDTO.fixture()
             .with(id: 1)
             .with(postId: 1)
             .with(name: "Test Comment")
@@ -203,7 +203,7 @@ struct CommentDTOTests {
         // When - JSON으로 인코딩
         let encoder = JSONEncoder()
         let jsonData = try encoder.encode(sample)
-        
+
         // Then - 디코딩 가능한지 확인
         let decoder = JSONDecoder()
         let decoded = try decoder.decode(CommentDTO.self, from: jsonData)
@@ -218,7 +218,7 @@ struct CommentDTOTests {
     @Test("CommentDTO가 Codable을 준수하는지 확인")
     func commentDTOCodable() throws {
         // Given
-        let original = CommentDTO.mock()
+        let original = CommentDTO.random()
 
         // When - Encode
         let encoder = JSONEncoder()
@@ -240,7 +240,7 @@ struct CommentDTOTests {
     @Test("CommentDTO가 Comment 도메인 모델로 올바르게 변환되는지 확인")
     func commentDTOToDomainModel() {
         // Given
-        let dto = CommentDTO.builder()
+        let dto = CommentDTO.fixture()
             .with(id: 1)
             .with(postId: 1)
             .with(name: "Test Comment")
@@ -284,7 +284,7 @@ struct CommentDTOTests {
     @Test("Mock CommentDTO를 도메인 모델로 변환 후 다시 DTO로 변환해도 동일한지 확인")
     func roundTripConversion() {
         // Given
-        let originalDTO = CommentDTO.builder()
+        let originalDTO = CommentDTO.fixture()
             .with(id: 1)
             .with(postId: 1)
             .with(name: "Test Comment")

@@ -22,7 +22,7 @@ import Testing
 /// ### 문제 (수정 전)
 /// ```swift
 /// // 매크로가 생성한 코드
-/// categoryIds: (0..<Int.random(in: 2...5)).map { _ in Int.mock() }
+/// categoryIds: (0..<Int.random(in: 2...5)).map { _ in Int.random() }
 /// //                                                   ^^^^^ 에러!
 /// // Type 'Int' has no member 'mock'
 /// ```
@@ -39,9 +39,9 @@ struct ItemDTOTests {
     // MARK: - Mock 생성 테스트
 
     @Test("mock() - 기본 타입 배열이 랜덤 값으로 생성됨")
-    func testMock() throws {
+    func mock() throws {
         // Given & When
-        let item = ItemDTO.mock()
+        let item = ItemDTO.random()
 
         // Then: 모든 필드가 생성되어야 함
         #expect(item.id > 0)
@@ -63,8 +63,8 @@ struct ItemDTOTests {
     @Test("mock() - 호출마다 다른 값 생성 (랜덤성 검증)")
     func mockRandomness() throws {
         // Given & When
-        let item1 = ItemDTO.mock()
-        let item2 = ItemDTO.mock()
+        let item1 = ItemDTO.random()
+        let item2 = ItemDTO.random()
 
         // Then: 랜덤 값이므로 대부분 달라야 함 (id는 랜덤이므로 다를 가능성 높음)
         #expect(item1.id != item2.id)
@@ -82,7 +82,7 @@ struct ItemDTOTests {
     @Test("builder() - 고정 값으로 생성됨 (fixtureJSON 기반)")
     func testFixture() throws {
         // Given & When
-        let item = ItemDTO.builder()
+        let item = ItemDTO.fixture()
             .with(id: 1001)
             .with(name: "Sample Item")
             .with(categoryIds: [100, 200, 300])
@@ -112,7 +112,7 @@ struct ItemDTOTests {
     @Test("builder() - 항상 동일한 값 반환")
     func fixtureConsistency() throws {
         // Given & When
-        let item1 = ItemDTO.builder()
+        let item1 = ItemDTO.fixture()
             .with(id: 1001)
             .with(name: "Sample Item")
             .with(categoryIds: [100, 200, 300])
@@ -125,7 +125,7 @@ struct ItemDTOTests {
             .with(metadata: nil)
             .with(relatedIds: [2001, 2002])
             .build()
-        let item2 = ItemDTO.builder()
+        let item2 = ItemDTO.fixture()
             .with(id: 1001)
             .with(name: "Sample Item")
             .with(categoryIds: [100, 200, 300])
@@ -149,9 +149,9 @@ struct ItemDTOTests {
     // MARK: - Builder 패턴 테스트
 
     @Test("builder() - 특정 필드만 커스터마이징")
-    func testBuilder() throws {
+    func builder() throws {
         // Given & When
-        let item = ItemDTO.builder()
+        let item = ItemDTO.fixture()
             .with(id: 9999)
             .with(categoryIds: [1, 2, 3])
             .with(labels: ["custom", "label"])
@@ -170,9 +170,9 @@ struct ItemDTOTests {
     // MARK: - mockArray 테스트
 
     @Test("mockArray() - 여러 개 생성")
-    func testMockArray() throws {
+    func mockArray() throws {
         // Given & When
-        let items = ItemDTO.mockArray(count: 3)
+        let items = ItemDTO.randomArray(count: 3)
 
         // Then
         #expect(items.count == 3)
@@ -186,7 +186,7 @@ struct ItemDTOTests {
     @Test("assertValid() - 유효한 데이터 검증")
     func testAssertValid() throws {
         // Given
-        let item = ItemDTO.builder()
+        let item = ItemDTO.fixture()
             .with(id: 1001)
             .with(name: "Sample Item")
             .with(categoryIds: [100, 200, 300])
@@ -209,7 +209,7 @@ struct ItemDTOTests {
     @Test("기본 타입 배열 - Int 배열 처리")
     func intArray() throws {
         // Given & When
-        let item = ItemDTO.mock()
+        let item = ItemDTO.random()
 
         // Then: 배열이 생성되고 유효한 값들을 포함하는지 확인
         #expect(item.categoryIds.count >= 2)
@@ -220,7 +220,7 @@ struct ItemDTOTests {
     @Test("기본 타입 배열 - String 배열 처리")
     func stringArray() throws {
         // Given & When
-        let item = ItemDTO.mock()
+        let item = ItemDTO.random()
 
         // Then: 배열이 생성되고 유효한 값들을 포함하는지 확인
         #expect(item.labels.count >= 2)
@@ -231,7 +231,7 @@ struct ItemDTOTests {
     @Test("기본 타입 배열 - Double 배열 처리 (Optional)")
     func doubleArrayOptional() throws {
         // Given & When
-        let item = ItemDTO.mock()
+        let item = ItemDTO.random()
 
         // Then: Optional이므로 nil이거나 유효한 값들을 포함
         if let ratings = item.ratings {
@@ -244,7 +244,7 @@ struct ItemDTOTests {
     @Test("딕셔너리 타입 처리 (Optional)")
     func dictionaryOptional() throws {
         // Given & When
-        let item = ItemDTO.mock()
+        let item = ItemDTO.random()
 
         // Then: Optional이므로 nil이거나 딕셔너리 생성됨
         if let metadata = item.metadata {
@@ -261,7 +261,7 @@ struct SelectionDTOTests {
     @Test("mock() - Int 배열 생성")
     func testMock() throws {
         // Given & When
-        let selection = SelectionDTO.mock()
+        let selection = SelectionDTO.random()
 
         // Then
         #expect(!selection.title.isEmpty)
@@ -273,7 +273,7 @@ struct SelectionDTOTests {
     @Test("builder() - 고정 값 (fixtureJSON)")
     func testFixture() throws {
         // Given & When
-        let selection = SelectionDTO.builder()
+        let selection = SelectionDTO.fixture()
             .with(title: "Sample Selection")
             .with(totalCount: 5)
             .with(selectedIndices: [1, 3, 4])
@@ -288,7 +288,7 @@ struct SelectionDTOTests {
     @Test("builder() - 인덱스 커스터마이징")
     func testBuilder() throws {
         // Given & When
-        let selection = SelectionDTO.builder()
+        let selection = SelectionDTO.fixture()
             .with(selectedIndices: [2, 4, 6])
             .build()
 
@@ -305,7 +305,7 @@ struct CategorySetDTOTests {
     @Test("mock() - Set<Int> 생성")
     func testMock() throws {
         // Given & When
-        let categorySet = CategorySetDTO.mock()
+        let categorySet = CategorySetDTO.random()
 
         // Then
         #expect(categorySet.id > 0)
@@ -317,7 +317,7 @@ struct CategorySetDTOTests {
     @Test("builder() - Set이 배열로부터 생성됨")
     func testFixture() throws {
         // Given & When
-        let categorySet = CategorySetDTO.builder()
+        let categorySet = CategorySetDTO.fixture()
             .with(id: 1)
             .with(title: "Product Category")
             .with(categoryIds: [101, 102, 103])
@@ -332,7 +332,7 @@ struct CategorySetDTOTests {
     @Test("builder() - Set<Int> 커스터마이징")
     func testBuilder() throws {
         // Given & When
-        let categorySet = CategorySetDTO.builder()
+        let categorySet = CategorySetDTO.fixture()
             .with(categoryIds: [999, 888])
             .build()
 
@@ -348,7 +348,7 @@ struct GridDTOTests {
     @Test("mock() - 2차원 배열 생성")
     func testMock() throws {
         // Given & When
-        let grid = GridDTO.mock()
+        let grid = GridDTO.random()
 
         // Then
         #expect(grid.id > 0)
@@ -365,7 +365,7 @@ struct GridDTOTests {
     @Test("builder() - 고정 2차원 배열")
     func testFixture() throws {
         // Given & When
-        let grid = GridDTO.builder()
+        let grid = GridDTO.fixture()
             .with(id: 1)
             .with(title: "Sample Grid")
             .with(data: [[1, 2, 3], [4, 5, 6]])
@@ -380,7 +380,7 @@ struct GridDTOTests {
     @Test("builder() - 2차원 배열 커스터마이징")
     func testBuilder() throws {
         // Given & When
-        let grid = GridDTO.builder()
+        let grid = GridDTO.fixture()
             .with(data: [[9, 8], [7, 6], [5, 4]])
             .build()
 
@@ -392,7 +392,7 @@ struct GridDTOTests {
     @Test("다차원 배열 - 크기 검증")
     func matrixDimensions() throws {
         // Given
-        let grid = GridDTO.builder()
+        let grid = GridDTO.fixture()
             .with(id: 1)
             .with(title: "Sample Grid")
             .with(data: [[1, 2, 3], [4, 5, 6]])
@@ -415,34 +415,34 @@ struct PrimitiveArrayIntegrationTests {
     @Test("모든 DTO가 컴파일되고 인스턴스 생성 가능")
     func allDTOsCompile() throws {
         // Given & When & Then: 컴파일 에러 없이 생성되어야 함
-        _ = ItemDTO.mock()
-        _ = ItemDTO.builder().build()
-        _ = SelectionDTO.mock()
-        _ = SelectionDTO.builder().build()
-        _ = CategorySetDTO.mock()
-        _ = CategorySetDTO.builder().build()
-        _ = GridDTO.mock()
-        _ = GridDTO.builder().build()
+        _ = ItemDTO.random()
+        _ = ItemDTO.fixture().build()
+        _ = SelectionDTO.random()
+        _ = SelectionDTO.fixture().build()
+        _ = CategorySetDTO.random()
+        _ = CategorySetDTO.fixture().build()
+        _ = GridDTO.random()
+        _ = GridDTO.fixture().build()
     }
 
     @Test("TestableDTO 프로토콜 채택 확인")
     func ableDTOConformance() throws {
         // Given & When: 모든 DTO가 TestableDTO 메서드를 가지고 있는지 확인
-        _ = ItemDTO.mock()
-        _ = ItemDTO.builder().build()
-        _ = ItemDTO.mockArray()
+        _ = ItemDTO.random()
+        _ = ItemDTO.fixture().build()
+        _ = ItemDTO.randomArray()
 
-        _ = SelectionDTO.mock()
-        _ = SelectionDTO.builder().build()
-        _ = SelectionDTO.mockArray()
+        _ = SelectionDTO.random()
+        _ = SelectionDTO.fixture().build()
+        _ = SelectionDTO.randomArray()
 
-        _ = CategorySetDTO.mock()
-        _ = CategorySetDTO.builder().build()
-        _ = CategorySetDTO.mockArray()
+        _ = CategorySetDTO.random()
+        _ = CategorySetDTO.fixture().build()
+        _ = CategorySetDTO.randomArray()
 
-        _ = GridDTO.mock()
-        _ = GridDTO.builder().build()
-        _ = GridDTO.mockArray()
+        _ = GridDTO.random()
+        _ = GridDTO.fixture().build()
+        _ = GridDTO.randomArray()
 
         // Then: 컴파일 및 실행 성공
         #expect(Bool(true))
@@ -451,7 +451,7 @@ struct PrimitiveArrayIntegrationTests {
     @Test("Codable 직렬화/역직렬화")
     func codable() throws {
         // Given
-        let original = ItemDTO.builder()
+        let original = ItemDTO.fixture()
             .with(id: 1001)
             .with(name: "Sample Item")
             .with(categoryIds: [100, 200, 300])

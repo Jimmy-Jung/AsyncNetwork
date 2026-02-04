@@ -13,10 +13,10 @@ import Testing
 struct PostDTOTests {
     // MARK: - Mock Tests
 
-    @Test("PostDTO.mock()이 올바른 데이터를 생성하는지 확인")
+    @Test("PostDTO.random()이 올바른 데이터를 생성하는지 확인")
     func postDTOMock() throws {
         // When
-        let mock = PostDTO.mock()
+        let mock = PostDTO.random()
 
         // Then
         #expect(mock.id > 0)
@@ -28,20 +28,20 @@ struct PostDTOTests {
         mock.assertValid()
     }
 
-    @Test("PostDTO.mock()이 매번 다른 값을 생성하는지 확인")
+    @Test("PostDTO.random()이 매번 다른 값을 생성하는지 확인")
     func postDTOMockRandomness() {
         // When
-        let mock1 = PostDTO.mock()
-        let mock2 = PostDTO.mock()
+        let mock1 = PostDTO.random()
+        let mock2 = PostDTO.random()
 
         // Then - 랜덤이므로 값이 달라야 함
         #expect(mock1.id != mock2.id || mock1.title != mock2.title)
     }
 
-    @Test("PostDTO.mockArray()가 여러 개의 Mock을 생성하는지 확인")
+    @Test("PostDTO.randomArray()가 여러 개의 Mock을 생성하는지 확인")
     func postDTOMockArray() throws {
         // When
-        let mocks = PostDTO.mockArray(count: 10)
+        let mocks = PostDTO.randomArray(count: 10)
 
         // Then
         #expect(mocks.count == 10)
@@ -52,10 +52,10 @@ struct PostDTOTests {
         }
     }
 
-    @Test("PostDTO.mockArray()가 기본 개수로 생성하는지 확인")
+    @Test("PostDTO.randomArray()가 기본 개수로 생성하는지 확인")
     func postDTOMockArrayDefaultCount() {
-        // When (defaultArrayCount: 10)
-        let mocks = PostDTO.mockArray()
+        // When ()
+        let mocks = PostDTO.randomArray()
 
         // Then
         #expect(mocks.count == 10)
@@ -63,17 +63,17 @@ struct PostDTOTests {
 
     // MARK: - Builder Tests (Fixture Replacement)
 
-    @Test("PostDTO.builder()가 일관된 데이터를 생성하는지 확인")
+    @Test("PostDTO.fixture()가 일관된 데이터를 생성하는지 확인")
     func postDTOBuilderFixture() {
         // When
-        let fixture1 = PostDTO.builder()
+        let fixture1 = PostDTO.fixture()
             .with(id: 1)
             .with(userId: 1)
             .with(title: "sunt aut facere repellat provident occaecati excepturi optio reprehenderit")
             .with(body: "quia et suscipit\nsuscipit recusandae consequuntur expedita et cum\nreprehenderit molestiae ut ut quas totam\nnostrum rerum est autem sunt rem eveniet architecto")
             .build()
-        
-        let fixture2 = PostDTO.builder()
+
+        let fixture2 = PostDTO.fixture()
             .with(id: 1)
             .with(userId: 1)
             .with(title: "sunt aut facere repellat provident occaecati excepturi optio reprehenderit")
@@ -94,14 +94,14 @@ struct PostDTOTests {
 
     // MARK: - Builder Tests
 
-    @Test("PostDTO.builder()가 커스텀 데이터를 생성하는지 확인")
+    @Test("PostDTO.fixture()가 커스텀 데이터를 생성하는지 확인")
     func postDTOBuilder() throws {
         // Given
         let customTitle = "Custom Test Title"
         let customBody = "Custom Test Body"
 
         // When
-        let custom = PostDTO.builder()
+        let custom = PostDTO.fixture()
             .with(id: 999)
             .with(userId: 42)
             .with(title: customTitle)
@@ -117,10 +117,10 @@ struct PostDTOTests {
         custom.assertValid()
     }
 
-    @Test("PostDTO.builder()가 일부만 커스터마이징하는지 확인")
+    @Test("PostDTO.fixture()가 일부만 커스터마이징하는지 확인")
     func postDTOBuilderPartial() throws {
         // When - title만 변경
-        let partial = PostDTO.builder()
+        let partial = PostDTO.fixture()
             .with(title: "Only Title Changed")
             .build()
 
@@ -135,10 +135,10 @@ struct PostDTOTests {
 
     // MARK: - JSON Sample Tests (Builder-based)
 
-    @Test("PostDTO.builder()로 생성한 샘플이 유효한 JSON으로 인코딩/디코딩되는지 확인")
+    @Test("PostDTO.fixture()로 생성한 샘플이 유효한 JSON으로 인코딩/디코딩되는지 확인")
     func postDTOBuilderJsonSample() throws {
         // Given - Builder로 샘플 생성
-        let sample = PostDTO.builder()
+        let sample = PostDTO.fixture()
             .with(id: 1)
             .with(userId: 1)
             .with(title: "sunt aut facere repellat provident occaecati excepturi optio reprehenderit")
@@ -166,7 +166,7 @@ struct PostDTOTests {
     @Test("PostDTO가 Codable을 준수하는지 확인")
     func postDTOCodable() throws {
         // Given
-        let original = PostDTO.mock()
+        let original = PostDTO.random()
 
         // When - Encode
         let encoder = JSONEncoder()
@@ -187,7 +187,7 @@ struct PostDTOTests {
     @Test("PostDTO가 Post 도메인 모델로 올바르게 변환되는지 확인")
     func postDTOToDomainModel() {
         // Given
-        let dto = PostDTO.builder()
+        let dto = PostDTO.fixture()
             .with(id: 1)
             .with(userId: 1)
             .with(title: "sunt aut facere repellat provident occaecati excepturi optio reprehenderit")
@@ -227,7 +227,7 @@ struct PostDTOTests {
     @Test("Mock PostDTO를 도메인 모델로 변환 후 다시 DTO로 변환해도 동일한지 확인")
     func roundTripConversion() {
         // Given
-        let originalDTO = PostDTO.builder()
+        let originalDTO = PostDTO.fixture()
             .with(id: 1)
             .with(userId: 1)
             .with(title: "sunt aut facere repellat provident occaecati excepturi optio reprehenderit")

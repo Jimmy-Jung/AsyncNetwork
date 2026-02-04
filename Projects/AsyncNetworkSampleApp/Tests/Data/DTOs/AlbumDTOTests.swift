@@ -13,10 +13,10 @@ import Testing
 struct AlbumDTOTests {
     // MARK: - Mock Tests
 
-    @Test("AlbumDTO.mock()이 올바른 데이터를 생성하는지 확인")
+    @Test("AlbumDTO.random()이 올바른 데이터를 생성하는지 확인")
     func albumDTOMock() throws {
         // When
-        let mock = AlbumDTO.mock()
+        let mock = AlbumDTO.random()
 
         // Then
         #expect(mock.id > 0)
@@ -27,20 +27,20 @@ struct AlbumDTOTests {
         mock.assertValid()
     }
 
-    @Test("AlbumDTO.mock()이 매번 다른 값을 생성하는지 확인")
+    @Test("AlbumDTO.random()이 매번 다른 값을 생성하는지 확인")
     func albumDTOMockRandomness() {
         // When
-        let mock1 = AlbumDTO.mock()
-        let mock2 = AlbumDTO.mock()
+        let mock1 = AlbumDTO.random()
+        let mock2 = AlbumDTO.random()
 
         // Then - 랜덤이므로 값이 달라야 함
         #expect(mock1.id != mock2.id || mock1.title != mock2.title)
     }
 
-    @Test("AlbumDTO.mockArray()가 여러 개의 Mock을 생성하는지 확인")
+    @Test("AlbumDTO.randomArray()가 여러 개의 Mock을 생성하는지 확인")
     func albumDTOMockArray() throws {
         // When
-        let mocks = AlbumDTO.mockArray(count: 10)
+        let mocks = AlbumDTO.randomArray(count: 10)
 
         // Then
         #expect(mocks.count == 10)
@@ -51,10 +51,10 @@ struct AlbumDTOTests {
         }
     }
 
-    @Test("AlbumDTO.mockArray()가 기본 개수로 생성하는지 확인")
+    @Test("AlbumDTO.randomArray()가 기본 개수로 생성하는지 확인")
     func albumDTOMockArrayDefaultCount() {
-        // When (defaultArrayCount: 10)
-        let mocks = AlbumDTO.mockArray()
+        // When ()
+        let mocks = AlbumDTO.randomArray()
 
         // Then
         #expect(mocks.count == 10)
@@ -62,15 +62,15 @@ struct AlbumDTOTests {
 
     // MARK: - Builder Tests (Fixture Replacement)
 
-    @Test("AlbumDTO.builder()가 일관된 데이터를 생성하는지 확인")
+    @Test("AlbumDTO.fixture()가 일관된 데이터를 생성하는지 확인")
     func albumDTOFixture() {
         // When
-        let fixture1 = AlbumDTO.builder()
+        let fixture1 = AlbumDTO.fixture()
             .with(id: 1)
             .with(userId: 1)
             .with(title: "quidem molestiae enim")
             .build()
-        let fixture2 = AlbumDTO.builder()
+        let fixture2 = AlbumDTO.fixture()
             .with(id: 1)
             .with(userId: 1)
             .with(title: "quidem molestiae enim")
@@ -89,13 +89,13 @@ struct AlbumDTOTests {
 
     // MARK: - Builder Tests
 
-    @Test("AlbumDTO.builder()가 커스텀 데이터를 생성하는지 확인")
+    @Test("AlbumDTO.fixture()가 커스텀 데이터를 생성하는지 확인")
     func albumDTOBuilder() throws {
         // Given
         let customTitle = "Custom Album Title"
 
         // When
-        let custom = AlbumDTO.builder()
+        let custom = AlbumDTO.fixture()
             .with(id: 999)
             .with(userId: 42)
             .with(title: customTitle)
@@ -109,10 +109,10 @@ struct AlbumDTOTests {
         custom.assertValid()
     }
 
-    @Test("AlbumDTO.builder()가 일부만 커스터마이징하는지 확인")
+    @Test("AlbumDTO.fixture()가 일부만 커스터마이징하는지 확인")
     func albumDTOBuilderPartial() throws {
         // When - title만 변경
-        let partial = AlbumDTO.builder()
+        let partial = AlbumDTO.fixture()
             .with(title: "Only Title Changed")
             .build()
 
@@ -127,10 +127,10 @@ struct AlbumDTOTests {
 
     // MARK: - Builder JSON Tests
 
-    @Test("AlbumDTO.builder()로 생성한 데이터가 JSON 인코딩/디코딩되는지 확인")
+    @Test("AlbumDTO.fixture()로 생성한 데이터가 JSON 인코딩/디코딩되는지 확인")
     func albumDTOJsonSample() throws {
         // Given - Builder로 샘플 데이터 생성
-        let sample = AlbumDTO.builder()
+        let sample = AlbumDTO.fixture()
             .with(id: 1)
             .with(userId: 1)
             .with(title: "quidem molestiae enim")
@@ -154,7 +154,7 @@ struct AlbumDTOTests {
     @Test("AlbumDTO가 Codable을 준수하는지 확인")
     func albumDTOCodable() throws {
         // Given
-        let original = AlbumDTO.mock()
+        let original = AlbumDTO.random()
 
         // When - Encode
         let encoder = JSONEncoder()
@@ -174,7 +174,7 @@ struct AlbumDTOTests {
     @Test("AlbumDTO가 Album 도메인 모델로 올바르게 변환되는지 확인")
     func albumDTOToDomainModel() {
         // Given
-        let dto = AlbumDTO.builder()
+        let dto = AlbumDTO.fixture()
             .with(id: 1)
             .with(userId: 1)
             .with(title: "quidem molestiae enim")
@@ -265,10 +265,10 @@ struct AlbumDTOTests {
 struct PhotoDTOTests {
     // MARK: - Mock Tests
 
-    @Test("PhotoDTO.mock()이 올바른 데이터를 생성하는지 확인")
+    @Test("PhotoDTO.random()이 올바른 데이터를 생성하는지 확인")
     func photoDTOMock() throws {
         // When
-        let mock = PhotoDTO.mock()
+        let mock = PhotoDTO.random()
 
         // Then
         #expect(mock.id > 0)
@@ -281,20 +281,20 @@ struct PhotoDTOTests {
         mock.assertValid()
     }
 
-    @Test("PhotoDTO.mock()이 매번 다른 값을 생성하는지 확인")
+    @Test("PhotoDTO.random()이 매번 다른 값을 생성하는지 확인")
     func photoDTOMockRandomness() {
         // When
-        let mock1 = PhotoDTO.mock()
-        let mock2 = PhotoDTO.mock()
+        let mock1 = PhotoDTO.random()
+        let mock2 = PhotoDTO.random()
 
         // Then - 랜덤이므로 값이 달라야 함
         #expect(mock1.id != mock2.id || mock1.title != mock2.title)
     }
 
-    @Test("PhotoDTO.mockArray()가 여러 개의 Mock을 생성하는지 확인")
+    @Test("PhotoDTO.randomArray()가 여러 개의 Mock을 생성하는지 확인")
     func photoDTOMockArray() throws {
         // When
-        let mocks = PhotoDTO.mockArray(count: 50)
+        let mocks = PhotoDTO.randomArray(count: 50)
 
         // Then
         #expect(mocks.count == 50)
@@ -305,10 +305,10 @@ struct PhotoDTOTests {
         }
     }
 
-    @Test("PhotoDTO.mockArray()가 기본 개수로 생성하는지 확인")
+    @Test("PhotoDTO.randomArray()가 기본 개수로 생성하는지 확인")
     func photoDTOMockArrayDefaultCount() {
-        // When (defaultArrayCount: 50)
-        let mocks = PhotoDTO.mockArray()
+        // When ()
+        let mocks = PhotoDTO.randomArray()
 
         // Then
         #expect(mocks.count == 50)
@@ -316,15 +316,15 @@ struct PhotoDTOTests {
 
     // MARK: - Builder Tests (Fixture Replacement)
 
-    @Test("PhotoDTO.builder()가 일관된 데이터를 생성하는지 확인")
+    @Test("PhotoDTO.fixture()가 일관된 데이터를 생성하는지 확인")
     func photoDTOFixture() {
         // When
-        let fixture1 = PhotoDTO.builder()
+        let fixture1 = PhotoDTO.fixture()
             .with(id: 1)
             .with(albumId: 1)
             .with(title: "accusamus beatae ad facilis cum similique qui sunt")
             .build()
-        let fixture2 = PhotoDTO.builder()
+        let fixture2 = PhotoDTO.fixture()
             .with(id: 1)
             .with(albumId: 1)
             .with(title: "accusamus beatae ad facilis cum similique qui sunt")
@@ -345,7 +345,7 @@ struct PhotoDTOTests {
 
     // MARK: - Builder Tests
 
-    @Test("PhotoDTO.builder()가 커스텀 데이터를 생성하는지 확인")
+    @Test("PhotoDTO.fixture()가 커스텀 데이터를 생성하는지 확인")
     func photoDTOBuilder() throws {
         // Given
         let customTitle = "Custom Photo Title"
@@ -353,7 +353,7 @@ struct PhotoDTOTests {
         let customThumbnail = "https://example.com/thumb.jpg"
 
         // When
-        let custom = PhotoDTO.builder()
+        let custom = PhotoDTO.fixture()
             .with(id: 999)
             .with(albumId: 42)
             .with(title: customTitle)
@@ -376,7 +376,7 @@ struct PhotoDTOTests {
     @Test("PhotoDTO가 Codable을 준수하는지 확인")
     func photoDTOCodable() throws {
         // Given
-        let original = PhotoDTO.mock()
+        let original = PhotoDTO.random()
 
         // When - Encode
         let encoder = JSONEncoder()
@@ -398,7 +398,7 @@ struct PhotoDTOTests {
     @Test("PhotoDTO가 Photo 도메인 모델로 올바르게 변환되는지 확인")
     func photoDTOToDomainModel() {
         // Given
-        let dto = PhotoDTO.builder()
+        let dto = PhotoDTO.fixture()
             .with(id: 1)
             .with(albumId: 1)
             .with(title: "accusamus beatae ad facilis cum similique qui sunt")

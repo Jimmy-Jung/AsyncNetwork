@@ -11,9 +11,9 @@ import Testing
 
 @Suite("ActivityDTO Union Type Tests")
 struct ActivityDTOUnionTypeTests {
-    @Test("ActivityDTO.mock()이 유효한 케이스를 생성하는지 확인")
+    @Test("ActivityDTO.random()이 유효한 케이스를 생성하는지 확인")
     func activityDTOMock() throws {
-        let mock = ActivityDTO.mock()
+        let mock = ActivityDTO.random()
 
         switch mock {
         case let .login(dto):
@@ -25,9 +25,9 @@ struct ActivityDTOUnionTypeTests {
         }
     }
 
-    @Test("ActivityDTO.mockArray()가 여러 개의 Mock을 생성하는지 확인")
+    @Test("ActivityDTO.randomArray()가 여러 개의 Mock을 생성하는지 확인")
     func activityDTOMockArray() throws {
-        let mocks = ActivityDTO.mockArray(count: 10)
+        let mocks = ActivityDTO.randomArray(count: 10)
 
         #expect(mocks.count == 10)
 
@@ -138,7 +138,7 @@ struct ActivityDTOUnionTypeTests {
 
     @Test("ActivityDTO가 Equatable을 준수하는지 확인")
     func activityDTOEquatable() {
-        let loginDTO1 = LoginActivityDTO.builder()
+        let loginDTO1 = LoginActivityDTO.fixture()
             .with(id: "login-001")
             .with(type: "login")
             .with(userId: "user-123")
@@ -147,7 +147,7 @@ struct ActivityDTOUnionTypeTests {
             .with(timestamp: "2026-02-01T10:00:00Z")
             .build()
 
-        let loginDTO2 = LoginActivityDTO.builder()
+        let loginDTO2 = LoginActivityDTO.fixture()
             .with(id: "login-001")
             .with(type: "login")
             .with(userId: "user-123")

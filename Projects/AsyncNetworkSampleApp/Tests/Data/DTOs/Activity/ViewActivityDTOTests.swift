@@ -11,9 +11,9 @@ import Testing
 
 @Suite("ViewActivityDTO Tests")
 struct ViewActivityDTOTests {
-    @Test("ViewActivityDTO.mock()이 유효한 데이터를 생성하는지 확인")
+    @Test("ViewActivityDTO.random()이 유효한 데이터를 생성하는지 확인")
     func viewActivityDTOMock() {
-        let mock = ViewActivityDTO.mock()
+        let mock = ViewActivityDTO.random()
 
         #expect(!mock.id.isEmpty)
         #expect(!mock.userId.isEmpty)
@@ -24,12 +24,12 @@ struct ViewActivityDTOTests {
         mock.assertValid()
     }
 
-    @Test("ViewActivityDTO.builder()로 특정 조회 정보 설정")
+    @Test("ViewActivityDTO.fixture()로 특정 조회 정보 설정")
     func viewActivityDTOBuilderCustom() {
         let contentType = "video"
         let duration = 3600
 
-        let custom = ViewActivityDTO.builder()
+        let custom = ViewActivityDTO.fixture()
             .with(id: "view-001")
             .with(type: ActivityType.view.rawValue)
             .with(userId: "user-123")

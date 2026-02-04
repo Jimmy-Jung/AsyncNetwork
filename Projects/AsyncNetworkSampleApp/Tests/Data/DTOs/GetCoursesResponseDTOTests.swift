@@ -13,10 +13,10 @@ import Testing
 struct GetCoursesResponseDTOTests {
     // MARK: - Mock Tests
 
-    @Test("GetCoursesResponseDTO.mock()이 올바른 데이터를 생성하는지 확인")
+    @Test("GetCoursesResponseDTO.random()이 올바른 데이터를 생성하는지 확인")
     func getCoursesResponseDTOMock() throws {
         // When
-        let mock = GetCoursesResponseDTO.mock()
+        let mock = GetCoursesResponseDTO.random()
 
         // Then
         #expect(!mock.items.isEmpty, "items가 비어있지 않아야 함")
@@ -25,11 +25,11 @@ struct GetCoursesResponseDTOTests {
         mock.assertValid()
     }
 
-    @Test("GetCoursesResponseDTO.mock()이 매번 다른 값을 생성하는지 확인")
+    @Test("GetCoursesResponseDTO.random()이 매번 다른 값을 생성하는지 확인")
     func getCoursesResponseDTOMockRandomness() {
         // When
-        let mock1 = GetCoursesResponseDTO.mock()
-        let mock2 = GetCoursesResponseDTO.mock()
+        let mock1 = GetCoursesResponseDTO.random()
+        let mock2 = GetCoursesResponseDTO.random()
 
         // Then - items가 비어있지 않아야 함
         #expect(!mock1.items.isEmpty, "mock1.items가 비어있지 않아야 함")
@@ -43,10 +43,10 @@ struct GetCoursesResponseDTOTests {
         }
     }
 
-    @Test("GetCoursesResponseDTO.mockArray()가 여러 개의 Mock을 생성하는지 확인")
+    @Test("GetCoursesResponseDTO.random()으로 여러 개의 데이터를 생성하는지 확인")
     func getCoursesResponseDTOMockArray() throws {
         // When
-        let mocks = GetCoursesResponseDTO.mockArray(count: 10)
+        let mocks = GetCoursesResponseDTO.randomArray(count: 10)
 
         // Then
         #expect(mocks.count == 10)
@@ -57,10 +57,10 @@ struct GetCoursesResponseDTOTests {
         }
     }
 
-    @Test("GetCoursesResponseDTO.mockArray()가 기본 개수로 생성하는지 확인")
+    @Test("GetCoursesResponseDTO.randomArray()가 기본 개수로 생성하는지 확인")
     func getCoursesResponseDTOMockArrayDefaultCount() {
         // When
-        let mocks = GetCoursesResponseDTO.mockArray()
+        let mocks = GetCoursesResponseDTO.randomArray()
 
         // Then
         #expect(mocks.count == 5)
@@ -68,27 +68,27 @@ struct GetCoursesResponseDTOTests {
 
     // MARK: - Fixture Tests
 
-    @Test("GetCoursesResponseDTO.builder()가 일관된 데이터를 생성하는지 확인")
+    @Test("GetCoursesResponseDTO.fixture()가 일관된 데이터를 생성하는지 확인")
     func getCoursesResponseDTOFixture() {
         // Given - 고정 데이터 준비
-        let course1 = CourseDTO.builder()
+        let course1 = CourseDTO.fixture()
             .with(id: "course-001")
             .with(title: "Swift Programming Fundamentals")
             .with(description: "Learn the basics of Swift")
             .build()
-        
-        let course2 = CourseDTO.builder()
+
+        let course2 = CourseDTO.fixture()
             .with(id: "course-002")
             .with(title: "Advanced Swift Patterns")
             .with(description: "Master advanced concepts")
             .build()
-        
+
         // When
-        let fixture1 = GetCoursesResponseDTO.builder()
+        let fixture1 = GetCoursesResponseDTO.fixture()
             .with(items: [course1, course2])
             .with(nextToken: "eyJwYWdlIjoxfQ==")
             .build()
-        let fixture2 = GetCoursesResponseDTO.builder()
+        let fixture2 = GetCoursesResponseDTO.fixture()
             .with(items: [course1, course2])
             .with(nextToken: "eyJwYWdlIjoxfQ==")
             .build()
@@ -108,16 +108,16 @@ struct GetCoursesResponseDTOTests {
 
     // MARK: - Builder Tests
 
-    @Test("GetCoursesResponseDTO.builder()가 커스텀 데이터를 생성하는지 확인")
+    @Test("GetCoursesResponseDTO.fixture()가 커스텀 데이터를 생성하는지 확인")
     func getCoursesResponseDTOBuilder() throws {
         // Given
-        let customCourse1 = CourseDTO.builder()
+        let customCourse1 = CourseDTO.fixture()
             .with(id: "custom-1")
             .with(title: "Custom Course 1")
             .with(description: "First custom course")
             .build()
 
-        let customCourse2 = CourseDTO.builder()
+        let customCourse2 = CourseDTO.fixture()
             .with(id: "custom-2")
             .with(title: "Custom Course 2")
             .with(description: "Second custom course")
@@ -126,7 +126,7 @@ struct GetCoursesResponseDTOTests {
         let customNextToken = "customToken123"
 
         // When
-        let custom = GetCoursesResponseDTO.builder()
+        let custom = GetCoursesResponseDTO.fixture()
             .with(items: [customCourse1, customCourse2])
             .with(nextToken: customNextToken)
             .build()
@@ -144,13 +144,13 @@ struct GetCoursesResponseDTOTests {
     func getCoursesResponseDTOBuilderPartialUpdate() throws {
         // Given - nextToken만 변경
         // Builder는 mock() 기반이므로 랜덤 items가 생성됨
-        let custom = GetCoursesResponseDTO.builder()
+        let custom = GetCoursesResponseDTO.fixture()
             .with(nextToken: "partialToken")
             .build()
 
         // Then
         #expect(custom.nextToken == "partialToken", "nextToken이 올바르게 설정되어야 함")
-        
+
         // Builder는 mock() 기반이므로 items는 랜덤으로 생성됨
         #expect(!custom.items.isEmpty, "Builder는 mock() 기반이므로 items가 자동 생성되어야 함")
     }
@@ -158,8 +158,8 @@ struct GetCoursesResponseDTOTests {
     @Test("GetCoursesResponseDTO가 nextToken이 nil인 경우를 처리하는지 확인")
     func getCoursesResponseDTOWithoutNextToken() throws {
         // Given
-        let custom = GetCoursesResponseDTO.builder()
-            .with(items: CourseDTO.mockArray(count: 3))
+        let custom = GetCoursesResponseDTO.fixture()
+            .with(items: CourseDTO.randomArray(count: 3))
             .with(nextToken: nil)
             .build()
 
