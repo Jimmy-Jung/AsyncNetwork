@@ -51,16 +51,18 @@ final class ResponseTestableMacroSnapshotTests: XCTestCase {
                     var generator: RandomNumberGenerator = seed != nil ? SeededRandomNumberGenerator(seed: seed!) : SystemRandomNumberGenerator()
                     // 시드가 있으면 예측 가능한 난수 시퀀스를 위해 시드를 조금씩 변경하거나, 생성기를 공유해야 함.
                     // 여기서는 단순화를 위해 시드를 증가시키는 방식 사용
-                    return (0..<count).map { i in
-                        let itemSeed = seed.map { $0 + i }
-                        return random(seed: itemSeed)
+                return (0 ..< count).map { i in
+                    let itemSeed = seed.map {
+                        $0 + i
                     }
+                    return random(seed: itemSeed)
+                }
                 }
 
                 /// 데이터 검증
                 public func assertValid() {
                     assert(id > 0, "id must be positive")
-                    assert(!name.isEmpty, "name must not be empty")
+                        assert(!name.isEmpty, "name must not be empty")
                 }
 
                 /// Builder 패턴으로 유연한 데이터 생성
@@ -93,8 +95,8 @@ final class ResponseTestableMacroSnapshotTests: XCTestCase {
                 /// - with() 메서드로 원하는 값만 커스터마이징 가능
                 /// - 테스트 시나리오별로 특정 필드만 제어할 때 유용
                 public struct UserDTOFixtureBuilder: Sendable {
-                    private var id: Int = 1
-                    private var name: String = "Test String"
+                    private var id: Int
+                    private var name: String
 
                     public init() {
                         self.id = 1
@@ -117,7 +119,7 @@ final class ResponseTestableMacroSnapshotTests: XCTestCase {
                     public func build() -> UserDTO {
                         UserDTO(
                             id: id,
-                            name: name
+                                name: name
                         )
                     }
                 }

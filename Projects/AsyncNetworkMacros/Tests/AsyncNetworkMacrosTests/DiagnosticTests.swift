@@ -44,7 +44,7 @@ final class DiagnosticTests: XCTestCase {
                     "https://api.example.com"
                 }
 
-                public var method: AsyncNetwork.HTTPMethod {
+                public var method: HTTPMethod {
                     .get
                 }
 
@@ -124,7 +124,7 @@ final class DiagnosticTests: XCTestCase {
                     "https://api.example.com"
                 }
 
-                public var method: AsyncNetwork.HTTPMethod {
+                public var method: HTTPMethod {
                     httpMethod
                 }
 
@@ -163,7 +163,7 @@ final class DiagnosticTests: XCTestCase {
                     "https://api.example.com"
                 }
 
-                public var method: AsyncNetwork.HTTPMethod {
+                public var method: HTTPMethod {
                     .get
                 }
 
@@ -205,7 +205,7 @@ final class DiagnosticTests: XCTestCase {
                     "https://api.example.com"
                 }
 
-                public var method: AsyncNetwork.HTTPMethod {
+                public var method: HTTPMethod {
                     .get
                 }
 
@@ -245,7 +245,7 @@ final class DiagnosticTests: XCTestCase {
                     "https://api.example.com"
                 }
 
-                public var method: AsyncNetwork.HTTPMethod {
+                public var method: HTTPMethod {
                     .get
                 }
 
@@ -287,7 +287,7 @@ final class DiagnosticTests: XCTestCase {
                     "https://api.example.com"
                 }
 
-                public var method: AsyncNetwork.HTTPMethod {
+                public var method: HTTPMethod {
                     .get
                 }
 
@@ -324,7 +324,7 @@ final class DiagnosticTests: XCTestCase {
                     "https://api.example.com"
                 }
 
-                public var method: AsyncNetwork.HTTPMethod {
+                public var method: HTTPMethod {
                     .get
                 }
 
@@ -363,7 +363,7 @@ final class DiagnosticTests: XCTestCase {
                     "https://api.example.com"
                 }
 
-                public var method: AsyncNetwork.HTTPMethod {
+                public var method: HTTPMethod {
                     .get
                 }
 
@@ -409,7 +409,7 @@ final class DiagnosticTests: XCTestCase {
                     "https://api.example.com"
                 }
 
-                public var method: AsyncNetwork.HTTPMethod {
+                public var method: HTTPMethod {
                     .get
                 }
 
