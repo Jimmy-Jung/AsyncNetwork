@@ -15,9 +15,9 @@ import Foundation
 ///
 /// ## 버그 시나리오
 ///
-/// ### 문제 /// - `categoryIds: [Int]` → 매크로가 `Int.random()` 생성 → 컴파일 에러
-/// - `labels: [String]` → 매크로가 `String.random()` 생성 → 컴파일 에러
-/// - 기본 타입은 `.random()` 메서드가 없음
+/// ### 문제 /// - `categoryIds: [Int]` → 매크로가 `Int.mock()` 생성 → 컴파일 에러
+/// - `labels: [String]` → 매크로가 `String.mock()` 생성 → 컴파일 에러
+/// - 기본 타입은 `.mock()` 메서드가 없음
 ///
 /// ### 해결 /// - 배열 요소 타입을 재귀적으로 검사
 /// - 기본 타입이면 `generateMockValue` 재호출

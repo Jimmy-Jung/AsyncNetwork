@@ -20,7 +20,7 @@ import Foundation
 /// ```
 ///
 /// - Note: @ResponseTestable 매크로로 mock(), mockArray(), assertValid() 자동 생성
-@ResponseTestable
+@ResponseTestable(defaultArrayCount: 5)
 public enum NotificationDTO: Codable, Sendable, Equatable {
     case text(TextNotificationDTO)
     case image(ImageNotificationDTO)
@@ -97,7 +97,7 @@ public enum NotificationType: Int, Codable, Sendable, CaseIterable {
 ///     isRead: boolean;
 /// }
 /// ```
-@ResponseTestable
+@ResponseTestable(defaultArrayCount: 5)
 public struct TextNotificationDTO: Codable, Sendable, Equatable {
     public let id: String
     public let type: Int
@@ -139,7 +139,7 @@ public struct TextNotificationDTO: Codable, Sendable, Equatable {
 ///     isRead: boolean;
 /// }
 /// ```
-@ResponseTestable
+@ResponseTestable(defaultArrayCount: 5)
 public struct ImageNotificationDTO: Codable, Sendable, Equatable {
     public let id: String
     public let type: Int
@@ -185,7 +185,7 @@ public struct ImageNotificationDTO: Codable, Sendable, Equatable {
 ///     isRead: boolean;
 /// }
 /// ```
-@ResponseTestable
+@ResponseTestable(defaultArrayCount: 5)
 public struct ActionNotificationDTO: Codable, Sendable, Equatable {
     public let id: String
     public let type: Int
