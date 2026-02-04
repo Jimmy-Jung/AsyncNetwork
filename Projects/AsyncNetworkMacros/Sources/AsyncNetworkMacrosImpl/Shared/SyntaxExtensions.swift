@@ -44,10 +44,6 @@ public extension VariableDeclSyntax {
     var firstTypeAnnotation: TypeAnnotationSyntax? {
         bindings.first?.typeAnnotation
     }
-
-    var firstInitializer: InitializerClauseSyntax? {
-        bindings.first?.initializer
-    }
 }
 
 // MARK: - AttributeSyntax Extensions
@@ -77,13 +73,5 @@ public extension AttributeSyntax {
 public extension TypeAnnotationSyntax {
     var isOptional: Bool {
         type.trimmedDescription.hasSuffix("?")
-    }
-}
-
-// MARK: - PatternBindingSyntax Extensions
-
-public extension PatternBindingSyntax {
-    var propertyName: String? {
-        pattern.as(IdentifierPatternSyntax.self)?.identifier.text
     }
 }

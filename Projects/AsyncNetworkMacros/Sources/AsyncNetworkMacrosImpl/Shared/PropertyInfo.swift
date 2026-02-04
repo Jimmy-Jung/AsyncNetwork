@@ -13,8 +13,23 @@ public struct PropertyInfo {
         !isRequired
     }
 
+    /// Phase 3: PathParameter 여부 확인
+    public var isPathParameter: Bool {
+        wrapperType == "PathParameter"
+    }
+
+    /// Phase 3: QueryParameter 여부 확인
+    public var isQueryParameter: Bool {
+        wrapperType == "QueryParameter"
+    }
+
+    /// Phase 3: RequestBody 여부 확인
+    public var isRequestBody: Bool {
+        wrapperType == "RequestBody"
+    }
+
     // MARK: - Initializer
-    
+
     /// PropertyInfo 생성자
     /// - Parameters:
     ///   - name: 프로퍼티 이름
@@ -39,13 +54,13 @@ public struct PropertyInfo {
 
 // MARK: - Convenience Initializers
 
-extension PropertyInfo {
+public extension PropertyInfo {
     /// ResponseTestable 매크로 전용 편의 생성자
     /// - Parameters:
     ///   - name: 프로퍼티 이름
     ///   - type: 프로퍼티 타입
     ///   - isOptional: Optional 타입 여부
-    public init(
+    init(
         name: String,
         type: String,
         isOptional: Bool
