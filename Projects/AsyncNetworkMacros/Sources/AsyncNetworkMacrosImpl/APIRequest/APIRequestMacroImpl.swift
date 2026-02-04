@@ -33,17 +33,21 @@ public struct APIRequestMacroImpl: MemberMacro, ExtensionMacro {
         in context: some MacroExpansionContext
     ) throws -> [ExtensionDeclSyntax] {
         guard declaration.is(StructDeclSyntax.self) else {
-            let diagnostic = Diagnostic(
+            // Fix-it 생성
+            let fixIt = FixItBuilder.changeToStruct(from: declaration)
+            let diagnostic = MacroError.onlyApplicableToStruct.diagnostic(
                 node: node,
-                message: MacroError.onlyApplicableToStruct
+                fixIt: fixIt
             )
             context.diagnose(diagnostic)
             return []
         }
 
+        // Phase 4: 모듈 한정자 추가 (타입 충돌 방지)
+        // AsyncNetwork.APIRequest로 명시하여 사용자 정의 APIRequest 타입과 충돌 방지
         let ext: DeclSyntax =
             """
-            extension \(type.trimmed): APIRequest {}
+            extension \(type.trimmed): AsyncNetwork.APIRequest {}
             """
 
         guard let extensionDeclSyntax = ext.as(ExtensionDeclSyntax.self) else {

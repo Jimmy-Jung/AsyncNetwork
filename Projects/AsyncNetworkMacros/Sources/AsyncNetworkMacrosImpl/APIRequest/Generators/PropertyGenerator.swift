@@ -42,12 +42,24 @@ extension PropertyGenerator {
     }
 
     private func generateMethod() -> DeclSyntax {
-        let methodValue = formatHTTPMethod()
-        return createPropertyDeclaration(
-            name: "method",
-            type: "HTTPMethod",
-            value: methodValue
-        )
+        // Phase 3: 동적 메서드 지원
+        if args.isDynamicMethod, let propertyName = args.dynamicMethodProperty {
+            // 동적: 사용자가 정의한 프로퍼티를 참조
+            return createPropertyDeclaration(
+                name: "method",
+                type: "HTTPMethod",
+                value: propertyName
+            )
+        } else {
+            // 정적: enum case (.get, .post 등)
+            // args.method가 이미 enum case 이름("get", "post" 등)이므로 점을 붙여야 함
+            let methodValue = ".\(args.method.lowercased())"
+            return createPropertyDeclaration(
+                name: "method",
+                type: "HTTPMethod",
+                value: methodValue
+            )
+        }
     }
 
     private func generateHeaders() -> DeclSyntax {
@@ -106,10 +118,6 @@ extension PropertyGenerator {
         args.isBaseURLLiteral
             ? #""\#(args.baseURL)""#
             : args.baseURL
-    }
-
-    private func formatHTTPMethod() -> String {
-        ".\(args.method.lowercased())"
     }
 
     private func createPropertyDeclaration(
