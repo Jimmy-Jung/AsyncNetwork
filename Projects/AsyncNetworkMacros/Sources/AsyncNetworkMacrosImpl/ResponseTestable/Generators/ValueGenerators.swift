@@ -201,8 +201,8 @@ extension ResponseTestableMacroImpl {
             )
             return "(0..<\(randomCount)).map { _ in \(elementRandomValue) }"
         } else if isCustomType(cleanElementType) {
-            // 커스텀 타입
-            return "\(cleanElementType).randomArray(count: \(randomCount), seed: seed)"
+            // 커스텀 타입 - defaultArrayCount 사용
+            return "\(cleanElementType).randomArray(seed: seed)"
         } else {
             // 기본 타입
             let elementRandomValue = generateRandomValue(
@@ -236,8 +236,8 @@ extension ResponseTestableMacroImpl {
             )
             return "Set((0..<\(randomCount)).map { _ in \(elementRandomValue) })"
         } else if isCustomType(cleanElementType) {
-            // 커스텀 타입
-            return "Set(\(cleanElementType).randomArray(count: \(randomCount), seed: seed))"
+            // 커스텀 타입 - defaultArrayCount 사용
+            return "Set(\(cleanElementType).randomArray(seed: seed))"
         } else {
             // 기본 타입
             let elementRandomValue = generateRandomValue(
