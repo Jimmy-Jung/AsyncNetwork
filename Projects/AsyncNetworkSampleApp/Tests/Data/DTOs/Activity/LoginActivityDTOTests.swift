@@ -11,9 +11,9 @@ import Testing
 
 @Suite("LoginActivityDTO Tests")
 struct LoginActivityDTOTests {
-    @Test("LoginActivityDTO.mock()이 유효한 데이터를 생성하는지 확인")
+    @Test("LoginActivityDTO.random()이 유효한 데이터를 생성하는지 확인")
     func loginActivityDTOMock() {
-        let mock = LoginActivityDTO.mock()
+        let mock = LoginActivityDTO.random()
 
         #expect(!mock.id.isEmpty)
         #expect(!mock.userId.isEmpty)
@@ -23,12 +23,12 @@ struct LoginActivityDTOTests {
         mock.assertValid()
     }
 
-    @Test("LoginActivityDTO.builder()로 특정 IP 주소 설정")
+    @Test("LoginActivityDTO.fixture()로 특정 IP 주소 설정")
     func loginActivityDTOBuilderCustomIP() {
         let customIP = "192.168.1.100"
         let customDevice = "iPhone 15 Pro"
 
-        let custom = LoginActivityDTO.builder()
+        let custom = LoginActivityDTO.fixture()
             .with(id: "login-001")
             .with(type: ActivityType.login.rawValue)
             .with(userId: "user-123")

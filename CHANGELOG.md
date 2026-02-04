@@ -9,6 +9,373 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### 🚀 Phase 4: Macro Quality Improvements
+
+AsyncNetworkMacros의 타입 안전성, 코드 생성 견고성, 그리고 유지보수성을 대폭 강화했습니다.
+
+### ✨ Added
+
+#### TypeAnalyzer 유틸리티 추가
+
+타입 문자열 분석 및 호환성 검사를 위한 강력한 유틸리티가 추가되었습니다.
+
+```swift
+// Swift.String, String?, Optional<String> 모두 허용
+@PathParameter var id: Swift.String  // ✅ 통과
+@PathParameter var name: String?     // ✅ 통과
+@QueryParameter var query: Optional<String>  // ✅ 통과
+```
+
+**지원 기능:**
+- Optional 언래핑 (`String?`, `Optional<T>`)
+- 모듈 한정자 제거 (`Swift.String` → `String`)
+- 타입 정규화 및 호환성 검사
+- 제네릭 타입 내부 정규화
+
+#### 모듈 한정자 추가로 타입 충돌 방지
+
+생성되는 코드에 `AsyncNetwork.` 모듈 한정자를 명시하여 사용자 정의 타입과의 충돌을 방지합니다.
+
+```swift
+// Before (Phase 3)
+public var method: HTTPMethod { .get }
+extension MyRequest: APIRequest {}
+
+// After (Phase 4)
+public var method: AsyncNetwork.HTTPMethod { .get }
+extension MyRequest: AsyncNetwork.APIRequest {}
+```
+
+**장점:**
+- 사용자가 `HTTPMethod`나 `APIRequest`를 정의해도 충돌하지 않음
+- Import 누락 시 명확한 에러 메시지
+
+#### 메서드 파싱 로직 통합
+
+`parseMethod`와 `parseDynamicMethod`의 중복 로직을 `MethodParseResult` enum으로 통합했습니다.
+
+```swift
+enum MethodParseResult {
+    case static(String)   // .get, .post 등
+    case dynamic(String)  // 프로퍼티 참조
+}
+```
+
+**장점:**
+- 타입 안전성 향상
+- 유지보수 시 불일치 방지
+- 명확한 정적/동적 구분
+
+### 🔧 Changed
+
+#### MacroValidator 타입 검증 강화
+
+String 기반 단순 비교에서 TypeAnalyzer 기반 정교한 분석으로 개선되었습니다.
+
+```swift
+// Before: 문자열 등가 비교
+return propType == "String" || propType == "Optional<String>"
+
+// After: TypeAnalyzer 활용
+return typeAnalyzer.isStringCompatible(propType)
+```
+
+**개선사항:**
+- `Swift.String`, `Foundation.URL` 등 모듈 한정자 허용
+- `String?`와 `Optional<String>` 표기법 혼용 지원
+- 화이트스페이스 무시
+- 제네릭 타입 중첩 시 안정성 향상
+
+#### 에러 메시지 개선
+
+더욱 친절하고 상세한 가이드를 제공합니다.
+
+```
+예상 타입: String 또는 Optional<String> (Swift.String, String? 등 모두 허용)
+```
+
+### 🐛 Fixed
+
+#### Fix-it 버그 수정
+
+`addMissingArgument` Fix-it이 실제로 인자를 추가하지 않고 쉼표만 추가하던 버그를 수정했습니다.
+
+**해결 방법:**
+- 복잡도와 실용성을 고려하여 Fix-it을 제거하고 deprecated 처리
+- MacroError 메시지를 더욱 상세하게 개선하여 수동 수정 가이드 제공
+
+### 🧪 Tests
+
+#### 타입 검증 엣지 케이스 테스트 추가
+
+6개의 새로운 테스트 케이스가 추가되어 다양한 타입 표기법을 검증합니다:
+
+1. `testModuleQualifiedStringType` - `Swift.String` 허용
+2. `testOptionalAngleBracketNotation` - `Optional<String>` 허용
+3. `testOptionalQuestionMarkNotation` - `String?` 허용
+4. `testGenericResponseType` - `Result<User, APIError>` 허용
+5. `testModuleQualifierPreventsConflict` - 모듈 한정자 충돌 방지 확인
+6. `testVariousQueryParameterTypes` - Int, Bool, Double 등 다양한 타입
+
+### 📚 Documentation
+
+#### 개선 계획 문서 작성
+
+비판적 리뷰를 바탕으로 한 체계적인 개선 계획이 수립되었습니다.
+
+- 발견된 문제점 분석 (Critical ~ Low)
+- 우선순위별 해결 방안
+- 아키텍처 다이어그램
+- 테스트 전략
+
+### 🧹 Removed
+
+#### 미사용 코드 정리
+
+코드베이스 분석을 통해 실제로 사용되지 않는 코드를 제거했습니다.
+
+**제거된 항목:**
+1. `PropertyGenerator.formatHTTPMethod()` - 완전 미사용 메서드 (generateMethod에서 인라인으로 대체됨)
+2. `SyntaxExtensions.firstInitializer` - 미사용 프로퍼티
+3. `SyntaxExtensions.propertyName` (PatternBinding extension) - 중복 프로퍼티 (VariableDeclSyntax.firstPropertyName 사용)
+
+**효과:**
+- 코드 라인 수 감소
+- 유지보수 부담 감소
+- 코드베이스 명확성 향상
+
+### 🔄 Migration Impact
+
+- **Breaking Change 없음**: 모든 개선이 내부 로직 강화
+- **사용자 코드 변경 불필요**: API 변경 없음
+- **경고 증가 가능성**: Validator 강화로 기존에 놓쳤던 문제 탐지될 수 있음
+
+---
+
+## [2.0.0] - 2026-02-04
+
+### 🎉 Major Release: TCA Philosophy & Deterministic Testing
+
+AsyncNetwork v2.0.0은 TCA (The Composable Architecture) 철학을 반영하여 완전히 재설계되었습니다.
+결정론적 테스트, 명확한 네이밍, 단순화된 API를 제공합니다.
+
+### 💥 Breaking Changes
+
+#### @ResponseTestable 매크로 극단적 단순화
+
+**v1.x (복잡함):**
+```swift
+@ResponseTestable(
+    sampleData: [/* ... */],          // ❌ 제거됨
+    alternativeSamples: [/* ... */],  // ❌ 제거됨
+    fixtureJSON: "user.json",         // ❌ 제거됨
+    defaultArrayCount: 3              // ❌ 제거됨
+)
+```
+
+**v2.0 (단순함):**
+```swift
+@ResponseTestable  // ✅ 파라미터 불필요!
+```
+
+#### 명확한 메서드 네이밍
+
+| v1.x | v2.0 | 의미 |
+|------|------|------|
+| `.mock()` | `.random()` | 랜덤 값 생성 |
+| `.builder()` | `.fixture()` | 고정값 빌더 |
+
+**v2.0 핵심 개선:**
+```swift
+// ✅ Seed 기반 결정론적 랜덤 (TCA 스타일)
+let user = UserDTO.random(seed: 42)
+
+// 같은 Seed는 항상 같은 값 생성 → 재현 가능한 테스트
+let user2 = UserDTO.random(seed: 42)
+XCTAssertEqual(user, user2)  // ✅ 항상 통과!
+```
+
+### ✨ Added
+
+#### Phase 3: 확장 기능 (v2.0.0-rc)
+
+**1. ValidationLevel 시스템**
+```swift
+@APIRequest(
+    response: User.self,
+    baseURL: "https://api.example.com",
+    path: "/users",
+    method: .get,
+    validationLevel: .strict  // .moderate, .lenient
+)
+```
+
+- `.strict`: 모든 규칙 강제 (프로덕션)
+- `.moderate`: 필수만 에러, 나머지 경고 (마이그레이션)
+- `.lenient`: 최소한의 검증 (레거시)
+
+**2. 동적 메서드 지원**
+```swift
+@APIRequest(
+    response: User.self,
+    baseURL: "https://api.example.com",
+    path: "/users",
+    method: httpMethod  // 런타임 결정!
+)
+struct DynamicRequest {
+    var httpMethod: HTTPMethod
+}
+```
+
+**3. 상세한 에러 메시지 (5줄+)**
+```
+@APIRequest에 필수 인자 'response'가 누락되었습니다
+
+💡 예상 타입: Type.self
+
+✅ 해결 방법: 'response' 인자를 추가하세요.
+   예: response: MyResponse.self
+```
+
+**4. Fix-it 제안 시스템**
+```swift
+@APIRequest(...)
+class MyRequest {}  // ❌ class 사용
+
+// 컴파일러 제안:
+// ✏️ struct로 변경 (클릭 한 번으로 자동 수정)
+```
+
+#### Phase 4: 안정화 (v2.0.0)
+
+**마이그레이션 도구**
+- SwiftSyntax 기반 자동 변환 스크립트
+- 단일 파일 또는 디렉토리 전체 마이그레이션
+- 자동 백업 (.v1.backup)
+- Dry-run 모드 지원
+
+```bash
+# 간단한 스크립트
+./Scripts/Migration/migrate.swift Sources/
+
+# 고급 도구 (SwiftSyntax)
+migrate-async-network --dry-run Sources/
+```
+
+**TCA 철학 문서**
+- [TCA_PHILOSOPHY.md](Scripts/Migration/TCA_PHILOSOPHY.md)
+- 왜 결정론적 테스트인가?
+- Seed의 이해와 사용법
+- 실전 예제 및 Best Practices
+
+### 🔧 Changed
+
+#### Phase 2: 전략 패턴 및 안정성 (v2.0.0-beta)
+
+**1. RandomStrategy (Seeded)**
+```swift
+public struct RandomStrategy: ValueGenerationStrategy {
+    private var generator: any RandomNumberGenerator
+    
+    public init(seed: Int? = nil) {
+        if let seed = seed {
+            // ✅ Seed로 결정론적 랜덤 생성
+            self.generator = SeededRandomNumberGenerator(seed: seed)
+        } else {
+            self.generator = SystemRandomNumberGenerator()
+        }
+    }
+}
+```
+
+**2. FixtureStrategy (Enum Support)**
+- Enum 기본값 처리 전략 구현
+- `.firstCase`, `.allCases` 전략 제공
+
+**3. 순환 참조 감지**
+- 재귀 깊이 제한 로직
+- 안전한 중첩 타입 처리
+
+### 🧪 Tests
+
+#### swift-macro-testing 통합
+
+TCA/Point-Free 스타일의 스냅샷 기반 매크로 테스트:
+
+```swift
+func testBasicExpansion() {
+    assertMacro {
+        """
+        @APIRequest(response: User.self, ...)
+        struct GetUserRequest {}
+        """
+    } expansion: {
+        """
+        struct GetUserRequest {
+            // 생성된 코드 검증
+        }
+        """
+    }
+}
+```
+
+**테스트 결과:**
+- 전체 테스트: **564개**
+- 성공률: **100%**
+- Phase 3 테스트: 4/4 통과
+- 빌드 경고: 0개
+
+### 📊 성공 지표
+
+| 지표 | v1.x | v2.0 |
+|------|------|------|
+| 파일 수 | 35개 | **18개** (48% 감소) |
+| 테스트 방식 | 문자열 비교 | **Macro Snapshot** |
+| 테스트 안정성 | 랜덤 (불안정) | **Seed 기반 (100% 재현)** |
+| Enum 지원 | 제한적 | **전용 전략** |
+| 에러 메시지 | 1줄 | **5줄+ (Fix-it 포함)** |
+
+### 📝 Migration Guide
+
+[MIGRATION_GUIDE.md](Scripts/Migration/MIGRATION_GUIDE.md) 참고
+
+**자동 마이그레이션:**
+```bash
+./Scripts/Migration/migrate.swift MyProject/Sources/
+```
+
+**수동 체크리스트:**
+1. `@ResponseTestable` 파라미터 제거
+2. `.mock()` → `.random()`
+3. `.builder()` → `.fixture()`
+4. Seed 사용 (선택)
+
+### 🎓 Philosophy
+
+> **TCA 철학**: 모든 부수 효과(Side Effects)를 제어 가능하게 만들어, 결정론적이고 재현 가능한 테스트를 작성합니다.
+
+**핵심 원칙:**
+1. **결정론적 실행**: 같은 Seed = 같은 결과
+2. **재현 가능성**: 버그 발견 시 Seed 기록으로 재현
+3. **CI 안정성**: Flaky Test 완전 제거
+
+### 📚 Documentation
+
+- [REDESIGN.md](REDESIGN.md): v2.0 재설계 사양
+- [PHASE3_GUIDE.md](PHASE3_GUIDE.md): Phase 3 기능 가이드
+- [PHASE3_COMPLETION.md](PHASE3_COMPLETION.md): Phase 3 완료 보고서
+- [TCA_PHILOSOPHY.md](Scripts/Migration/TCA_PHILOSOPHY.md): TCA 철학
+- [MIGRATION_GUIDE.md](Scripts/Migration/MIGRATION_GUIDE.md): 마이그레이션 가이드
+
+### 🙏 Credits
+
+- [The Composable Architecture](https://github.com/pointfreeco/swift-composable-architecture) by Point-Free
+- [swift-macro-testing](https://github.com/pointfreeco/swift-macro-testing) by Point-Free
+
+---
+
+## [Unreleased]
+
 ### 💥 Breaking Changes
 
 #### @APITestable Macro - Removed

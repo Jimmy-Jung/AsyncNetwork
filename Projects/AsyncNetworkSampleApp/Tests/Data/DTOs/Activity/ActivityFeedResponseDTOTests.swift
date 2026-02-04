@@ -11,12 +11,12 @@ import Testing
 
 @Suite("ActivityFeedResponseDTO Tests - Bug Reproduction")
 struct ActivityFeedResponseDTOTests {
-    @Test("ActivityFeedResponseDTO.builder()가 enum 배열을 올바르게 생성하는지 확인")
+    @Test("ActivityFeedResponseDTO.fixture()가 enum 배열을 올바르게 생성하는지 확인")
     func activityFeedResponseDTOBuilderBugFixed() {
-        let response = ActivityFeedResponseDTO.builder().build()
+        let response = ActivityFeedResponseDTO.fixture().build()
 
         #expect(response.totalCount == 1)
-        #expect(response.activities.count == 3)  // ActivityDTO.defaultArrayCount = 3
+        #expect(response.activities.count == 3) // ActivityDTO.defaultArrayCount = 3
 
         for activity in response.activities {
             switch activity {
@@ -41,10 +41,10 @@ struct ActivityFeedResponseDTOTests {
         response.assertValid()
     }
 
-    @Test("ActivityFeedResponseDTO.builder()로 커스텀 activities를 설정할 수 있는지 확인")
+    @Test("ActivityFeedResponseDTO.fixture()로 커스텀 activities를 설정할 수 있는지 확인")
     func activityFeedResponseDTOBuilderWithCustomActivities() {
         let loginActivity = ActivityDTO.login(
-            LoginActivityDTO.builder()
+            LoginActivityDTO.fixture()
                 .with(id: "login-001")
                 .with(type: ActivityType.login.rawValue)
                 .with(userId: "user-123")
@@ -55,7 +55,7 @@ struct ActivityFeedResponseDTOTests {
         )
 
         let purchaseActivity = ActivityDTO.purchase(
-            PurchaseActivityDTO.builder()
+            PurchaseActivityDTO.fixture()
                 .with(id: "purchase-001")
                 .with(type: ActivityType.purchase.rawValue)
                 .with(userId: "user-123")
@@ -67,7 +67,7 @@ struct ActivityFeedResponseDTOTests {
                 .build()
         )
 
-        let response = ActivityFeedResponseDTO.builder()
+        let response = ActivityFeedResponseDTO.fixture()
             .with(totalCount: 2)
             .with(activities: [loginActivity, purchaseActivity])
             .build()
@@ -92,12 +92,12 @@ struct ActivityFeedResponseDTOTests {
         response.assertValid()
     }
 
-    @Test("ActivityFeedResponseDTO.mock()이 유효한 데이터를 생성하는지 확인")
+    @Test("ActivityFeedResponseDTO.random()이 유효한 데이터를 생성하는지 확인")
     func activityFeedResponseDTOMock() {
-        let mock = ActivityFeedResponseDTO.mock()
+        let mock = ActivityFeedResponseDTO.random()
 
         #expect(mock.totalCount > 0)
-        #expect(mock.activities.count == 3)  // ActivityDTO.defaultArrayCount = 3
+        #expect(mock.activities.count == 3) // ActivityDTO.defaultArrayCount = 3
 
         for activity in mock.activities {
             switch activity {
@@ -122,9 +122,9 @@ struct ActivityFeedResponseDTOTests {
         mock.assertValid()
     }
 
-    @Test("ActivityFeedResponseDTO.mockArray()가 여러 개를 생성하는지 확인")
+    @Test("ActivityFeedResponseDTO.randomArray()가 여러 개를 생성하는지 확인")
     func activityFeedResponseDTOMockArray() {
-        let mocks = ActivityFeedResponseDTO.mockArray(count: 5)
+        let mocks = ActivityFeedResponseDTO.randomArray(count: 5)
 
         #expect(mocks.count == 5)
 
@@ -138,7 +138,7 @@ struct ActivityFeedResponseDTOTests {
     @Test("ActivityFeedResponseDTO를 수동으로 생성할 수 있는지 확인")
     func activityFeedResponseDTOManualCreation() {
         let loginActivity = ActivityDTO.login(
-            LoginActivityDTO.builder()
+            LoginActivityDTO.fixture()
                 .with(id: "login-001")
                 .with(type: "login")
                 .with(userId: "user-123")
@@ -149,7 +149,7 @@ struct ActivityFeedResponseDTOTests {
         )
 
         let purchaseActivity = ActivityDTO.purchase(
-            PurchaseActivityDTO.builder()
+            PurchaseActivityDTO.fixture()
                 .with(id: "purchase-001")
                 .with(type: "purchase")
                 .with(userId: "user-123")
@@ -175,7 +175,7 @@ struct ActivityFeedResponseDTOTests {
     @Test("ActivityFeedResponseDTO가 Codable을 준수하는지 확인")
     func activityFeedResponseDTOCodable() throws {
         let loginActivity = ActivityDTO.login(
-            LoginActivityDTO.builder()
+            LoginActivityDTO.fixture()
                 .with(id: "login-001")
                 .with(type: ActivityType.login.rawValue)
                 .with(userId: "user-123")
@@ -186,7 +186,7 @@ struct ActivityFeedResponseDTOTests {
         )
 
         let purchaseActivity = ActivityDTO.purchase(
-            PurchaseActivityDTO.builder()
+            PurchaseActivityDTO.fixture()
                 .with(id: "purchase-001")
                 .with(type: ActivityType.purchase.rawValue)
                 .with(userId: "user-123")

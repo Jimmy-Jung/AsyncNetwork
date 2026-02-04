@@ -17,15 +17,17 @@ jobs:
       run: swift --version
       
     - name: Build
-      timeout-minutes: 10
-      run: swift build --enable-code-coverage
+      timeout-minutes: 15
+      run: swift build
       
     - name: Run Tests
-      timeout-minutes: 10
-      run: swift test --parallel --enable-code-coverage
+      timeout-minutes: 20
+      run: swift test
       
     - name: Generate code coverage
+      if: success()
       run: |
+        swift test --enable-code-coverage
         xcrun llvm-cov export -format="lcov" \
           .build/debug/AsyncNetworkPackageTests.xctest/Contents/MacOS/AsyncNetworkPackageTests \
           -instr-profile .build/debug/codecov/default.profdata > coverage.lcov

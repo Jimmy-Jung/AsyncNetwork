@@ -11,9 +11,9 @@ import Testing
 
 @Suite("PurchaseActivityDTO Tests")
 struct PurchaseActivityDTOTests {
-    @Test("PurchaseActivityDTO.mock()이 유효한 데이터를 생성하는지 확인")
+    @Test("PurchaseActivityDTO.random()이 유효한 데이터를 생성하는지 확인")
     func purchaseActivityDTOMock() {
-        let mock = PurchaseActivityDTO.mock()
+        let mock = PurchaseActivityDTO.random()
 
         #expect(!mock.id.isEmpty)
         #expect(!mock.userId.isEmpty)
@@ -24,13 +24,13 @@ struct PurchaseActivityDTOTests {
         mock.assertValid()
     }
 
-    @Test("PurchaseActivityDTO.builder()로 특정 구매 정보 설정")
+    @Test("PurchaseActivityDTO.fixture()로 특정 구매 정보 설정")
     func purchaseActivityDTOBuilderCustom() {
         let productName = "Premium Subscription"
         let amount = 9.99
         let currency = "USD"
 
-        let custom = PurchaseActivityDTO.builder()
+        let custom = PurchaseActivityDTO.fixture()
             .with(id: "purchase-001")
             .with(type: ActivityType.purchase.rawValue)
             .with(userId: "user-123")

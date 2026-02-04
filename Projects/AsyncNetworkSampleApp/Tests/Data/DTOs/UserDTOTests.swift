@@ -13,10 +13,10 @@ import Testing
 struct UserDTOTests {
     // MARK: - Mock Tests
 
-    @Test("UserDTO.mock()이 올바른 데이터를 생성하는지 확인")
+    @Test("UserDTO.random()이 올바른 데이터를 생성하는지 확인")
     func userDTOMock() throws {
         // When
-        let mock = UserDTO.mock()
+        let mock = UserDTO.random()
 
         // Then
         #expect(mock.id > 0)
@@ -28,20 +28,20 @@ struct UserDTOTests {
         mock.assertValid()
     }
 
-    @Test("UserDTO.mock()이 매번 다른 값을 생성하는지 확인")
+    @Test("UserDTO.random()이 매번 다른 값을 생성하는지 확인")
     func userDTOMockRandomness() {
         // When
-        let mock1 = UserDTO.mock()
-        let mock2 = UserDTO.mock()
+        let mock1 = UserDTO.random()
+        let mock2 = UserDTO.random()
 
         // Then - 랜덤이므로 값이 달라야 함
         #expect(mock1.id != mock2.id || mock1.name != mock2.name)
     }
 
-    @Test("UserDTO.mockArray()가 여러 개의 Mock을 생성하는지 확인")
+    @Test("UserDTO.randomArray()가 여러 개의 Mock을 생성하는지 확인")
     func userDTOMockArray() throws {
         // When
-        let mocks = UserDTO.mockArray(count: 10)
+        let mocks = UserDTO.randomArray(count: 10)
 
         // Then
         #expect(mocks.count == 10)
@@ -52,10 +52,10 @@ struct UserDTOTests {
         }
     }
 
-    @Test("UserDTO.mockArray()가 기본 개수로 생성하는지 확인")
+    @Test("UserDTO.randomArray()가 기본 개수로 생성하는지 확인")
     func userDTOMockArrayDefaultCount() {
-        // When (defaultArrayCount: 10)
-        let mocks = UserDTO.mockArray()
+        // When ()
+        let mocks = UserDTO.randomArray()
 
         // Then
         #expect(mocks.count == 10)
@@ -63,14 +63,14 @@ struct UserDTOTests {
 
     // MARK: - Builder Tests
 
-    @Test("UserDTO.builder()가 커스텀 데이터를 생성하는지 확인")
+    @Test("UserDTO.fixture()가 커스텀 데이터를 생성하는지 확인")
     func userDTOBuilder() throws {
         // Given
         let customName = "Custom User"
         let customEmail = "custom@example.com"
 
         // When
-        let custom = UserDTO.builder()
+        let custom = UserDTO.fixture()
             .with(id: 999)
             .with(name: customName)
             .with(username: "customuser")
@@ -90,10 +90,10 @@ struct UserDTOTests {
         custom.assertValid()
     }
 
-    @Test("UserDTO.builder()가 일부만 커스터마이징하는지 확인")
+    @Test("UserDTO.fixture()가 일부만 커스터마이징하는지 확인")
     func userDTOBuilderPartial() throws {
         // When - name만 변경, 나머지는 랜덤
-        let partial = UserDTO.builder()
+        let partial = UserDTO.fixture()
             .with(name: "Partial User")
             .build()
 
@@ -105,11 +105,11 @@ struct UserDTOTests {
 
         partial.assertValid()
     }
-    
-    @Test("UserDTO.builder()로 고정 시나리오 테스트")
+
+    @Test("UserDTO.fixture()로 고정 시나리오 테스트")
     func userDTOBuilderFixedScenario() throws {
         // Given - 특정 테스트 시나리오: 관리자 계정
-        let adminUser = UserDTO.builder()
+        let adminUser = UserDTO.fixture()
             .with(id: 1)
             .with(name: "Admin User")
             .with(username: "admin")
@@ -119,7 +119,7 @@ struct UserDTOTests {
             .with(address: nil)
             .with(company: nil)
             .build()
-        
+
         // Then
         #expect(adminUser.id == 1)
         #expect(adminUser.name == "Admin User")
@@ -127,7 +127,7 @@ struct UserDTOTests {
         #expect(adminUser.email == "admin@example.com")
         #expect(adminUser.address == nil)
         #expect(adminUser.company == nil)
-        
+
         adminUser.assertValid()
     }
 
@@ -136,7 +136,7 @@ struct UserDTOTests {
     @Test("UserDTO가 Codable을 준수하는지 확인")
     func userDTOCodable() throws {
         // Given
-        let original = UserDTO.mock()
+        let original = UserDTO.random()
 
         // When - Encode
         let encoder = JSONEncoder()
@@ -157,7 +157,7 @@ struct UserDTOTests {
     @Test("UserDTO가 User 도메인 모델로 올바르게 변환되는지 확인")
     func userDTOToDomainModel() {
         // Given - Builder로 고정 값 생성
-        let dto = UserDTO.builder()
+        let dto = UserDTO.fixture()
             .with(id: 1)
             .with(name: "Leanne Graham")
             .with(username: "Bret")
@@ -181,7 +181,7 @@ struct UserDTOTests {
     @Test("UserDTO의 옵셔널 필드가 nil일 때 도메인 모델로 올바르게 변환되는지 확인")
     func userDTOWithNilOptionalsToDomainModel() {
         // Given
-        let dto = UserDTO.builder()
+        let dto = UserDTO.fixture()
             .with(id: 1)
             .with(name: "Test User")
             .with(username: "testuser")
@@ -307,10 +307,10 @@ struct UserDTOTests {
 struct AddressDTOTests {
     // MARK: - Mock Tests
 
-    @Test("AddressDTO.mock()이 올바른 데이터를 생성하는지 확인")
+    @Test("AddressDTO.random()이 올바른 데이터를 생성하는지 확인")
     func addressDTOMock() throws {
         // When
-        let mock = AddressDTO.mock()
+        let mock = AddressDTO.random()
 
         // Then
         #expect(!mock.street.isEmpty)
@@ -323,10 +323,10 @@ struct AddressDTOTests {
 
     // MARK: - Builder Tests
 
-    @Test("AddressDTO.builder()로 고정 값 생성")
+    @Test("AddressDTO.fixture()로 고정 값 생성")
     func addressDTOBuilder() {
         // When - Builder로 고정 시나리오 생성
-        let address = AddressDTO.builder()
+        let address = AddressDTO.fixture()
             .with(street: "Kulas Light")
             .with(suite: "Apt. 556")
             .with(city: "Gwenborough")
@@ -345,7 +345,7 @@ struct AddressDTOTests {
     @Test("AddressDTO가 Address 도메인 모델로 올바르게 변환되는지 확인")
     func addressDTOToDomainModel() {
         // Given - Builder로 고정 값 생성
-        let dto = AddressDTO.builder()
+        let dto = AddressDTO.fixture()
             .with(street: "Test Street")
             .with(suite: "Suite 100")
             .with(city: "Test City")
@@ -426,10 +426,10 @@ struct AddressDTOTests {
 struct GeoDTOTests {
     // MARK: - Mock Tests
 
-    @Test("GeoDTO.mock()이 올바른 데이터를 생성하는지 확인")
+    @Test("GeoDTO.random()이 올바른 데이터를 생성하는지 확인")
     func geoDTOMock() throws {
         // When
-        let mock = GeoDTO.mock()
+        let mock = GeoDTO.random()
 
         // Then
         #expect(!mock.lat.isEmpty)
@@ -440,10 +440,10 @@ struct GeoDTOTests {
 
     // MARK: - Builder Tests
 
-    @Test("GeoDTO.builder()로 고정 값 생성")
+    @Test("GeoDTO.fixture()로 고정 값 생성")
     func geoDTOBuilder() {
         // When - Builder로 고정 좌표 생성
-        let geo = GeoDTO.builder()
+        let geo = GeoDTO.fixture()
             .with(lat: "-37.3159")
             .with(lng: "81.1496")
             .build()
@@ -458,7 +458,7 @@ struct GeoDTOTests {
     @Test("GeoDTO가 Geo 도메인 모델로 올바르게 변환되는지 확인")
     func geoDTOToDomainModel() {
         // Given - Builder로 고정 값 생성
-        let dto = GeoDTO.builder()
+        let dto = GeoDTO.fixture()
             .with(lat: "-37.3159")
             .with(lng: "81.1496")
             .build()
@@ -526,10 +526,10 @@ struct GeoDTOTests {
 struct CompanyDTOTests {
     // MARK: - Mock Tests
 
-    @Test("CompanyDTO.mock()이 올바른 데이터를 생성하는지 확인")
+    @Test("CompanyDTO.random()이 올바른 데이터를 생성하는지 확인")
     func companyDTOMock() throws {
         // When
-        let mock = CompanyDTO.mock()
+        let mock = CompanyDTO.random()
 
         // Then
         #expect(!mock.name.isEmpty)
@@ -541,10 +541,10 @@ struct CompanyDTOTests {
 
     // MARK: - Builder Tests
 
-    @Test("CompanyDTO.builder()로 고정 값 생성")
+    @Test("CompanyDTO.fixture()로 고정 값 생성")
     func companyDTOBuilder() {
         // When - Builder로 특정 회사 정보 생성
-        let company = CompanyDTO.builder()
+        let company = CompanyDTO.fixture()
             .with(name: "Romaguera-Crona")
             .with(catchPhrase: "Multi-layered client-server neural-net")
             .with(bs: "harness real-time e-markets")
@@ -561,7 +561,7 @@ struct CompanyDTOTests {
     @Test("CompanyDTO가 Company 도메인 모델로 올바르게 변환되는지 확인")
     func companyDTOToDomainModel() {
         // Given - Builder로 고정 값 생성
-        let dto = CompanyDTO.builder()
+        let dto = CompanyDTO.fixture()
             .with(name: "Test Company")
             .with(catchPhrase: "Test Phrase")
             .with(bs: "Test BS")

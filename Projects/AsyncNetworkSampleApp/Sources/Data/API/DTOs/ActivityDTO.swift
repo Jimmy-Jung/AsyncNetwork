@@ -235,8 +235,8 @@ public struct ViewActivityDTO: Codable, Sendable, Equatable {
 /// ## 버그 설명
 ///
 /// `ActivityDTO`는 enum 타입이므로 `builder()` 메서드를 제공하지 않습니다.
-/// 하지만 `@ResponseTestable` 매크로가 `ActivityFeedResponseDTO.builder()`의 `init()`을 생성할 때,
-/// `activities` 프로퍼티의 기본값으로 `ActivityDTO.builder().build()`를 호출하려고 시도합니다.
+/// 하지만 `@ResponseTestable` 매크로가 `ActivityFeedResponseDTO.fixture()`의 `init()`을 생성할 때,
+/// `activities` 프로퍼티의 기본값으로 `ActivityDTO.fixture().build()`를 호출하려고 시도합니다.
 ///
 /// **예상되는 컴파일 오류**:
 /// ```
@@ -249,7 +249,7 @@ public struct ViewActivityDTO: Codable, Sendable, Equatable {
 /// public init() {
 ///     self.totalCount = 1
 ///     self.activities = (0 ..< 3).map { _ in
-///         ActivityDTO.builder().build()  // ❌ enum은 builder()가 없음!
+///         ActivityDTO.fixture().build()  // ❌ enum은 builder()가 없음!
 ///     }
 /// }
 /// ```
@@ -260,7 +260,7 @@ public struct ViewActivityDTO: Codable, Sendable, Equatable {
 /// public init() {
 ///     self.totalCount = 1
 ///     self.activities = (0 ..< 3).map { _ in
-///         ActivityDTO.mock()  // ✅ enum은 mock()만 사용 가능
+///         ActivityDTO.random()  // ✅ enum은 mock()만 사용 가능
 ///     }
 /// }
 /// ```

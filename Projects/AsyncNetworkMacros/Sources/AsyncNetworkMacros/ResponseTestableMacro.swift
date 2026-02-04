@@ -7,6 +7,16 @@
 
 @_exported import AsyncNetworkCore
 
+// MARK: - EnumFixtureStrategy
+
+/// Enum의 Fixture 생성 전략
+public enum EnumFixtureStrategy: String, Sendable {
+    /// 첫 번째 Case 사용 (기본값)
+    case firstCase
+    /// 랜덤 Case 사용
+    case random
+}
+
 // MARK: - TestableDTO 프로토콜
 
 /// 테스트 가능한 DTO 프로토콜
@@ -16,36 +26,50 @@
 ///
 /// ## 제공 메서드
 ///
-/// - **mock()**: 랜덤 값으로 테스트 데이터 생성
-/// - **mockArray(count:)**: 여러 개의 Mock 데이터 생성
+/// - **random()**: 랜덤 값으로 테스트 데이터 생성
+/// - **randomArray(count:)**: 여러 개의 랜덤 데이터 생성
 /// - **assertValid()**: 데이터 유효성 검증
 ///
 /// ## 사용 예시
 ///
 /// ```swift
-/// // Mock 생성
-/// let user = UserDTO.mock()
+/// // Random 생성
+/// let user = UserDTO.random()
 ///
 /// // 여러 개 생성
-/// let users = UserDTO.mockArray(count: 10)
+/// let users = UserDTO.randomArray(count: 10)
 ///
 /// // 검증
 /// user.assertValid()
 /// ```
 public protocol TestableDTO {
+    /// 랜덤 값으로 테스트 데이터 생성 (내부 재귀 호출용)
+    /// - Parameters:
+    ///   - seed: 랜덤 시드
+    ///   - depth: 재귀 깊이
+    static func random(seed: Int?, depth: Int) -> Self
+    
     /// 랜덤 값으로 테스트 데이터 생성
     ///
     /// 매 호출마다 다른 값을 생성합니다.
     /// 테스트 독립성을 보장하고 엣지 케이스를 발견하는 데 유용합니다.
     ///
+    /// - Parameter seed: 랜덤 시드 값 (옵셔널). 시드를 제공하면 결정론적 결과를 생성합니다.
     /// - Returns: 랜덤 값으로 채워진 인스턴스
-    static func mock() -> Self
+    static func random(seed: Int?) -> Self
+    
+    /// 랜덤 값으로 테스트 데이터 생성 (편의 메서드)
+    static func random() -> Self
 
-    /// 여러 개의 Mock 데이터 생성
+    /// 여러 개의 랜덤 데이터 생성
     ///
-    /// - Parameter count: 생성할 Mock 개수 (기본값: 매크로 설정의 defaultArrayCount)
-    /// - Returns: Mock 인스턴스 배열
-    static func mockArray(count: Int) -> [Self]
+    /// - Parameter count: 생성할 개수 (기본값: 매크로 설정의 defaultArrayCount)
+    /// - Parameter seed: 랜덤 시드 값 (옵셔널)
+    /// - Returns: 랜덤 인스턴스 배열
+    static func randomArray(count: Int, seed: Int?) -> [Self]
+    
+    /// 여러 개의 랜덤 데이터 생성 (편의 메서드)
+    static func randomArray(count: Int) -> [Self]
 
     /// 데이터 유효성 검증
     ///
@@ -58,6 +82,20 @@ public protocol TestableDTO {
     func assertValid() throws
 }
 
+extension TestableDTO {
+    public static func random(seed: Int?) -> Self {
+        random(seed: seed, depth: 0)
+    }
+    
+    public static func random() -> Self {
+        random(seed: nil, depth: 0)
+    }
+    
+    public static func randomArray(count: Int) -> [Self] {
+        randomArray(count: count, seed: nil)
+    }
+}
+
 // MARK: - @ResponseTestable 매크로
 
 /// Codable 응답 모델에 테스트 데이터 생성 및 검증 기능을 추가하는 매크로
@@ -66,8 +104,8 @@ public protocol TestableDTO {
 ///
 /// ## 주요 기능
 ///
-/// 1. **Mock 데이터 생성**: `mock()`, `mockArray()`
-/// 2. **Builder 패턴**: 특정 필드만 커스터마이징 (struct만 지원)
+/// 1. **Random 데이터 생성**: `random()`, `randomArray()`
+/// 2. **Fixture 패턴**: `fixture()`를 사용해 특정 필드만 커스터마이징 (struct만 지원)
 /// 3. **자동 검증**: `assertValid()`로 데이터 유효성 확인
 /// 4. **TestableDTO 프로토콜 자동 채택**
 ///
@@ -84,9 +122,9 @@ public protocol TestableDTO {
 /// }
 ///
 /// // 사용
-/// let user = UserDTO.mock()                    // 매번 다른 랜덤 데이터
-/// let users = UserDTO.mockArray(count: 10)     // 10개의 랜덤 데이터 배열
-/// user.assertValid()                           // 데이터 유효성 검증
+/// let user = UserDTO.random()                    // 매번 다른 랜덤 데이터
+/// let users = UserDTO.randomArray(count: 10)     // 10개의 랜덤 데이터 배열
+/// user.assertValid()                             // 데이터 유효성 검증
 /// ```
 ///
 /// ### Enum (Associated Value 지원)
@@ -100,14 +138,14 @@ public protocol TestableDTO {
 /// }
 ///
 /// // 사용
-/// let response = ResponseDTO.mock()            // 랜덤하게 case 선택
-/// let responses = ResponseDTO.mockArray(count: 5)
-/// response.assertValid()                       // Associated value 검증
+/// let response = ResponseDTO.random()            // 랜덤하게 case 선택
+/// let responses = ResponseDTO.randomArray(count: 5)
+/// response.assertValid()                         // Associated value 검증
 /// ```
 ///
-/// ## Builder 패턴 사용
+/// ## Fixture 패턴 사용
 ///
-/// 특정 필드만 커스터마이징하고 나머지는 랜덤 값을 사용할 수 있습니다.
+/// 특정 필드만 커스터마이징하고 나머지는 고정 값(Fixture)을 사용할 수 있습니다.
 ///
 /// ```swift
 /// @ResponseTestable
@@ -117,12 +155,12 @@ public protocol TestableDTO {
 ///     let email: String
 /// }
 ///
-/// // 특정 필드만 고정, 나머지는 랜덤
-/// let customUser = UserDTO.builder()
+/// // 특정 필드만 고정, 나머지는 Fixture 값
+/// let customUser = UserDTO.fixture()
 ///     .with(id: 999)
 ///     .with(name: "Custom Name")
 ///     .build()
-/// // email은 자동으로 랜덤 값 생성
+/// // email은 자동으로 고정된 Fixture 값 사용
 /// ```
 ///
 /// ## 테스트 패턴
@@ -130,15 +168,15 @@ public protocol TestableDTO {
 /// ### Pattern 1: 완전 랜덤 (테스트 독립성)
 ///
 /// ```swift
-/// let user1 = UserDTO.mock()
-/// let user2 = UserDTO.mock()
+/// let user1 = UserDTO.random()
+/// let user2 = UserDTO.random()
 /// #expect(user1.id != user2.id)  // ✅ 매번 다른 값
 /// ```
 ///
-/// ### Pattern 2: 특정 시나리오 (Builder)
+/// ### Pattern 2: 특정 시나리오 (Fixture)
 ///
 /// ```swift
-/// let adminUser = UserDTO.builder()
+/// let adminUser = UserDTO.fixture()
 ///     .with(id: 1)
 ///     .with(name: "Admin")
 ///     .with(email: "admin@example.com")
@@ -149,8 +187,8 @@ public protocol TestableDTO {
 /// ### Pattern 3: 부분 고정 (하이브리드)
 ///
 /// ```swift
-/// // id만 고정, 나머지는 랜덤
-/// let user = UserDTO.builder()
+/// // id만 고정, 나머지는 Fixture 값
+/// let user = UserDTO.fixture()
 ///     .with(id: 999)
 ///     .build()
 /// ```
@@ -167,18 +205,14 @@ public protocol TestableDTO {
 ///     let comments: [CommentDTO]  // 2~5개의 랜덤 Comment 생성
 /// }
 ///
-/// let post = PostDTO.mock()
-/// // post.comments는 자동으로 CommentDTO.mock()으로 채워짐
+/// let post = PostDTO.random()
+/// // post.comments는 자동으로 CommentDTO.random()으로 채워짐
 /// ```
 ///
 /// ## 파라미터 설명
 ///
-/// - Parameter includeBuilder: Builder 패턴 포함 여부 (기본값: `true`)
-///   - `true`: `builder()` 메서드 및 `{TypeName}Builder` 타입 생성
-///   - `false`: Builder 미생성 (심플한 DTO에 적합)
-///
-/// - Parameter defaultArrayCount: `mockArray()` 기본 개수 (기본값: `5`)
-///   - `mockArray()` 호출 시 count 생략하면 이 값 사용
+/// - Parameter defaultArrayCount: `randomArray()` 기본 개수 (기본값: `5`)
+///   - `randomArray()` 호출 시 count 생략하면 이 값 사용
 ///
 /// ## 지원하는 타입
 ///
@@ -196,12 +230,12 @@ public protocol TestableDTO {
 /// - Set: `Set<Element>` (2~5개의 랜덤 요소)
 ///
 /// ### 커스텀 타입
-/// - 중첩 DTO: 자동으로 `.mock()` 호출
+/// - 중첩 DTO: 자동으로 `.random()` 호출
 /// - Optional: 50% 확률로 `nil` 또는 값
 ///
 /// ## 특수 필드명 인식
 ///
-/// 필드명에 따라 적절한 Mock 데이터를 생성합니다:
+/// 필드명에 따라 적절한 랜덤 데이터를 생성합니다:
 ///
 /// - **email**: `"mock123@example.com"` 형식
 /// - **url**: `"https://example.com/uuid"` 형식
@@ -219,18 +253,18 @@ public protocol TestableDTO {
 /// ### Struct
 ///
 /// ```swift
-/// // Mock 생성 (항상 랜덤 값)
-/// public static func mock() -> Self
+/// // Random 생성 (항상 랜덤 값)
+/// public static func random(seed: Int? = nil) -> Self
 ///
 /// // 배열 생성 (랜덤 값 배열)
-/// public static func mockArray(count: Int = defaultArrayCount) -> [Self]
+/// public static func randomArray(count: Int = defaultArrayCount, seed: Int? = nil) -> [Self]
 ///
 /// // 검증
 /// public func assertValid()
 ///
-/// // Builder
-/// public static func builder() -> {TypeName}Builder
-/// public struct {TypeName}Builder: Sendable {
+/// // Fixture Builder
+/// public static func fixture() -> {TypeName}FixtureBuilder
+/// public struct {TypeName}FixtureBuilder: Sendable {
 ///     public func with({propertyName}: {PropertyType}) -> Self
 ///     public func build() -> {TypeName}
 /// }
@@ -239,11 +273,11 @@ public protocol TestableDTO {
 /// ### Enum
 ///
 /// ```swift
-/// // Mock 생성 (랜덤 case 선택)
-/// public static func mock() -> Self
+/// // Random 생성 (랜덤 case 선택)
+/// public static func random(seed: Int? = nil) -> Self
 ///
 /// // 배열 생성 (랜덤 case 배열)
-/// public static func mockArray(count: Int = defaultArrayCount) -> [Self]
+/// public static func randomArray(count: Int = defaultArrayCount, seed: Int? = nil) -> [Self]
 ///
 /// // 검증 (Associated value 검증)
 /// public func assertValid() throws
@@ -258,12 +292,13 @@ public protocol TestableDTO {
 ///
 @attached(
     member,
-    names: named(mock), named(builder), named(mockArray),
+    names: named(random), named(fixture), named(randomArray),
     named(assertValid), arbitrary
 )
 @attached(extension, conformances: TestableDTO)
 public macro ResponseTestable(
-    defaultArrayCount: Int = 5
+    defaultArrayCount: Int = 5,
+    enumStrategy: EnumFixtureStrategy = .firstCase
 ) = #externalMacro(
     module: "AsyncNetworkMacrosImpl",
     type: "ResponseTestableMacroImpl"

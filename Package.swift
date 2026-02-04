@@ -32,7 +32,8 @@ let package = Package(
     ],
     dependencies: [
         .package(url: "https://github.com/apple/swift-syntax.git", from: "600.0.0"),
-        .package(url: "https://github.com/apple/swift-docc-plugin", from: "1.0.0")
+        .package(url: "https://github.com/apple/swift-docc-plugin", from: "1.0.0"),
+        .package(url: "https://github.com/pointfreeco/swift-macro-testing.git", from: "0.5.0")
     ],
     targets: [
         // MARK: - Core Network Library
@@ -96,7 +97,9 @@ let package = Package(
             dependencies: [
                 "AsyncNetworkMacros",
                 "AsyncNetworkMacrosImpl",
-                .product(name: "SwiftSyntaxMacrosTestSupport", package: "swift-syntax")
+                "AsyncNetworkCore",
+                .product(name: "SwiftSyntaxMacrosTestSupport", package: "swift-syntax"),
+                .product(name: "MacroTesting", package: "swift-macro-testing")
             ],
             path: "Projects/AsyncNetworkMacros/Tests"
         )
