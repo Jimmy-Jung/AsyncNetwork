@@ -67,12 +67,10 @@ public struct APIRequestMacroValidator: MacroValidator {
                 parameterName: prop.name,
                 availableParameters: Array(pathParameters)
             )
-
-                if asError {
-                    throw error
-                }
-                // 경고는 context.diagnose()를 통해 처리 (필요 시 구현)
+            if asError {
+                throw error
             }
+            // 경고는 context.diagnose()를 통해 처리 (필요 시 구현)
         }
     }
 
