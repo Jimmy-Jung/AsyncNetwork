@@ -55,11 +55,14 @@ body:
       description: 버그를 재현할 수 있는 최소한의 코드를 작성해주세요.
       render: swift
       placeholder: |
-        import NetworkKit
-        
-        enum MyAPI: APIRequest {
-            case getUsers
-            // 코드 작성
+        import AsyncNetwork
+
+        struct MyRequest: APIRequest {
+            typealias Response = EmptyResponse
+
+            let baseURLString = "https://api.example.com"
+            let path = "/health"
+            let method: HTTPMethod = .get
         }
 
   - type: dropdown
@@ -80,7 +83,7 @@ body:
     id: version
     attributes:
       label: 버전
-      description: NetworkKit의 버전을 입력해주세요.
+      description: AsyncNetwork 버전을 입력해주세요.
       placeholder: "예: 1.0.0"
     validations:
       required: true
@@ -132,4 +135,3 @@ body:
       label: 추가 컨텍스트
       description: 버그에 대한 추가 정보가 있나요?
       placeholder: 스크린샷, 로그, 또는 기타 관련 정보를 추가해주세요.
-

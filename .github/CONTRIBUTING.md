@@ -1,6 +1,6 @@
-# Contributing to NetworkKit
+# Contributing to AsyncNetwork
 
-NetworkKit에 기여해주셔서 감사합니다! 이 문서는 프로젝트에 기여하는 방법을 안내합니다.
+AsyncNetwork에 기여해주셔서 감사합니다. 이 문서는 현재 저장소 구조와 기여 절차를 간단히 정리합니다.
 
 ## 목차
 
@@ -23,40 +23,31 @@ NetworkKit에 기여해주셔서 감사합니다! 이 문서는 프로젝트에 
 - Xcode 16.0 이상
 - Swift 6.0 이상
 - macOS 14.0 이상
-- Tuist 4.x (Example 프로젝트 빌드 시)
 
 ### 저장소 클론
 
 ```bash
-git clone https://github.com/Jimmy-Jung/NetworkKit.git
-cd NetworkKit
+git clone https://github.com/Jimmy-Jung/AsyncNetwork.git
+cd AsyncNetwork
 ```
 
 ### 프로젝트 구조
 
 ```
-NetworkKit/
-├── Package.swift                    # SPM 패키지 정의
+AsyncNetwork/
+├── Package.swift                    # Swift Package 정의
 ├── Projects/
-│   ├── NetworkKit/                  # Core 라이브러리
-│   │   ├── Sources/                 # 소스 코드
-│   │   └── Tests/                   # 단위 테스트
-│   └── NetworkKitExample/           # Example 앱 (Tuist)
-└── .github/                         # GitHub 설정
+│   └── AsyncNetwork/
+│       ├── Sources/                 # 코어 네트워킹 소스
+│       └── Tests/                   # 단위 테스트
+└── .github/                         # CI, 템플릿, 정책
 ```
 
 ### 빌드 및 테스트
 
 ```bash
-# NetworkKit 패키지 빌드 및 테스트
 swift build
 swift test
-
-# Example 프로젝트 실행
-cd Projects/NetworkKitExample
-tuist install
-tuist generate
-open NetworkKitExample.xcworkspace
 ```
 
 ## 개발 워크플로우
@@ -119,7 +110,7 @@ GitHub에서 Pull Request를 생성합니다.
 
 ```swift
 import Testing
-@testable import NetworkKit
+@testable import AsyncNetworkCore
 
 @Suite("HTTPClient Tests")
 struct HTTPClientTests {
@@ -181,11 +172,10 @@ Conventional Commits 형식을 사용합니다:
 
 ### Scope (선택 사항)
 
-- `core`: Core 타입 (APIRequest, HTTPMethod 등)
-- `infrastructure`: Infrastructure 계층
-- `application`: Application 계층
-- `orchestration`: Orchestration 계층
-- `example`: Example 프로젝트
+- `core`: 프로토콜, 모델, property wrapper
+- `client`: HTTPClient, 헤더, 전송 계층
+- `service`: NetworkService, retry, processing
+- `docs`: README, CHANGELOG, GitHub 문서
 
 ### 예시
 
@@ -223,16 +213,15 @@ test(orchestration): add network service tests
 
 ### 버그 리포트
 
-버그를 발견하셨나요? [Bug Report](https://github.com/Jimmy-Jung/NetworkKit/issues/new?template=bug_report.yml)를 작성해주세요.
+버그를 발견하셨나요? [Bug Report](https://github.com/Jimmy-Jung/AsyncNetwork/issues/new?template=bug_report.yml)를 작성해주세요.
 
 ### 기능 제안
 
-새로운 기능을 제안하고 싶으신가요? [Feature Request](https://github.com/Jimmy-Jung/NetworkKit/issues/new?template=feature_request.yml)를 작성해주세요.
+새로운 기능을 제안하고 싶으신가요? [Feature Request](https://github.com/Jimmy-Jung/AsyncNetwork/issues/new?template=feature_request.yml)를 작성해주세요.
 
 ## 질문이 있으신가요?
 
-- [Discussions](https://github.com/Jimmy-Jung/NetworkKit/discussions)에서 질문하세요
-- [Issues](https://github.com/Jimmy-Jung/NetworkKit/issues)를 확인하세요
+- [Issues](https://github.com/Jimmy-Jung/AsyncNetwork/issues)를 확인하세요
 
 ## 라이선스
 
@@ -240,5 +229,4 @@ test(orchestration): add network service tests
 
 ---
 
-다시 한번 NetworkKit에 기여해주셔서 감사합니다! 🎉
-
+다시 한번 AsyncNetwork에 기여해주셔서 감사합니다.

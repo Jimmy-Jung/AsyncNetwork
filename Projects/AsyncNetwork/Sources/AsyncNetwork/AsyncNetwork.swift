@@ -5,42 +5,9 @@
 //  Created by jimmy on 2026/01/03.
 //
 
-/// AsyncNetwork 통합 모듈
+/// AsyncNetwork 공개 모듈
 ///
-/// Core 기능과 매크로를 모두 포함하는 단일 모듈입니다.
-/// 이 모듈 하나만 import하면 AsyncNetwork의 모든 기능을 사용할 수 있습니다.
-///
-/// ## 사용법
-///
-/// ```swift
-/// import AsyncNetwork
-///
-/// @APIRequest(
-///     response: [Post].self,
-///     title: "Get all posts",
-///     baseURL: "https://jsonplaceholder.typicode.com",
-///     path: "/posts",
-///     method: "get"
-/// )
-/// struct GetAllPostsRequest {}
-///
-/// let service = NetworkService()
-/// let posts: [Post] = try await service.request(GetAllPostsRequest())
-/// ```
-///
-/// ## 마이그레이션
-///
-/// 기존 코드에서 다음과 같이 변경하세요:
-///
-/// Before:
-/// ```swift
-/// import AsyncNetworkCore
-/// import AsyncNetworkMacros
-/// ```
-///
-/// After:
-/// ```swift
-/// import AsyncNetwork
-/// ```
+/// 소비자 코드는 `import AsyncNetwork` 하나로 코어 네트워킹 API를 사용할 수 있습니다.
+/// `AsyncNetworkCore`를 직접 가져오지 않아도 같은 공개 타입을 사용할 수 있도록
+/// 얇은 우산 모듈만 유지합니다.
 @_exported import AsyncNetworkCore
-@_exported import AsyncNetworkMacros

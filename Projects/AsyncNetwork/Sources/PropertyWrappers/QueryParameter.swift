@@ -162,7 +162,6 @@ extension UInt64: DefaultInitializable {
 @propertyWrapper
 public struct QueryParameter<Value: Sendable>: RequestParameter {
     public var wrappedValue: Value
-    public var projectedValue: QueryParameter<Value> { self }
     private let customKey: String?
 
     /// Non-optional 값을 받는 초기화자 (필수 파라미터용)
