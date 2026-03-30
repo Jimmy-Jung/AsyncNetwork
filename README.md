@@ -19,13 +19,13 @@ Foundation, Network, Swift Concurrency 기반으로 구성한 Swift 네트워크
 - `NetworkMonitor.shared` 기반 네트워크 연결 상태 확인
 - `AsyncNetwork` 우산 모듈 + `AsyncNetworkCore` 코어 product 제공
 
-## 3.0 변경점
+## 현재 구조 안내
 
-- 매크로 기반 선언(`@APIRequest`, `@ResponseTestable`) 제거
-- 일반 Swift 타입과 프로토콜 중심 구조로 정리
-- `AsyncNetwork`는 유지하되 내부 구현은 `AsyncNetworkCore`를 재노출하는 얇은 우산 모듈로 단순화
+- 요청 정의는 매크로 대신 `APIRequest` 프로토콜과 property wrapper 조합을 사용합니다.
+- 외부 소비자는 `AsyncNetwork` product를 사용하고, 내부 구현은 `AsyncNetworkCore` 중심으로 구성됩니다.
+- 매크로 기반 버전에서 올라오는 경우 기존 요청 선언을 일반 `APIRequest` 타입으로 옮겨야 합니다.
 
-기존 매크로 기반 요청은 일반 `APIRequest` 타입으로 옮겨야 합니다.
+버전별 상세 변경 내역은 `CHANGELOG.md`를 참고하면 됩니다.
 
 ## 설치
 
@@ -33,7 +33,7 @@ Foundation, Network, Swift Concurrency 기반으로 구성한 Swift 네트워크
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/Jimmy-Jung/AsyncNetwork.git", from: "3.0.0")
+    .package(url: "https://github.com/Jimmy-Jung/AsyncNetwork.git", from: "1.4.0")
 ]
 ```
 
