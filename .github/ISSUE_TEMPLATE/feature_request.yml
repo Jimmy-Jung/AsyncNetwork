@@ -40,11 +40,14 @@ body:
       description: 제안하는 기능의 API 사용 예제를 작성해주세요.
       render: swift
       placeholder: |
-        import NetworkKit
-        
-        enum MyAPI: APIRequest {
-            case getUsers
-            // 제안하는 API 사용 예제
+        import AsyncNetwork
+
+        struct MyRequest: APIRequest {
+            typealias Response = EmptyResponse
+
+            let baseURLString = "https://api.example.com"
+            let path = "/health"
+            let method: HTTPMethod = .get
         }
 
   - type: dropdown
@@ -77,4 +80,3 @@ body:
       label: 추가 컨텍스트
       description: 기능에 대한 추가 정보가 있나요?
       placeholder: 스크린샷, 참고 자료, 또는 기타 관련 정보를 추가해주세요.
-

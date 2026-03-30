@@ -11,7 +11,6 @@ import Foundation
 @propertyWrapper
 public struct PathParameter<Value: Sendable>: RequestParameter {
     public var wrappedValue: Value
-    public var projectedValue: PathParameter<Value> { self }
     private let customKey: String?
 
     public init(wrappedValue: Value) {

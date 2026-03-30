@@ -2,12 +2,13 @@
 
 ## Supported Versions
 
-현재 지원되는 NetworkKit 버전:
+현재 지원되는 AsyncNetwork 버전:
 
 | Version | Supported          |
 | ------- | ------------------ |
-| 1.x.x   | :white_check_mark: |
-| < 1.0   | :x:                |
+| 3.x.x   | :white_check_mark: |
+| 2.x.x   | :white_check_mark: |
+| < 2.0   | :x:                |
 
 ## Reporting a Vulnerability
 
@@ -18,7 +19,7 @@
 보안 취약점은 공개 이슈로 리포트하지 마세요. 대신 다음 방법 중 하나를 사용해주세요:
 
 - GitHub Security Advisories를 통해 비공개로 리포트
-- 이메일로 리포트: [security@networkkit.io] (또는 메인테이너 이메일)
+- 이메일로 리포트: joony300@gmail.com
 
 ### 2. 포함해야 할 정보
 
@@ -52,7 +53,7 @@
 
 ## 모범 사례
 
-NetworkKit을 사용할 때 다음 보안 모범 사례를 따라주세요:
+AsyncNetwork를 사용할 때 다음 보안 모범 사례를 따라주세요:
 
 1. 항상 최신 버전을 사용하세요
 2. 의존성을 정기적으로 업데이트하세요
@@ -69,5 +70,4 @@ NetworkKit을 사용할 때 다음 보안 모범 사례를 따라주세요:
 
 ---
 
-보안 문제를 리포트해주셔서 감사합니다! 🛡️
-
+보안 문제를 리포트해주셔서 감사합니다.

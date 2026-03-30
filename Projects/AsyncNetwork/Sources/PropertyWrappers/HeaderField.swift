@@ -31,7 +31,6 @@ import Foundation
 @propertyWrapper
 public struct HeaderField<Value: Sendable>: RequestParameter {
     public var wrappedValue: Value
-    public var projectedValue: HeaderField<Value> { self }
     private let key: HTTPHeaders.HeaderKey
 
     /// Non-optional 값을 받는 초기화자 (필수 헤더용)
@@ -89,7 +88,6 @@ public extension HeaderField {
 @propertyWrapper
 public struct CustomHeader<Value: Sendable>: RequestParameter {
     public var wrappedValue: Value
-    public var projectedValue: CustomHeader<Value> { self }
     private let headerName: String
 
     /// Non-optional 값을 받는 초기화자 (필수 헤더용)

@@ -43,9 +43,9 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.version.outputs.VERSION }}
-          name: NetworkKit ${{ steps.version.outputs.VERSION }}
+          name: AsyncNetwork ${{ steps.version.outputs.VERSION }}
           body: |
-            # NetworkKit ${{ steps.version.outputs.VERSION }}
+            # AsyncNetwork ${{ steps.version.outputs.VERSION }}
             
             ${{ steps.changelog.outputs.CHANGELOG }}
             
@@ -55,7 +55,7 @@ jobs:
             
             ```swift
             dependencies: [
-                .package(url: "https://github.com/Jimmy-Jung/NetworkKit", from: "${{ steps.version.outputs.VERSION }}")
+                .package(url: "https://github.com/Jimmy-Jung/AsyncNetwork", from: "${{ steps.version.outputs.VERSION }}")
             ]
             ```
             
@@ -65,17 +65,16 @@ jobs:
             .target(
                 name: "YourTarget",
                 dependencies: [
-                    .product(name: "NetworkKit", package: "NetworkKit")
+                    .product(name: "AsyncNetwork", package: "AsyncNetwork")
                 ]
             )
             ```
             
             ## Documentation
             
-            - [GitHub README](https://github.com/Jimmy-Jung/NetworkKit)
-            - [Example App](https://github.com/Jimmy-Jung/NetworkKit/tree/main/Projects/NetworkKitExample)
+            - [GitHub README](https://github.com/Jimmy-Jung/AsyncNetwork)
+            - [CHANGELOG](https://github.com/Jimmy-Jung/AsyncNetwork/blob/main/CHANGELOG.md)
           draft: false
           prerelease: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-

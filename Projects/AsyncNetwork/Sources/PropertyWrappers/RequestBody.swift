@@ -28,7 +28,6 @@ import Foundation
 @propertyWrapper
 public struct RequestBody<Value: Encodable & Sendable>: RequestParameter {
     public var wrappedValue: Value
-    public var projectedValue: RequestBody<Value> { self }
 
     /// Non-optional 값을 받는 초기화자 (필수 body용)
     public init(wrappedValue: Value) {

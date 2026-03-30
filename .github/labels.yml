@@ -45,7 +45,7 @@
 ## Component
 - name: "core"
   color: "d4c5f9"
-  description: "NetworkKit Core package"
+  description: "AsyncNetwork core package"
 
 - name: "infrastructure"
   color: "c2e0c6"
@@ -59,9 +59,9 @@
   color: "e4e669"
   description: "Orchestration layer (NetworkService)"
 
-- name: "example"
+- name: "docs"
   color: "ffd700"
-  description: "Example project"
+  description: "Documentation and repository surface"
 
 ## Status
 - name: "status: blocked"
@@ -120,4 +120,3 @@
 - name: "swift"
   color: "f05138"
   description: "Swift language related"
-

@@ -1,13 +1,10 @@
-# Code Owners for NetworkKit
+# Code Owners for AsyncNetwork
 
 # 전체 프로젝트 기본 리뷰어
 * @Jimmy-Jung
 
-# NetworkKit Core 패키지
-/Projects/NetworkKit/ @Jimmy-Jung
-
-# NetworkKitExample 프로젝트
-/Projects/NetworkKitExample/ @Jimmy-Jung
+# AsyncNetwork core package
+/Projects/AsyncNetwork/ @Jimmy-Jung
 
 # 문서
 /README.md @Jimmy-Jung
@@ -20,4 +17,3 @@
 
 # Swift Package Manager
 /Package.swift @Jimmy-Jung
-
