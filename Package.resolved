@@ -1,13 +1,13 @@
 {
-  "originHash" : "a21cea12cb6c23898f0af895e11914a61520fcf745ded71e690e10d14f40ac8f",
+  "originHash" : "15c7aec1a3cc8a1ab425826ce319921a8e4e7974fb2f8f7520e5d9e60d7a3a85",
   "pins" : [
     {
       "identity" : "swift-docc-plugin",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/apple/swift-docc-plugin",
       "state" : {
-        "revision" : "e977f65879f82b375a044c8837597f690c067da6",
-        "version" : "1.4.6"
+        "revision" : "647c708be89f834fa6a6d4945442793a77ddf5b6",
+        "version" : "1.5.0"
       }
     },
     {
