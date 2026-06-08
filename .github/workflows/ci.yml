@@ -33,7 +33,7 @@ jobs:
           -instr-profile .build/debug/codecov/default.profdata > coverage.lcov
       
     - name: Upload coverage to Codecov
-      uses: codecov/codecov-action@v5
+      uses: codecov/codecov-action@v7
       with:
         files: ./coverage.lcov
         flags: unittests
